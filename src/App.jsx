@@ -5,7 +5,8 @@ import './App.css'
 const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE']
 const SERVICE_TYPES = {
   'General': ['INTERNET', 'VOICE', 'IPTV'],
-  'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B']
+  'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B'],
+  'INFRACARE': ['Kabel Terjuntai', 'ODP Terbuka']
 }
 const STATUSES = ['Open', 'In Progress', 'Pending', 'Closed', 'Resolved']
 const TEKNISI_LIST = [
