@@ -373,11 +373,6 @@ function TicketForm({ onSubmit, tickets }) {
     const existingTicket = tickets.find(t => t.incident === formData.incident)
     if (existingTicket) {
       setIsUpdateMode(true)
-      // Fill form with existing data BUT keep current date for the update entry? 
-      // User said "status update", usually means a new log. 
-      // Let's pre-fill everything from existing ticket to ensure consistency, 
-      // but maybe update the date to today? 
-      // Or just load exactly what was there. Let's load what was there + allow status change.
       setFormData(prev => ({
         ...existingTicket,
         date: new Date().toISOString().split('T')[0], // Updates happen "today"
@@ -385,13 +380,47 @@ function TicketForm({ onSubmit, tickets }) {
       }))
     } else {
       setIsUpdateMode(false)
-      // Optional: Clear fields if user types a new number after an old one?
-      // For now, let's just reset the mode. Clearing might be annoying if they just made a typo.
     }
   }, [formData.incident, tickets])
 
+  // EFFECT: Handle INFRACARE changes specifically
+  useEffect(() => {
+    if (formData.ticketType === 'INFRACARE') {
+      setFormData(prev => ({
+        ...prev,
+        customerName: '-',
+        serviceId: '-'
+        // Removed serviceType override here to let user pick from the filtered list
+      }))
+    }
+  }, [formData.ticketType])
+
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+
+    // Aggressive overrides
+    if (name === 'ticketType' && value === 'INFRACARE') {
+      // If switching TO Infracare, reset service type to first Infracare option to avoid invalid state
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        customerName: '-',
+        serviceId: '-',
+        serviceType: 'Kabel Terjuntai' // Default to first option
+      }))
+    } else if (name === 'ticketType' && value !== 'INFRACARE') {
+      // If switching AWAY from Infracare, clear the '-' if possible
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        customerName: prev.customerName === '-' ? '' : prev.customerName,
+        serviceId: prev.serviceId === '-' ? '' : prev.serviceId,
+        serviceType: 'INTERNET' // Reset to default General
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -439,6 +468,28 @@ function TicketForm({ onSubmit, tickets }) {
     }
   }
 
+  // Dynamic Service Types based on Ticket Type
+  const getServiceTypeOptions = () => {
+    if (formData.ticketType === 'INFRACARE') {
+      return (
+        <optgroup label="INFRACARE">
+          {SERVICE_TYPES['INFRACARE'].map(s => <option key={s} value={s}>{s}</option>)}
+        </optgroup>
+      )
+    }
+    // If not Infracare, show all EXCEPT Infracare
+    return Object.entries(SERVICE_TYPES).map(([category, services]) => {
+      // Skip Infracare category for non-Infracare tickets
+      if (category === 'INFRACARE') return null
+
+      return (
+        <optgroup key={category} label={category}>
+          {services.map(s => <option key={s} value={s}>{s}</option>)}
+        </optgroup>
+      )
+    })
+  }
+
   return (
     <div className="glass-panel">
       <h2 style={{ marginBottom: '2rem', fontSize: '1.5rem' }}>
@@ -474,22 +525,32 @@ function TicketForm({ onSubmit, tickets }) {
 
           <div className="input-group">
             <label>Customer Name</label>
-            <input type="text" name="customerName" value={formData.customerName} onChange={handleChange} required disabled={isUpdateMode} />
+            <input
+              type="text"
+              name="customerName"
+              value={formData.customerName}
+              onChange={handleChange}
+              required
+              disabled={isUpdateMode || formData.ticketType === 'INFRACARE'}
+            />
           </div>
 
           <div className="input-group">
             <label>Service ID (SID/Inet/Tlp)</label>
-            <input type="text" name="serviceId" value={formData.serviceId} onChange={handleChange} required disabled={isUpdateMode} />
+            <input
+              type="text"
+              name="serviceId"
+              value={formData.serviceId}
+              onChange={handleChange}
+              required
+              disabled={isUpdateMode || formData.ticketType === 'INFRACARE'}
+            />
           </div>
 
           <div className="input-group">
             <label>Service Type</label>
             <select name="serviceType" value={formData.serviceType} onChange={handleChange} disabled={isUpdateMode}>
-              {Object.entries(SERVICE_TYPES).map(([category, services]) => (
-                <optgroup key={category} label={category}>
-                  {services.map(s => <option key={s} value={s}>{s}</option>)}
-                </optgroup>
-              ))}
+              {getServiceTypeOptions()}
             </select>
           </div>
 
