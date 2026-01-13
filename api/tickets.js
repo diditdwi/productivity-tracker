@@ -49,7 +49,7 @@ export default async function handler(req, res) {
                 console.log('Fetching tickets from sheet:', SPREADSHEET_ID);
                 const getRes = await sheets.spreadsheets.values.get({
                     spreadsheetId: SPREADSHEET_ID,
-                    range: `${SHEET_NAME}!A:M`,
+                    range: `'${SHEET_NAME}'!A:M`,
                 });
 
                 const rows = getRes.data.values || [];
