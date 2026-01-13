@@ -1,24 +1,34 @@
 :root {
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Dark Premium Palette */
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: rgba(30, 41, 59, 0.7);
+  /* Bright Light Blue Theme */
+  --bg-primary: #e0f2fe;
+  /* Sky 100 */
+  --bg-secondary: #f0f9ff;
+  /* Sky 50 */
+  --bg-card: #ffffff;
 
-  --text-main: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-main: #0c4a6e;
+  /* Sky 900 */
+  --text-secondary: #0284c7;
+  /* Sky 600 */
   --text-accent: #38bdf8;
+  /* Sky 400 */
 
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
+  --primary-color: #0ea5e9;
+  /* Sky 500 */
+  --primary-hover: #0284c7;
+  /* Sky 600 */
 
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
+  --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
 
-  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --glass-border: 1px solid #bae6fd;
+  /* Sky 200 */
+  --glass-shadow: 0 8px 32px rgba(14, 165, 233, 0.1);
+  /* Sky tinted shadow */
 }
 
 * {
@@ -29,10 +39,12 @@
 
 body {
   font-family: var(--font-family);
-  background-color: var(--bg-primary);
+  background: linear-gradient(135deg, #e0f2fe 0%, #e0e7ff 100%);
+  /* Sky to Indigo-ish Light */
   color: var(--text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 input,
