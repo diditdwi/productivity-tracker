@@ -45,30 +45,40 @@ export default async function handler(req, res) {
         const sheets = google.sheets({ version: 'v4', auth });
 
         if (req.method === 'GET') {
-            const getRes = await sheets.spreadsheets.values.get({
-                spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!A:M`,
-            });
+            try {
+                console.log('Fetching tickets from sheet:', SPREADSHEET_ID);
+                const getRes = await sheets.spreadsheets.values.get({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: `${SHEET_NAME}!A:M`,
+                });
 
-            const rows = getRes.data.values || [];
-            const tickets = rows.slice(1).map((row, index) => ({
-                id: index + '-' + row[2],
-                date: row[0],
-                ticketType: row[1],
-                incident: row[2],
-                customerName: row[3],
-                serviceId: row[4],
-                serviceType: row[5],
-                technician: row[6],
-                labcode: row[7],
-                repair: row[8],
-                status: row[9],
-                workzone: row[10],
-                hdOfficer: row[11],
-                timestamp: row[12]
-            })).reverse();
+                const rows = getRes.data.values || [];
+                console.log('Rows found:', rows.length);
 
-            return res.status(200).json(tickets);
+                const tickets = rows.slice(1).map((row, index) => ({
+                    id: index + '-' + row[2],
+                    date: row[0],
+                    ticketType: row[1],
+                    incident: row[2],
+                    customerName: row[3],
+                    serviceId: row[4],
+                    serviceType: row[5],
+                    technician: row[6],
+                    labcode: row[7],
+                    repair: row[8],
+                    status: row[9],
+                    workzone: row[10],
+                    hdOfficer: row[11],
+                    timestamp: row[12]
+                })).reverse();
+
+                return res.status(200).json(tickets);
+            } catch (err) {
+                console.error('Error in GET /api/tickets:', err);
+                // Return 200 with empty array to prevent frontend crash, but log error
+                // Or better: return error so we can see it in Network tab
+                return res.status(500).json({ error: err.message, stack: err.stack });
+            }
         }
 
         else if (req.method === 'POST') {
