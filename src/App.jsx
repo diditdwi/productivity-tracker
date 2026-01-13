@@ -161,7 +161,10 @@ const USERS = [
 ]
 
 function App() {
-  const [user, setUser] = useState(null) // null = not logged in
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('ticketTrackerUser')
+    return saved ? JSON.parse(saved) : null
+  })
   const [view, setView] = useState('entry')
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -217,11 +220,13 @@ function App() {
 
   const handleLogin = (authenticatedUser) => {
     setUser(authenticatedUser)
+    localStorage.setItem('ticketTrackerUser', JSON.stringify(authenticatedUser))
     setView('entry') // Default view after login
   }
 
   const handleLogout = () => {
     setUser(null)
+    localStorage.removeItem('ticketTrackerUser')
     setView('entry')
   }
 
