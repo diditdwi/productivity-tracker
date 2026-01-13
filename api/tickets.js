@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // Environment Variables
     const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-    const SHEET_NAME = process.env.SHEET_NAME || 'Produktivitas B2B BARAYA';
+    const SHEET_NAME = process.env.SHEET_NAME;
 
     // Handling Credentials from ENV (for Vercel)
     // Ensure private key handles newlines correctly
@@ -75,8 +75,6 @@ export default async function handler(req, res) {
                 return res.status(200).json(tickets);
             } catch (err) {
                 console.error('Error in GET /api/tickets:', err);
-                // Return 200 with empty array to prevent frontend crash, but log error
-                // Or better: return error so we can see it in Network tab
                 return res.status(500).json({ error: err.message, stack: err.stack });
             }
         }
@@ -92,7 +90,7 @@ export default async function handler(req, res) {
             // Check existing
             const getRes = await sheets.spreadsheets.values.get({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!C:C`, // Incident Column
+                range: `'${SHEET_NAME}'!C:C`, // Incident Column
             });
 
             const rows = getRes.data.values || [];
@@ -124,7 +122,7 @@ export default async function handler(req, res) {
             if (rowIndex !== -1) {
                 await sheets.spreadsheets.values.update({
                     spreadsheetId: SPREADSHEET_ID,
-                    range: `${SHEET_NAME}!A${rowIndex}`,
+                    range: `'${SHEET_NAME}'!A${rowIndex}`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: { values: [rowData] }
                 });
@@ -132,7 +130,7 @@ export default async function handler(req, res) {
             } else {
                 await sheets.spreadsheets.values.append({
                     spreadsheetId: SPREADSHEET_ID,
-                    range: `${SHEET_NAME}!A:A`,
+                    range: `'${SHEET_NAME}'!A:A`,
                     valueInputOption: 'USER_ENTERED',
                     requestBody: { values: [rowData] }
                 });
