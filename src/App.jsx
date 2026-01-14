@@ -987,12 +987,37 @@ function ProductivityDashboard({ tickets }) {
 
 function DailyReportDashboard({ tickets }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedRegion, setSelectedRegion] = useState('ALL')
 
-  // Filter tickets by selected date
+  // Helper to determine Region from Workzone Code
+  const getRegion = (wzCode) => {
+    if (!wzCode) return 'UNKNOWN'
+    for (const [region, zones] of Object.entries(WORKZONES)) {
+      if (zones.includes(wzCode)) return region
+    }
+    return 'OTHERS'
+  }
+
+  // Filter tickets by selected date and region
   const filteredTickets = tickets.filter(t => {
     if (!t.date) return false
-    // Ensure date comparisons work regardless of time or format nuances, assuming YYYY-MM-DD
-    return t.date === selectedDate
+
+    // Date Check
+    const isSameDate = t.date === selectedDate
+
+    // Region Check
+    let isRegionMatch = true
+    if (selectedRegion !== 'ALL') {
+      const ticketRegion = getRegion(t.workzone)
+      if (selectedRegion === 'OTHERS') {
+        // Should match if not in any known list, but usually 'OTHERS' means specifically outside defined ones
+        isRegionMatch = ticketRegion === 'OTHERS' || ticketRegion === 'UNKNOWN'
+      } else {
+        isRegionMatch = ticketRegion === selectedRegion
+      }
+    }
+
+    return isSameDate && isRegionMatch
   })
 
   // Helper to normalize technician name
@@ -1019,18 +1044,32 @@ function DailyReportDashboard({ tickets }) {
 
   const sortedTechs = Object.keys(reportData).sort()
 
+  const REGIONS = ['ALL', ...Object.keys(WORKZONES), 'OTHERS']
+
   return (
     <div className="glass-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2>Daily Report</h2>
-        <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
-          <label style={{ marginRight: '1rem', display: 'inline-block' }}>Select Date:</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
-          />
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
+            <label style={{ marginRight: '0.5rem', display: 'inline-block' }}>Region:</label>
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
+            >
+              {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
+            <label style={{ marginRight: '0.5rem', display: 'inline-block' }}>Date:</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
+            />
+          </div>
         </div>
       </div>
 
