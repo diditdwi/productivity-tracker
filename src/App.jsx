@@ -5,7 +5,8 @@ import './App.css'
 const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE']
 const SERVICE_TYPES = {
   'General': ['INTERNET', 'VOICE', 'IPTV'],
-  'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B']
+  'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B', 'OLO'],
+  'INFRACARE': ['Kabel Terjuntai', 'ODP Terbuka']
 }
 const STATUSES = ['Open', 'In Progress', 'Pending', 'Closed', 'Resolved']
 const TEKNISI_LIST = [
@@ -151,7 +152,7 @@ const WORKZONES = {
   'CIANJUR': ['CBE', 'CJG', 'CJR', 'CKK', 'SDL', 'SGA', 'SKM', 'TGE', 'CCL']
 }
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_RLtk15EwCVWuQUo04x2Frw7pSxxcbyC9y0N1ljx4NQ-NlHCcyQWPou3kOqU50yiZ/exec'
+const API_URL = '/api/tickets'
 
 // User Credentials
 const USERS = [
@@ -161,7 +162,10 @@ const USERS = [
 ]
 
 function App() {
-  const [user, setUser] = useState(null) // null = not logged in
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('ticketTrackerUser')
+    return saved ? JSON.parse(saved) : null
+  })
   const [view, setView] = useState('entry')
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -172,7 +176,7 @@ function App() {
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch(GOOGLE_SCRIPT_URL)
+      const response = await fetch(API_URL)
       const data = await response.json()
       // Google Sheets returns the array. If it's empty or error, handle safe.
       if (Array.isArray(data)) {
@@ -217,11 +221,13 @@ function App() {
 
   const handleLogin = (authenticatedUser) => {
     setUser(authenticatedUser)
+    localStorage.setItem('ticketTrackerUser', JSON.stringify(authenticatedUser))
     setView('entry') // Default view after login
   }
 
   const handleLogout = () => {
     setUser(null)
+    localStorage.removeItem('ticketTrackerUser')
     setView('entry')
   }
 
@@ -367,11 +373,6 @@ function TicketForm({ onSubmit, tickets }) {
     const existingTicket = tickets.find(t => t.incident === formData.incident)
     if (existingTicket) {
       setIsUpdateMode(true)
-      // Fill form with existing data BUT keep current date for the update entry? 
-      // User said "status update", usually means a new log. 
-      // Let's pre-fill everything from existing ticket to ensure consistency, 
-      // but maybe update the date to today? 
-      // Or just load exactly what was there. Let's load what was there + allow status change.
       setFormData(prev => ({
         ...existingTicket,
         date: new Date().toISOString().split('T')[0], // Updates happen "today"
@@ -379,13 +380,47 @@ function TicketForm({ onSubmit, tickets }) {
       }))
     } else {
       setIsUpdateMode(false)
-      // Optional: Clear fields if user types a new number after an old one?
-      // For now, let's just reset the mode. Clearing might be annoying if they just made a typo.
     }
   }, [formData.incident, tickets])
 
+  // EFFECT: Handle INFRACARE changes specifically
+  useEffect(() => {
+    if (formData.ticketType === 'INFRACARE') {
+      setFormData(prev => ({
+        ...prev,
+        customerName: '-',
+        serviceId: '-'
+        // Removed serviceType override here to let user pick from the filtered list
+      }))
+    }
+  }, [formData.ticketType])
+
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+
+    // Aggressive overrides
+    if (name === 'ticketType' && value === 'INFRACARE') {
+      // If switching TO Infracare, reset service type to first Infracare option to avoid invalid state
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        customerName: '-',
+        serviceId: '-',
+        serviceType: 'Kabel Terjuntai' // Default to first option
+      }))
+    } else if (name === 'ticketType' && value !== 'INFRACARE') {
+      // If switching AWAY from Infracare, clear the '-' if possible
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        customerName: prev.customerName === '-' ? '' : prev.customerName,
+        serviceId: prev.serviceId === '-' ? '' : prev.serviceId,
+        serviceType: 'INTERNET' // Reset to default General
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -398,9 +433,8 @@ function TicketForm({ onSubmit, tickets }) {
     }
 
     try {
-      await fetch(GOOGLE_SCRIPT_URL, {
+      await fetch(API_URL, {
         method: 'POST',
-        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -432,6 +466,28 @@ function TicketForm({ onSubmit, tickets }) {
       alert('Error saving to Google Sheets, but saved locally.')
       onSubmit(newTicket)
     }
+  }
+
+  // Dynamic Service Types based on Ticket Type
+  const getServiceTypeOptions = () => {
+    if (formData.ticketType === 'INFRACARE') {
+      return (
+        <optgroup label="INFRACARE">
+          {SERVICE_TYPES['INFRACARE'].map(s => <option key={s} value={s}>{s}</option>)}
+        </optgroup>
+      )
+    }
+    // If not Infracare, show all EXCEPT Infracare
+    return Object.entries(SERVICE_TYPES).map(([category, services]) => {
+      // Skip Infracare category for non-Infracare tickets
+      if (category === 'INFRACARE') return null
+
+      return (
+        <optgroup key={category} label={category}>
+          {services.map(s => <option key={s} value={s}>{s}</option>)}
+        </optgroup>
+      )
+    })
   }
 
   return (
@@ -469,22 +525,32 @@ function TicketForm({ onSubmit, tickets }) {
 
           <div className="input-group">
             <label>Customer Name</label>
-            <input type="text" name="customerName" value={formData.customerName} onChange={handleChange} required disabled={isUpdateMode} />
+            <input
+              type="text"
+              name="customerName"
+              value={formData.customerName}
+              onChange={handleChange}
+              required
+              disabled={isUpdateMode || formData.ticketType === 'INFRACARE'}
+            />
           </div>
 
           <div className="input-group">
             <label>Service ID (SID/Inet/Tlp)</label>
-            <input type="text" name="serviceId" value={formData.serviceId} onChange={handleChange} required disabled={isUpdateMode} />
+            <input
+              type="text"
+              name="serviceId"
+              value={formData.serviceId}
+              onChange={handleChange}
+              required
+              disabled={isUpdateMode || formData.ticketType === 'INFRACARE'}
+            />
           </div>
 
           <div className="input-group">
             <label>Service Type</label>
             <select name="serviceType" value={formData.serviceType} onChange={handleChange} disabled={isUpdateMode}>
-              {Object.entries(SERVICE_TYPES).map(([category, services]) => (
-                <optgroup key={category} label={category}>
-                  {services.map(s => <option key={s} value={s}>{s}</option>)}
-                </optgroup>
-              ))}
+              {getServiceTypeOptions()}
             </select>
           </div>
 
@@ -545,13 +611,31 @@ function TicketForm({ onSubmit, tickets }) {
 
 function TicketList({ tickets, loading }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterDate, setFilterDate] = useState('')
 
   const filteredTickets = tickets.filter(ticket => {
     const term = searchTerm.toLowerCase()
-    return (
+    const matchesSearch = (
       (ticket.incident && ticket.incident.toLowerCase().includes(term)) ||
       (ticket.serviceId && ticket.serviceId.toString().toLowerCase().includes(term))
     )
+
+    let matchesDate = true
+    if (filterDate) {
+      // Robust date comparison
+      try {
+        const ticketDate = new Date(ticket.date)
+        const filter = new Date(filterDate)
+        // Compare YYYY-MM-DD parts
+        matchesDate = ticketDate.getFullYear() === filter.getFullYear() &&
+          ticketDate.getMonth() === filter.getMonth() &&
+          ticketDate.getDate() === filter.getDate()
+      } catch (e) {
+        matchesDate = false
+      }
+    }
+
+    return matchesSearch && matchesDate
   })
 
   // GAUL Check Logic
@@ -592,6 +676,14 @@ function TicketList({ tickets, loading }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2>Recent Tickets (Synced with Google Sheets)</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              style={{ padding: '0.4rem', fontSize: '0.9rem', width: 'auto' }}
+            />
+          </div>
           <div className="input-group" style={{ marginBottom: 0 }}>
             <input
               type="text"
