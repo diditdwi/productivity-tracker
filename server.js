@@ -18,7 +18,7 @@ const PORT = 3001;
 
 // Configuration
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '';
-const SHEET_NAME = process.env.SHEET_NAME || 'Produktivitas B2B BARAYA';
+const SHEET_NAME = process.env.SHEET_NAME || 'All tiket';
 
 // Service Account Auth
 const auth = new google.auth.GoogleAuth({

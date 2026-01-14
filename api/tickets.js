@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // Environment Variables
     const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-    const SHEET_NAME = process.env.SHEET_NAME || 'Produktivitas B2B BARAYA';
+    const SHEET_NAME = process.env.SHEET_NAME || 'All tiket';
 
     // Handling Credentials from ENV (for Vercel)
     // Ensure private key handles newlines correctly
