@@ -798,61 +798,57 @@ function TicketList({ tickets, loading }) {
 
 function ProductivityDashboard({ tickets }) {
   // Calculate stats
-  // Calculate stats
   const now = new Date()
   const todayDate = now.getDate()
   const todayMonth = now.getMonth()
   const todayYear = now.getFullYear()
+  const monthName = now.toLocaleString('default', { month: 'long' })
 
-  const dailyTotal = tickets.filter(t => {
+  // 1. Filter for Current Month Only
+  const currentMonthTickets = tickets.filter(t => {
     if (!t.date) return false
     const d = new Date(t.date)
     return !isNaN(d.getTime()) &&
-      d.getDate() === todayDate &&
       d.getMonth() === todayMonth &&
       d.getFullYear() === todayYear
+  })
+
+  const dailyTotal = currentMonthTickets.filter(t => {
+    const d = new Date(t.date)
+    return d.getDate() === todayDate
   }).length
 
-  // Group by Technician
-  const techStats = tickets.reduce((acc, curr) => {
+  // 2. Group by Technician (Current Month)
+  const techStats = currentMonthTickets.reduce((acc, curr) => {
     const tech = curr.technician || 'Unknown'
     acc[tech] = (acc[tech] || 0) + 1
     return acc
   }, {})
 
-  // Group by HD Officer
-  const hdStats = tickets.reduce((acc, curr) => {
+  // 3. Group by HD Officer (Current Month)
+  const hdStats = currentMonthTickets.reduce((acc, curr) => {
     const hd = curr.hdOfficer || 'Unknown'
     acc[hd] = (acc[hd] || 0) + 1
     return acc
   }, {})
 
   // Monthly Chart Logic
-  const currentMonth = todayMonth
-  const currentYear = todayYear
-  const monthName = now.toLocaleString('default', { month: 'long' })
-
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+  const daysInMonth = new Date(todayYear, todayMonth + 1, 0).getDate()
   const monthlyData = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1
-    const count = tickets.filter(t => {
-      if (!t.date) return false
+    const count = currentMonthTickets.filter(t => {
       const d = new Date(t.date)
-      if (isNaN(d.getTime())) return false
-
-      return d.getDate() === day &&
-        d.getMonth() === currentMonth &&
-        d.getFullYear() === currentYear
+      return d.getDate() === day
     }).length
     return { day, count }
   })
 
-  const maxCount = Math.max(...monthlyData.map(d => d.count), 5) // Min max is 5 to keep scale looking good
+  const maxCount = Math.max(...monthlyData.map(d => d.count), 5)
 
   return (
     <div>
       <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-        <h2 style={{ marginBottom: '1.5rem' }}>Monthly Performance ({monthName} {currentYear})</h2>
+        <h2 style={{ marginBottom: '1.5rem' }}>Monthly Performance ({monthName} {todayYear})</h2>
         <div style={{
           display: 'flex',
           alignItems: 'flex-end',
@@ -904,6 +900,11 @@ function ProductivityDashboard({ tickets }) {
           <div className="stat-sub">{now.toLocaleDateString()}</div>
         </div>
         <div className="stat-card">
+          <h3>Total Tickets (This Month)</h3>
+          <div className="stat-value">{currentMonthTickets.length}</div>
+          <div className="stat-sub">Avg: {(currentMonthTickets.length / todayDate).toFixed(1)} / day</div>
+        </div>
+        <div className="stat-card">
           <h3>Total Tickets (All Time)</h3>
           <div className="stat-value">{tickets.length}</div>
         </div>
@@ -911,13 +912,14 @@ function ProductivityDashboard({ tickets }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
         <div className="glass-panel">
-          <h2>Technician Productivity</h2>
+          <h2>Technician Productivity (Current Month)</h2>
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Technician</th>
-                  <th>Total Tickets Processed</th>
+                  <th>Total (Month)</th>
+                  <th>Avg / Day</th>
                 </tr>
               </thead>
               <tbody>
@@ -927,6 +929,7 @@ function ProductivityDashboard({ tickets }) {
                     <tr key={tech}>
                       <td>{tech}</td>
                       <td>{count}</td>
+                      <td>{(count / todayDate).toFixed(1)}</td>
                     </tr>
                   ))}
               </tbody>
@@ -935,13 +938,14 @@ function ProductivityDashboard({ tickets }) {
         </div>
 
         <div className="glass-panel">
-          <h2>HD Officer Productivity</h2>
+          <h2>HD Officer Productivity (Current Month)</h2>
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Officer</th>
-                  <th>Total Tickets Logged</th>
+                  <th>Total (Month)</th>
+                  <th>Avg / Day</th>
                 </tr>
               </thead>
               <tbody>
@@ -951,6 +955,7 @@ function ProductivityDashboard({ tickets }) {
                     <tr key={hd}>
                       <td>{hd}</td>
                       <td>{count}</td>
+                      <td>{(count / todayDate).toFixed(1)}</td>
                     </tr>
                   ))}
               </tbody>
