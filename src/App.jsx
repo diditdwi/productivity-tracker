@@ -811,6 +811,13 @@ function ProductivityDashboard({ tickets }) {
   const todayYear = now.getFullYear()
   const monthName = now.toLocaleString('default', { month: 'long' })
 
+  // Helper to normalize technician name (match "Name Only" to "NIK - Name" from list if possible)
+  const normalizeTechName = (inputName) => {
+    if (!inputName) return 'Unknown'
+    const match = TEKNISI_LIST.find(t => t.includes(inputName.toUpperCase()))
+    return match || inputName
+  }
+
   // 1. Filter for Current Month Only
   const currentMonthTickets = tickets.filter(t => {
     if (!t.date) return false
@@ -827,7 +834,10 @@ function ProductivityDashboard({ tickets }) {
 
   // 2. Group by Technician (Current Month)
   const techStats = currentMonthTickets.reduce((acc, curr) => {
-    const tech = curr.technician || 'Unknown'
+    // Normalize the name from the ticket before counting
+    const rawTech = curr.technician || 'Unknown'
+    const tech = normalizeTechName(rawTech)
+
     acc[tech] = (acc[tech] || 0) + 1
     return acc
   }, {})
@@ -976,97 +986,105 @@ function ProductivityDashboard({ tickets }) {
 
 
 function DailyReportDashboard({ tickets }) {
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
-    // Filter tickets by selected date
-    const filteredTickets = tickets.filter(t => {
-        if (!t.date) return false
-        // Ensure date comparisons work regardless of time or format nuances, assuming YYYY-MM-DD
-        return t.date === selectedDate
-    })
+  // Filter tickets by selected date
+  const filteredTickets = tickets.filter(t => {
+    if (!t.date) return false
+    // Ensure date comparisons work regardless of time or format nuances, assuming YYYY-MM-DD
+    return t.date === selectedDate
+  })
 
-    // Group by Technician and then Count by Type
-    const reportData = filteredTickets.reduce((acc, curr) => {
-        const tech = curr.technician || 'Unknown'
-        const type = curr.ticketType || 'UNSPECIFIED'
+  // Helper to normalize technician name
+  const normalizeTechName = (inputName) => {
+    if (!inputName) return 'Unknown'
+    const match = TEKNISI_LIST.find(t => t.includes(inputName.toUpperCase()))
+    return match || inputName
+  }
 
-        if (!acc[tech]) {
-            acc[tech] = { total: 0 }
-        }
+  // Group by Technician and then Count by Type
+  const reportData = filteredTickets.reduce((acc, curr) => {
+    const rawTech = curr.technician || 'Unknown'
+    const tech = normalizeTechName(rawTech)
+    const type = curr.ticketType || 'UNSPECIFIED'
 
-        acc[tech][type] = (acc[tech][type] || 0) + 1
-        acc[tech].total += 1
-        return acc
-    }, {})
+    if (!acc[tech]) {
+      acc[tech] = { total: 0 }
+    }
 
-    const sortedTechs = Object.keys(reportData).sort()
+    acc[tech][type] = (acc[tech][type] || 0) + 1
+    acc[tech].total += 1
+    return acc
+  }, {})
 
-    return (
-        <div className="glass-panel">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h2>Daily Report</h2>
-                <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
-                    <label style={{ marginRight: '1rem', display: 'inline-block' }}>Select Date:</label>
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
-                    />
-                </div>
-            </div>
+  const sortedTechs = Object.keys(reportData).sort()
 
-            <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th style={{ minWidth: '200px' }}>Technician</th>
-                            {TICKET_TYPES.map(type => (
-                                <th key={type} style={{ textAlign: 'center' }}>{type}</th>
-                            ))}
-                            <th style={{ textAlign: 'center', fontWeight: 'bold' }}>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sortedTechs.length === 0 ? (
-                            <tr>
-                                <td colSpan={TICKET_TYPES.length + 2} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                                    No tickets found for {selectedDate}.
-                                </td>
-                            </tr>
-                        ) : (
-                            sortedTechs.map(tech => (
-                                <tr key={tech}>
-                                    <td style={{ fontWeight: '500' }}>{tech}</td>
-                                    {TICKET_TYPES.map(type => (
-                                        <td key={type} style={{ textAlign: 'center' }}>
-                                            {reportData[tech][type] || '-'}
-                                        </td>
-                                    ))}
-                                    <td style={{ textAlign: 'center', fontWeight: 'bold', background: 'rgba(var(--primary-rgb), 0.1)' }}>
-                                        {reportData[tech].total}
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                    {sortedTechs.length > 0 && (
-                        <tfoot>
-                            <tr style={{ background: 'var(--bg-secondary)', fontWeight: 'bold' }}>
-                                <td>Grand Total</td>
-                                {TICKET_TYPES.map(type => (
-                                    <td key={type} style={{ textAlign: 'center' }}>
-                                        {filteredTickets.filter(t => t.ticketType === type).length}
-                                    </td>
-                                ))}
-                                <td style={{ textAlign: 'center' }}>{filteredTickets.length}</td>
-                            </tr>
-                        </tfoot>
-                    )}
-                </table>
-            </div>
+  return (
+    <div className="glass-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h2>Daily Report</h2>
+        <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
+          <label style={{ marginRight: '1rem', display: 'inline-block' }}>Select Date:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
+          />
         </div>
-    )
+      </div>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th style={{ minWidth: '200px' }}>Technician</th>
+              {TICKET_TYPES.map(type => (
+                <th key={type} style={{ textAlign: 'center' }}>{type}</th>
+              ))}
+              <th style={{ textAlign: 'center', fontWeight: 'bold' }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedTechs.length === 0 ? (
+              <tr>
+                <td colSpan={TICKET_TYPES.length + 2} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  No tickets found for {selectedDate}.
+                </td>
+              </tr>
+            ) : (
+              sortedTechs.map(tech => (
+                <tr key={tech}>
+                  <td style={{ fontWeight: '500' }}>{tech}</td>
+                  {TICKET_TYPES.map(type => (
+                    <td key={type} style={{ textAlign: 'center' }}>
+                      {reportData[tech][type] || '-'}
+                    </td>
+                  ))}
+                  <td style={{ textAlign: 'center', fontWeight: 'bold', background: 'rgba(var(--primary-rgb), 0.1)' }}>
+                    {reportData[tech].total}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          {sortedTechs.length > 0 && (
+            <tfoot>
+              <tr style={{ background: 'var(--bg-secondary)', fontWeight: 'bold' }}>
+                <td>Grand Total</td>
+                {TICKET_TYPES.map(type => (
+                  <td key={type} style={{ textAlign: 'center' }}>
+                    {filteredTickets.filter(t => t.ticketType === type).length}
+                  </td>
+                ))}
+                <td style={{ textAlign: 'center' }}>{filteredTickets.length}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  )
 }
 
 export default App
