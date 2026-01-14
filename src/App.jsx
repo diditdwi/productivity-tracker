@@ -2,10 +2,10 @@
 import './App.css'
 
 // Initial data for dropdowns
-const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'WIFI', 'UNSPEC']
+const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
 const SERVICE_TYPES = {
   'General': ['INTERNET', 'VOICE', 'IPTV'],
-  'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B', 'OLO'],
+  'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B', 'OLO', 'WIFI'],
   'INFRACARE': ['Kabel Terjuntai', 'ODP Terbuka']
 }
 const STATUSES = ['Open', 'In Progress', 'Pending', 'Closed', 'Resolved']
