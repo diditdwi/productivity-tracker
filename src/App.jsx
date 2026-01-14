@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import './App.css'
 
 // Initial data for dropdowns
@@ -974,102 +974,99 @@ function ProductivityDashboard({ tickets }) {
   )
 }
 
+
+function DailyReportDashboard({ tickets }) {
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+
+    // Filter tickets by selected date
+    const filteredTickets = tickets.filter(t => {
+        if (!t.date) return false
+        // Ensure date comparisons work regardless of time or format nuances, assuming YYYY-MM-DD
+        return t.date === selectedDate
+    })
+
+    // Group by Technician and then Count by Type
+    const reportData = filteredTickets.reduce((acc, curr) => {
+        const tech = curr.technician || 'Unknown'
+        const type = curr.ticketType || 'UNSPECIFIED'
+
+        if (!acc[tech]) {
+            acc[tech] = { total: 0 }
+        }
+
+        acc[tech][type] = (acc[tech][type] || 0) + 1
+        acc[tech].total += 1
+        return acc
+    }, {})
+
+    const sortedTechs = Object.keys(reportData).sort()
+
+    return (
+        <div className="glass-panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2>Daily Report</h2>
+                <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
+                    <label style={{ marginRight: '1rem', display: 'inline-block' }}>Select Date:</label>
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
+                    />
+                </div>
+            </div>
+
+            <div className="table-container">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th style={{ minWidth: '200px' }}>Technician</th>
+                            {TICKET_TYPES.map(type => (
+                                <th key={type} style={{ textAlign: 'center' }}>{type}</th>
+                            ))}
+                            <th style={{ textAlign: 'center', fontWeight: 'bold' }}>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedTechs.length === 0 ? (
+                            <tr>
+                                <td colSpan={TICKET_TYPES.length + 2} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    No tickets found for {selectedDate}.
+                                </td>
+                            </tr>
+                        ) : (
+                            sortedTechs.map(tech => (
+                                <tr key={tech}>
+                                    <td style={{ fontWeight: '500' }}>{tech}</td>
+                                    {TICKET_TYPES.map(type => (
+                                        <td key={type} style={{ textAlign: 'center' }}>
+                                            {reportData[tech][type] || '-'}
+                                        </td>
+                                    ))}
+                                    <td style={{ textAlign: 'center', fontWeight: 'bold', background: 'rgba(var(--primary-rgb), 0.1)' }}>
+                                        {reportData[tech].total}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                    {sortedTechs.length > 0 && (
+                        <tfoot>
+                            <tr style={{ background: 'var(--bg-secondary)', fontWeight: 'bold' }}>
+                                <td>Grand Total</td>
+                                {TICKET_TYPES.map(type => (
+                                    <td key={type} style={{ textAlign: 'center' }}>
+                                        {filteredTickets.filter(t => t.ticketType === type).length}
+                                    </td>
+                                ))}
+                                <td style={{ textAlign: 'center' }}>{filteredTickets.length}</td>
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+            </div>
+        </div>
+    )
+}
+
 export default App
- 
- f u n c t i o n   D a i l y R e p o r t D a s h b o a r d ( {   t i c k e t s   } )   {  
-         c o n s t   [ s e l e c t e d D a t e ,   s e t S e l e c t e d D a t e ]   =   u s e S t a t e ( n e w   D a t e ( ) . t o I S O S t r i n g ( ) . s p l i t ( ' T ' ) [ 0 ] )  
-  
-         / /   F i l t e r   t i c k e t s   b y   s e l e c t e d   d a t e  
-         c o n s t   f i l t e r e d T i c k e t s   =   t i c k e t s . f i l t e r ( t   = >   {  
-                 i f   ( ! t . d a t e )   r e t u r n   f a l s e  
-                 / /   E n s u r e   d a t e   c o m p a r i s o n s   w o r k   r e g a r d l e s s   o f   t i m e   o r   f o r m a t   n u a n c e s ,   a s s u m i n g   Y Y Y Y - M M - D D  
-                 r e t u r n   t . d a t e   = = =   s e l e c t e d D a t e  
-         } )  
-  
-         / /   G r o u p   b y   T e c h n i c i a n   a n d   t h e n   C o u n t   b y   T y p e  
-         c o n s t   r e p o r t D a t a   =   f i l t e r e d T i c k e t s . r e d u c e ( ( a c c ,   c u r r )   = >   {  
-                 c o n s t   t e c h   =   c u r r . t e c h n i c i a n   | |   ' U n k n o w n '  
-                 c o n s t   t y p e   =   c u r r . t i c k e t T y p e   | |   ' U N S P E C I F I E D '  
-  
-                 i f   ( ! a c c [ t e c h ] )   {  
-                         a c c [ t e c h ]   =   {   t o t a l :   0   }  
-                         / /   I n i t i a l i z e   a l l   t y p e s   t o   0   f o r   c o n s i s t e n c y   i f   n e e d e d ,    
-                         / /   o r   j u s t   h a n d l e   u n d e f i n e d   w h e n   r e n d e r i n g .    
-                         / /   L e t ' s   r e l y   o n   T I C K E T _ T Y P E S   f o r   c o l u m n s .  
-                 }  
-  
-                 a c c [ t e c h ] [ t y p e ]   =   ( a c c [ t e c h ] [ t y p e ]   | |   0 )   +   1  
-                 a c c [ t e c h ] . t o t a l   + =   1  
-                 r e t u r n   a c c  
-         } ,   { } )  
-  
-         c o n s t   s o r t e d T e c h s   =   O b j e c t . k e y s ( r e p o r t D a t a ) . s o r t ( )  
-  
-         r e t u r n   (  
-                 < d i v   c l a s s N a m e = " g l a s s - p a n e l " >  
-                         < d i v   s t y l e = { {   d i s p l a y :   ' f l e x ' ,   j u s t i f y C o n t e n t :   ' s p a c e - b e t w e e n ' ,   a l i g n I t e m s :   ' c e n t e r ' ,   m a r g i n B o t t o m :   ' 2 r e m '   } } >  
-                                 < h 2 > D a i l y   R e p o r t < / h 2 >  
-                                 < d i v   c l a s s N a m e = " i n p u t - g r o u p "   s t y l e = { {   m a r g i n B o t t o m :   0 ,   w i d t h :   ' a u t o '   } } >  
-                                         < l a b e l   s t y l e = { {   m a r g i n R i g h t :   ' 1 r e m ' ,   d i s p l a y :   ' i n l i n e - b l o c k '   } } > S e l e c t   D a t e : < / l a b e l >  
-                                         < i n p u t  
-                                                 t y p e = " d a t e "  
-                                                 v a l u e = { s e l e c t e d D a t e }  
-                                                 o n C h a n g e = { ( e )   = >   s e t S e l e c t e d D a t e ( e . t a r g e t . v a l u e ) }  
-                                                 s t y l e = { {   p a d d i n g :   ' 0 . 4 r e m ' ,   b o r d e r R a d i u s :   ' v a r ( - - b o r d e r - r a d i u s ) ' ,   b o r d e r :   ' 1 p x   s o l i d   v a r ( - - b o r d e r - c o l o r ) ' ,   b a c k g r o u n d :   ' r g b a ( 2 5 5 , 2 5 5 , 2 5 5 , 0 . 5 ) '   } }  
-                                         / >  
-                                 < / d i v >  
-                         < / d i v >  
-  
-                         < d i v   c l a s s N a m e = " t a b l e - c o n t a i n e r " >  
-                                 < t a b l e   c l a s s N a m e = " d a t a - t a b l e " >  
-                                         < t h e a d >  
-                                                 < t r >  
-                                                         < t h   s t y l e = { {   m i n W i d t h :   ' 2 0 0 p x '   } } > T e c h n i c i a n < / t h >  
-                                                         { T I C K E T _ T Y P E S . m a p ( t y p e   = >   (  
-                                                                 < t h   k e y = { t y p e }   s t y l e = { {   t e x t A l i g n :   ' c e n t e r '   } } > { t y p e } < / t h >  
-                                                         ) ) }  
-                                                         < t h   s t y l e = { {   t e x t A l i g n :   ' c e n t e r ' ,   f o n t W e i g h t :   ' b o l d '   } } > T o t a l < / t h >  
-                                                 < / t r >  
-                                         < / t h e a d >  
-                                         < t b o d y >  
-                                                 { s o r t e d T e c h s . l e n g t h   = = =   0   ?   (  
-                                                         < t r >  
-                                                                 < t d   c o l S p a n = { T I C K E T _ T Y P E S . l e n g t h   +   2 }   s t y l e = { {   t e x t A l i g n :   ' c e n t e r ' ,   p a d d i n g :   ' 2 r e m ' ,   c o l o r :   ' v a r ( - - t e x t - s e c o n d a r y ) '   } } >  
-                                                                         N o   t i c k e t s   f o u n d   f o r   { s e l e c t e d D a t e } .  
-                                                                 < / t d >  
-                                                         < / t r >  
-                                                 )   :   (  
-                                                         s o r t e d T e c h s . m a p ( t e c h   = >   (  
-                                                                 < t r   k e y = { t e c h } >  
-                                                                         < t d   s t y l e = { {   f o n t W e i g h t :   ' 5 0 0 '   } } > { t e c h } < / t d >  
-                                                                         { T I C K E T _ T Y P E S . m a p ( t y p e   = >   (  
-                                                                                 < t d   k e y = { t y p e }   s t y l e = { {   t e x t A l i g n :   ' c e n t e r '   } } >  
-                                                                                         { r e p o r t D a t a [ t e c h ] [ t y p e ]   | |   ' - ' }  
-                                                                                 < / t d >  
-                                                                         ) ) }  
-                                                                         < t d   s t y l e = { {   t e x t A l i g n :   ' c e n t e r ' ,   f o n t W e i g h t :   ' b o l d ' ,   b a c k g r o u n d :   ' r g b a ( v a r ( - - p r i m a r y - r g b ) ,   0 . 1 ) '   } } >  
-                                                                                 { r e p o r t D a t a [ t e c h ] . t o t a l }  
-                                                                         < / t d >  
-                                                                 < / t r >  
-                                                         ) )  
-                                                 ) }  
-                                         < / t b o d y >  
-                                         { s o r t e d T e c h s . l e n g t h   >   0   & &   (  
-                                                 < t f o o t >  
-                                                         < t r   s t y l e = { {   b a c k g r o u n d :   ' v a r ( - - b g - s e c o n d a r y ) ' ,   f o n t W e i g h t :   ' b o l d '   } } >  
-                                                                 < t d > G r a n d   T o t a l < / t d >  
-                                                                 { T I C K E T _ T Y P E S . m a p ( t y p e   = >   (  
-                                                                         < t d   k e y = { t y p e }   s t y l e = { {   t e x t A l i g n :   ' c e n t e r '   } } >  
-                                                                                 { f i l t e r e d T i c k e t s . f i l t e r ( t   = >   t . t i c k e t T y p e   = = =   t y p e ) . l e n g t h }  
-                                                                         < / t d >  
-                                                                 ) ) }  
-                                                                 < t d   s t y l e = { {   t e x t A l i g n :   ' c e n t e r '   } } > { f i l t e r e d T i c k e t s . l e n g t h } < / t d >  
-                                                         < / t r >  
-                                                 < / t f o o t >  
-                                         ) }  
-                                 < / t a b l e >  
-                         < / d i v >  
-                 < / d i v >  
-         )  
- }  
- 
