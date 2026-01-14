@@ -84,10 +84,13 @@ app.post('/api/tickets', async (req, res) => {
         const rows = getRes.data.values || [];
         let rowIndex = -1;
 
+        const targetIncident = String(incident).trim().toUpperCase();
+
         // Find row index (1-based)
         for (let i = 0; i < rows.length; i++) {
             // rows[i][0] because we fetched only one column C
-            if (rows[i][0] === incident) {
+            const sheetIncident = String(rows[i][0] || '').trim().toUpperCase();
+            if (sheetIncident === targetIncident && targetIncident.length > 0) {
                 rowIndex = i + 1;
                 break;
             }

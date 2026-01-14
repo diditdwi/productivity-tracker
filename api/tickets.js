@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // Environment Variables
     const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-    const SHEET_NAME = process.env.SHEET_NAME || 'All tiket';
+    const SHEET_NAME = process.env.SHEET_NAME || 'Produktivitas B2B BARAYA';
 
     // Handling Credentials from ENV (for Vercel)
     // Ensure private key handles newlines correctly
@@ -96,8 +96,11 @@ export default async function handler(req, res) {
             const rows = getRes.data.values || [];
             let rowIndex = -1;
 
+            const targetIncident = String(incident).trim().toUpperCase();
+
             for (let i = 0; i < rows.length; i++) {
-                if (rows[i][0] === incident) {
+                const sheetIncident = String(rows[i][0] || '').trim().toUpperCase();
+                if (sheetIncident === targetIncident && targetIncident.length > 0) {
                     rowIndex = i + 1;
                     break;
                 }

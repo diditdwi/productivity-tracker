@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 
 // Initial data for dropdowns
-const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE']
+const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'WIFI', 'UNSPEC']
 const SERVICE_TYPES = {
   'General': ['INTERNET', 'VOICE', 'IPTV'],
   'DATIN': ['ASTINET', 'VPN', 'METRO-E', 'SIP-TRUNK', 'Node B', 'OLO'],
@@ -566,7 +566,7 @@ function TicketForm({ onSubmit, tickets }) {
 
           <div className="input-group">
             <label>Perbaikan (Action Taken)</label>
-            <input type="text" name="repair" value={formData.repair} onChange={handleChange} required disabled={isUpdateMode} />
+            <input type="text" name="repair" value={formData.repair} onChange={handleChange} required />
           </div>
 
           <div className="input-group">
@@ -592,9 +592,9 @@ function TicketForm({ onSubmit, tickets }) {
 
           <div className="input-group">
             <label>Petugas HD (HD Officer)</label>
-            <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleChange} required placeholder="Select or type..." disabled={isUpdateMode} />
+            <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleChange} required placeholder="Select or type..." />
             <datalist id="hds">
-              {HD_OFFICERS.map(h => <option key={h} value={h} />)}
+              {HD_OFFICERS.map(h => <option key={h} value={h} />)} [diff_end]
             </datalist>
           </div>
         </div>
@@ -612,6 +612,7 @@ function TicketForm({ onSubmit, tickets }) {
 function TicketList({ tickets, loading }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterDate, setFilterDate] = useState('')
+  const [filterType, setFilterType] = useState('ALL')
 
   const filteredTickets = tickets.filter(ticket => {
     const term = searchTerm.toLowerCase()
@@ -635,7 +636,9 @@ function TicketList({ tickets, loading }) {
       }
     }
 
-    return matchesSearch && matchesDate
+    const matchesType = filterType === 'ALL' || ticket.ticketType === filterType
+
+    return matchesSearch && matchesDate && matchesType
   })
 
   // GAUL Check Logic
@@ -676,6 +679,16 @@ function TicketList({ tickets, loading }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2>Recent Tickets (Synced with Google Sheets)</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{ padding: '0.4rem', fontSize: '0.9rem', width: 'auto' }}
+            >
+              <option value="ALL">All Types</option>
+              {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
           <div className="input-group" style={{ marginBottom: 0 }}>
             <input
               type="date"
