@@ -764,16 +764,21 @@ function TicketForm({ onSubmit, tickets }) {
       return
     }
 
+    if (!notepadContent.includes('|')) {
+      alert("Format salah! Harap gunakan tanda pemisah '|' (pipa) untuk setiap data.")
+      return
+    }
+
     const lines = notepadContent.trim().split('\n')
     const parsedPayloads = []
 
     // Expected Order: 
-    // HD Officer, Type, Workzone, Technician, Status, Incident, Customer Name, Service ID, Service Type, Repair
+    // HD Officer | Type | Workzone | Technician | Status | Incident | Customer Name | Service ID | Service Type | Repair
 
     for (const line of lines) {
       if (!line.trim()) continue
 
-      const cols = line.split('\t').map(s => s.trim())
+      const cols = line.split('|').map(s => s.trim())
 
       if (cols.length < 5) continue // Minimal robust check
 
@@ -798,7 +803,7 @@ function TicketForm({ onSubmit, tickets }) {
     }
 
     if (parsedPayloads.length === 0) {
-      alert("No valid rows parsed. Check format: Tab-separated, at least 5 cols.")
+      alert("No valid rows parsed. Check format: Pipe '|' separated, at least 5 cols.")
       return
     }
 
@@ -1100,7 +1105,7 @@ function TicketForm({ onSubmit, tickets }) {
       {mode === 'NOTEPAD' && (
         <div className="glass-panel" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
           <div style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
-            <p style={{ marginTop: 0 }}><strong>Format Copy-Paste (Order - Tab Separated):</strong></p>
+            <p style={{ marginTop: 0 }}><strong>Format Copy-Paste (Order - Pipe Separated '|'):</strong></p>
             <code style={{ display: 'block', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', whiteSpace: 'nowrap', overflowX: 'auto' }}>
               HD Officer | Type | Workzone | Technician | Status | Incident | Customer Name | Service ID | Service Type | Perbaikan
             </code>
@@ -1112,7 +1117,7 @@ function TicketForm({ onSubmit, tickets }) {
           <textarea
             value={notepadContent}
             onChange={e => setNotepadContent(e.target.value)}
-            placeholder={`Paste spreadsheet rows here...\nExample:\nUSER_HD\tREGULER\tBDK\tTEKNISI\tOpen\tINC123\tCustName\t12234\tINTERNET\tReboot`}
+            placeholder={`Paste rows with '|' separator here...\nExample:\nUSER_HD | REGULER | BDK | TEKNISI | Open | INC123 | CustName | 12234 | INTERNET | Reboot`}
             style={{
               width: '100%',
               height: '300px',
