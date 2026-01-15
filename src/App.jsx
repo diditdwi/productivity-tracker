@@ -248,7 +248,7 @@ function App() {
     return null
   })
   const [view, setView] = useState('entry')
-  const [entryMode, setEntryMode] = useState('single')
+
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -400,9 +400,7 @@ function App() {
         )}
         {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} />}
         {view === 'entry' && (
-          entryMode === 'single'
-            ? <TicketForm onSubmit={addTicket} tickets={tickets} onSwitchMode={() => setEntryMode('bulk')} />
-            : <BulkTicketForm onSubmit={addTicket} tickets={tickets} onSwitchMode={() => setEntryMode('single')} />
+          <TicketForm onSubmit={addTicket} tickets={tickets} />
         )}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'daily-report' && <DailyReportDashboard tickets={tickets} />}
@@ -521,7 +519,10 @@ function ChangePasswordForm({ user, onChangePassword, onCancel }) {
 
 const BULK_ROW_COUNT = 5
 
-function TicketForm({ onSubmit, tickets, onSwitchMode }) {
+function TicketForm({ onSubmit, tickets }) {
+  const [mode, setMode] = useState('SINGLE') // SINGLE | BULK | NOTEPAD
+
+  // SINGLE MODE STATE
   const [formData, setFormData] = useState({
     ticketType: 'REGULER',
     incident: '',
@@ -536,44 +537,57 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
     hdOfficer: ''
   })
   const [isUpdateMode, setIsUpdateMode] = useState(false)
+  const [isScraping, setIsScraping] = useState(false)
 
-  // Check for duplicate incident when incident number changes
+  // BULK MODE STATE
+  const [bulkCommon, setBulkCommon] = useState({
+    date: new Date().toISOString().split('T')[0],
+    technician: '',
+    status: 'Open',
+    workzone: '',
+    hdOfficer: ''
+  })
+  const [bulkRows, setBulkRows] = useState(
+    Array.from({ length: BULK_ROW_COUNT }).map(() => ({
+      ticketType: 'REGULER',
+      incident: '',
+      customerName: '',
+      serviceId: '',
+      serviceType: 'INTERNET',
+      repair: ''
+    }))
+  )
+
+  // NOTEPAD MODE STATE
+  const [notepadContent, setNotepadContent] = useState('')
+  const [notepadDate, setNotepadDate] = useState(new Date().toISOString().split('T')[0])
+
+  // --- SINGLE MODE LOGIC ---
   useEffect(() => {
+    if (mode !== 'SINGLE') return
     if (!formData.incident) {
       setIsUpdateMode(false)
       return
     }
 
     const searchInc = formData.incident.trim().toLowerCase()
-
-    // FIND FIX: Ensure we trim the STORED ticket incident as well, 
-    // because Google Sheets often has trailing/leading whitespace.
     const existingTicket = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === searchInc)
 
     if (existingTicket) {
       setIsUpdateMode(true)
       setFormData(prev => ({
-        ...prev, // Keep current form state (like type if somehow changed) but override with ticket data
+        ...prev,
         ...existingTicket,
-        date: new Date().toISOString().split('T')[0], // Updates happen "today"
-        status: existingTicket.status // Keep old status initially
+        date: new Date().toISOString().split('T')[0],
+        status: existingTicket.status
       }))
     } else {
       setIsUpdateMode(false)
-      // Only reset other fields if we were previously in update mode? 
-      // No, if user types a new (unique) INC, we want a clean slate or keep what they typed?
-      // Better to check if we were previously in update mode to decide whether to clear.
-      // For now, let's just leave it. If they switch from a valid INC to invalid, 
-      // it stays as "New Ticket" but keeps the data they might have just loaded? 
-      // That might be confusing. 
-      // Use strict approach: if not found, it's a new ticket.
-      // But clearing everything might be annoying if they are just fixing a typo.
-      // Compromise: Just set update mode to false.
     }
-  }, [formData.incident, tickets])
+  }, [formData.incident, tickets, mode])
 
-  // EFFECT: Handle INFRACARE changes specifically
   useEffect(() => {
+    if (mode !== 'SINGLE') return
     if (formData.ticketType === 'INFRACARE') {
       setFormData(prev => ({
         ...prev,
@@ -581,63 +595,73 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
         serviceId: '-'
       }))
     }
-  }, [formData.ticketType])
+  }, [formData.ticketType, mode])
 
-
-  const handleChange = (e) => {
+  const handleSingleChange = (e) => {
     const { name, value } = e.target
-
-    // Aggressive overrides
     if (name === 'ticketType' && value === 'INFRACARE') {
-      // If switching TO Infracare, reset service type to first Infracare option to avoid invalid state
       setFormData(prev => ({
         ...prev,
         [name]: value,
         customerName: '-',
         serviceId: '-',
-        serviceType: 'Kabel Terjuntai' // Default to first option
+        serviceType: 'Kabel Terjuntai'
       }))
     } else if (name === 'ticketType' && value !== 'INFRACARE') {
-      // If switching AWAY from Infracare, clear the '-' if possible
       setFormData(prev => ({
         ...prev,
         [name]: value,
         customerName: prev.customerName === '-' ? '' : prev.customerName,
         serviceId: prev.serviceId === '-' ? '' : prev.serviceId,
-        serviceType: 'INTERNET' // Reset to default General
+        serviceType: 'INTERNET'
       }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
   }
 
-  const handleSubmit = async (e) => {
+  const handleScrape = async () => {
+    if (!formData.incident) {
+      alert('Please enter an Incident Number first')
+      return
+    }
+
+    setIsScraping(true)
+    try {
+      const res = await fetch(`/api/scrape?inc=${formData.incident}`)
+      const data = await res.json()
+
+      if (data.error) throw new Error(data.error)
+
+      setFormData(prev => ({
+        ...prev,
+        customerName: data.customerName || prev.customerName,
+        serviceId: data.serviceId || prev.serviceId,
+        workzone: data.workzone || prev.workzone,
+        serviceType: data.serviceType === 'INTERNET' ? 'INTERNET' : (data.serviceType === 'IPTV' ? 'IPTV' : prev.serviceType)
+      }))
+
+      alert(`Found: ${data.customerName} (${data.serviceType})`)
+
+    } catch (e) {
+      console.error(e)
+      alert('Scraping failed: ' + (e.message || 'Unknown error'))
+    } finally {
+      setIsScraping(false)
+    }
+  }
+
+  const handleSingleSubmit = async (e) => {
     e.preventDefault()
 
-    // Validation: Mandatory Fields
     if (!formData.technician || !formData.workzone || !formData.hdOfficer) {
       alert('Mohon lengkapi: Technician, Workzone, dan HD Officer harus diisi!')
       return
     }
 
-    const newTicket = {
-      ...formData,
-      id: Date.now().toString(),
-      isUpdate: isUpdateMode // Flag to help tracking if needed
-    }
-
-    try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newTicket)
-      })
-
+    const payload = await submitTicket(formData, isUpdateMode)
+    if (payload) {
       alert(isUpdateMode ? 'Ticket Status Updated!' : 'New Ticket Saved!')
-
-      // Reset form fully after submit
       setFormData({
         ticketType: 'REGULER',
         incident: '',
@@ -652,68 +676,177 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
         hdOfficer: ''
       })
       setIsUpdateMode(false)
-
-      onSubmit(newTicket)
-
-    } catch (error) {
-      console.error('Error saving to sheets', error)
-      alert('Error saving to Google Sheets, but saved locally.')
-      onSubmit(newTicket)
+      onSubmit(payload)
     }
   }
 
-  const [isScraping, setIsScraping] = useState(false)
+  // --- BULK MODE LOGIC ---
+  const handleBulkCommonChange = (e) => {
+    const { name, value } = e.target
+    setBulkCommon(prev => ({ ...prev, [name]: value }))
+  }
 
-  const handleScrape = async () => {
-    if (!formData.incident) {
-      alert('Please enter an Incident Number first')
+  const handleBulkRowChange = (index, e) => {
+    const { name, value } = e.target
+    setBulkRows(prev => {
+      const newRows = [...prev]
+      const row = { ...newRows[index] }
+
+      if (name === 'ticketType') {
+        row[name] = value
+        if (value === 'INFRACARE') {
+          row.customerName = '-'
+          row.serviceId = '-'
+          row.serviceType = 'Kabel Terjuntai'
+        } else {
+          // Reset if switching away
+          if (row.ticketType === 'INFRACARE') {
+            row.customerName = ''
+            row.serviceId = ''
+            row.serviceType = 'INTERNET'
+          }
+        }
+      } else {
+        row[name] = value
+      }
+
+      newRows[index] = row
+      return newRows
+    })
+  }
+
+  const addBulkRow = () => {
+    setBulkRows(prev => [...prev, { ticketType: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '' }])
+  }
+
+  const handleBulkSubmit = async (e) => {
+    e.preventDefault()
+    const validRows = bulkRows.filter(r => r.incident.trim() !== '')
+    if (validRows.length === 0) {
+      alert("Please fill at least one row with an Incident Number.")
       return
     }
 
-    setIsScraping(true)
-    try {
-      // Use relative path so it flows through Vite Proxy (works on Localhost, LAN, and Tunnels)
-      const res = await fetch(`/api/scrape?inc=${formData.incident}`)
-      const data = await res.json()
+    if (!bulkCommon.technician || !bulkCommon.workzone || !bulkCommon.hdOfficer) {
+      alert("Please fill all Global Settings (Technician, Workzone, HD Officer).")
+      return
+    }
 
-      if (data.error) throw new Error(data.error)
+    const successfulPayloads = []
 
-      setFormData(prev => ({
-        ...prev,
-        customerName: data.customerName || prev.customerName,
-        serviceId: data.serviceId || prev.serviceId,
-        // Try to match workzone if possible, or just set it
-        // If the dropdown matches exactly, it will select. 
-        // If not, it might show empty, so we might need fuzzy matching later.
-        workzone: data.workzone || prev.workzone,
-        // We could also map Service Type if strictly standard
-        serviceType: data.serviceType === 'INTERNET' ? 'INTERNET' : (data.serviceType === 'IPTV' ? 'IPTV' : prev.serviceType)
-      }))
+    for (const row of validRows) {
+      const ticketPayload = { ...bulkCommon, ...row }
+      const payload = await submitTicket(ticketPayload, false)
+      if (payload) successfulPayloads.push(payload)
+    }
 
-      alert(`Found: ${data.customerName} (${data.serviceType})`)
-
-    } catch (e) {
-      console.error(e)
-      alert('Scraping failed: ' + (e.message || 'Unknown error'))
-    } finally {
-      setIsScraping(false)
+    if (successfulPayloads.length > 0) {
+      alert(`Bulk processing complete. Processed ${successfulPayloads.length} tickets.`)
+      setBulkRows(Array.from({ length: BULK_ROW_COUNT }).map(() => ({
+        ticketType: 'REGULER',
+        incident: '',
+        customerName: '',
+        serviceId: '',
+        serviceType: 'INTERNET',
+        repair: ''
+      })))
+      onSubmit(successfulPayloads)
+    } else {
+      alert("Failed to submit any tickets. Check connectivity.")
     }
   }
 
-  // Dynamic Service Types based on Ticket Type
-  const getServiceTypeOptions = () => {
-    if (formData.ticketType === 'INFRACARE') {
+  // --- NOTEPAD MODE LOGIC ---
+  const handleNotepadSubmit = async (e) => {
+    e.preventDefault()
+    if (!notepadContent.trim()) {
+      alert("Please paste data first.")
+      return
+    }
+
+    const lines = notepadContent.trim().split('\n')
+    const parsedPayloads = []
+
+    // Expected Order: 
+    // HD Officer, Type, Workzone, Technician, Status, Incident, Customer Name, Service ID, Service Type, Repair
+
+    for (const line of lines) {
+      if (!line.trim()) continue
+
+      const cols = line.split('\t').map(s => s.trim())
+
+      if (cols.length < 5) continue // Minimal robust check
+
+      // Mapping
+      let [hd, type, wz, tech, status, inc, cust, sid, stype, repair] = cols
+
+      const ticketData = {
+        date: notepadDate,
+        hdOfficer: hd || 'Unknown',
+        ticketType: type || 'REGULER',
+        workzone: wz || 'Unknown',
+        technician: tech || 'Unknown',
+        status: status || 'Open',
+        incident: inc || `MANUAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        customerName: cust || '-',
+        serviceId: sid || '-',
+        serviceType: stype || 'INTERNET',
+        repair: repair || '-'
+      }
+
+      parsedPayloads.push(ticketData)
+    }
+
+    if (parsedPayloads.length === 0) {
+      alert("No valid rows parsed. Check format: Tab-separated, at least 5 cols.")
+      return
+    }
+
+    if (confirm(`Parsed ${parsedPayloads.length} tickets. Submit now?`)) {
+      const successfulPayloads = []
+      for (const payload of parsedPayloads) {
+        const res = await submitTicket(payload, false)
+        if (res) successfulPayloads.push(res)
+      }
+      if (successfulPayloads.length > 0) {
+        alert(`Submitted ${successfulPayloads.length} tickets successfully.`)
+        setNotepadContent('')
+        onSubmit(successfulPayloads)
+      }
+    }
+  }
+
+  const submitTicket = async (ticketData, isUpdate) => {
+    const payload = {
+      ...ticketData,
+      id: Date.now().toString() + Math.random(),
+      isUpdate: isUpdate
+    }
+
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      return payload
+    } catch (error) {
+      console.error('Error saving ticket', error)
+      return null
+    }
+  }
+
+  const getServiceTypeOptions = (currentType) => {
+    const type = currentType || formData.ticketType
+    if (type === 'INFRACARE') {
       return (
         <optgroup label="INFRACARE">
           {SERVICE_TYPES['INFRACARE'].map(s => <option key={s} value={s}>{s}</option>)}
         </optgroup>
       )
     }
-    // If not Infracare, show all EXCEPT Infracare
     return Object.entries(SERVICE_TYPES).map(([category, services]) => {
-      // Skip Infracare category for non-Infracare tickets
       if (category === 'INFRACARE') return null
-
       return (
         <optgroup key={category} label={category}>
           {services.map(s => <option key={s} value={s}>{s}</option>)}
@@ -723,174 +856,283 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
   }
 
   return (
-    <div className="glass-panel">
+    <div className="glass-panel" style={{ maxWidth: mode === 'SINGLE' ? '600px' : '1200px', margin: '0 auto', transition: 'max-width 0.3s' }}>
+      {/* Updated TicketForm with Notepad Mode */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
-          {isUpdateMode ? 'Update Ticket Status' : 'New Ticket Entry'}
+          {mode === 'SINGLE' ? (isUpdateMode ? 'Update Ticket Status' : 'New Ticket Entry') : mode === 'BULK' ? 'Bulk Ticket Entry' : 'Notepad Input'}
         </h2>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.2)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+        <div className="toggle-container" style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
           <button
-            type="button"
+            className={`toggle-btn ${mode === 'SINGLE' ? 'active' : ''}`}
+            onClick={() => setMode('SINGLE')}
             style={{
-              padding: '6px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              background: 'var(--primary-color)',
-              color: 'white',
-              cursor: 'default',
-              fontWeight: '600',
-              transition: 'all 0.2s'
+              padding: '6px 16px', borderRadius: '6px', border: 'none',
+              background: mode === 'SINGLE' ? 'var(--primary-color)' : 'transparent',
+              color: mode === 'SINGLE' ? 'white' : 'var(--text-secondary)',
+              cursor: 'pointer', fontWeight: mode === 'SINGLE' ? 'bold' : 'normal'
             }}
           >
             Single
           </button>
           <button
-            type="button"
-            onClick={onSwitchMode}
+            className={`toggle-btn ${mode === 'BULK' ? 'active' : ''}`}
+            onClick={() => setMode('BULK')}
             style={{
-              padding: '6px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontWeight: '400',
-              transition: 'all 0.2s'
+              padding: '6px 16px', borderRadius: '6px', border: 'none',
+              background: mode === 'BULK' ? 'var(--primary-color)' : 'transparent',
+              color: mode === 'BULK' ? 'white' : 'var(--text-secondary)',
+              cursor: 'pointer', fontWeight: mode === 'BULK' ? 'bold' : 'normal'
             }}
           >
-            Bulk Input (Masal)
+            Bulk
+          </button>
+          <button
+            className={`toggle-btn ${mode === 'NOTEPAD' ? 'active' : ''}`}
+            onClick={() => setMode('NOTEPAD')}
+            style={{
+              padding: '6px 16px', borderRadius: '6px', border: 'none',
+              background: mode === 'NOTEPAD' ? 'var(--primary-color)' : 'transparent',
+              color: mode === 'NOTEPAD' ? 'white' : 'var(--text-secondary)',
+              cursor: 'pointer', fontWeight: mode === 'NOTEPAD' ? 'bold' : 'normal'
+            }}
+          >
+            Notepad
           </button>
         </div>
       </div>
-      <form onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="input-group">
-            <label>Date</label>
-            <input type="date" name="date" value={formData.date} onChange={handleChange} required />
-          </div>
 
-          <div className="input-group">
-            <label>Ticket Type</label>
-            <select name="ticketType" value={formData.ticketType} onChange={handleChange} disabled={isUpdateMode}>
-              {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div className="input-group">
-            <label>Incident No.</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                name="incident"
-                placeholder="INC12345"
-                value={formData.incident}
-                onChange={handleChange}
-                required
-                style={{ flex: 1 }}
-              />
-              <button
-                type="button"
-                onClick={handleScrape}
-                disabled={isScraping}
-                style={{
-                  background: 'var(--primary-color)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  padding: '0 12px',
-                  fontWeight: 'bold'
-                }}
-                title="Scrape from OSS"
-              >
-                {isScraping ? '...' : '🔍'}
-              </button>
+      {mode === 'SINGLE' && (
+        <form onSubmit={handleSingleSubmit}>
+          <div className="form-grid">
+            <div className="input-group">
+              <label>Date</label>
+              <input type="date" name="date" value={formData.date} onChange={handleSingleChange} required />
             </div>
-            {isUpdateMode && <small style={{ color: 'var(--primary-color)' }}>Existing ticket found. Update status mode.</small>}
+
+            <div className="input-group">
+              <label>Ticket Type</label>
+              <select name="ticketType" value={formData.ticketType} onChange={handleSingleChange} disabled={isUpdateMode}>
+                {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label>Incident No.</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  name="incident"
+                  placeholder="INC12345"
+                  value={formData.incident}
+                  onChange={handleSingleChange}
+                  required
+                  style={{ flex: 1 }}
+                />
+                <button type="button" onClick={handleScrape} disabled={isScraping} className="btn-secondary" style={{ padding: '0 10px' }}>
+                  {isScraping ? '...' : '🔍'}
+                </button>
+              </div>
+              {isUpdateMode && <small style={{ color: 'var(--primary-color)' }}>Existing ticket found. Update status mode.</small>}
+            </div>
+
+            <div className="input-group">
+              <label>Customer Name</label>
+              <input type="text" name="customerName" value={formData.customerName} onChange={handleSingleChange} required disabled={isUpdateMode || formData.ticketType === 'INFRACARE'} />
+            </div>
+
+            <div className="input-group">
+              <label>Service ID (SID/Inet/Tlp)</label>
+              <input type="text" name="serviceId" value={formData.serviceId} onChange={handleSingleChange} required disabled={isUpdateMode || formData.ticketType === 'INFRACARE'} />
+            </div>
+
+            <div className="input-group">
+              <label>Service Type</label>
+              <select name="serviceType" value={formData.serviceType} onChange={handleSingleChange} disabled={isUpdateMode}>
+                {getServiceTypeOptions(formData.ticketType)}
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label>Technician <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleSingleChange} required placeholder="Select or type..." disabled={isUpdateMode} />
+              <datalist id="techs">
+                {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
+              </datalist>
+            </div>
+
+            <div className="input-group">
+              <label>Perbaikan (Action Taken) <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" name="repair" value={formData.repair} onChange={handleSingleChange} required />
+            </div>
+
+            <div className="input-group">
+              <label>Status</label>
+              <select name="status" value={formData.status} onChange={handleSingleChange}>
+                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label>Workzone <span style={{ color: 'red' }}>*</span></label>
+              <select name="workzone" value={formData.workzone} onChange={handleSingleChange} required disabled={isUpdateMode}>
+                <option value="">Select Workzone...</option>
+                {Object.entries(WORKZONES).map(([region, zones]) => (
+                  <optgroup key={region} label={region}>
+                    {zones.map(zone => (
+                      <option key={zone} value={zone}>{zone}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label>Petugas HD (HD Officer) <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleSingleChange} required placeholder="Select or type..." />
+              <datalist id="hds">
+                {HD_OFFICERS.map(h => <option key={h} value={h} />)}
+              </datalist>
+            </div>
           </div>
 
-          <div className="input-group">
-            <label>Customer Name</label>
-            <input
-              type="text"
-              name="customerName"
-              value={formData.customerName}
-              onChange={handleChange}
-              required
-              disabled={isUpdateMode || formData.ticketType === 'INFRACARE'}
-            />
+          <div className="form-actions">
+            <button type="submit" className="btn-primary">
+              {isUpdateMode ? 'Update Status' : 'Save Ticket'}
+            </button>
           </div>
+        </form>
+      )}
 
-          <div className="input-group">
-            <label>Service ID (SID/Inet/Tlp)</label>
-            <input
-              type="text"
-              name="serviceId"
-              value={formData.serviceId}
-              onChange={handleChange}
-              required
-              disabled={isUpdateMode || formData.ticketType === 'INFRACARE'}
-            />
-          </div>
-
-          <div className="input-group">
-            <label>Service Type</label>
-            <select name="serviceType" value={formData.serviceType} onChange={handleChange} disabled={isUpdateMode}>
-              {getServiceTypeOptions()}
-            </select>
-          </div>
-
-          <div className="input-group">
-            <label>Technician <span style={{ color: 'red' }}>*</span></label>
-            <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleChange} required placeholder="Select or type..." />
-            <datalist id="techs">
-              {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
-            </datalist>
-          </div>
-
-          {/* Labcode field removed */}
-
-          <div className="input-group">
-            <label>Perbaikan (Action Taken)</label>
-            <input type="text" name="repair" value={formData.repair} onChange={handleChange} required />
-          </div>
-
-          <div className="input-group">
-            <label>Status</label>
-            <select name="status" value={formData.status} onChange={handleChange}>
-              {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-
-          <div className="input-group">
-            <label>Workzone <span style={{ color: 'red' }}>*</span></label>
-            <select name="workzone" value={formData.workzone} onChange={handleChange} disabled={isUpdateMode}>
-              <option value="">Select Workzone...</option>
-              {Object.entries(WORKZONES).map(([region, zones]) => (
-                <optgroup key={region} label={region}>
-                  {zones.map(zone => (
-                    <option key={zone} value={zone}>{zone}</option>
+      {mode === 'BULK' && (
+        <form onSubmit={handleBulkSubmit}>
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ marginTop: 0, fontSize: '1rem', color: 'var(--primary-color)' }}>Global Settings (Applied to all rows)</h3>
+            <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label>Date</label>
+                <input type="date" name="date" value={bulkCommon.date} onChange={handleBulkCommonChange} required />
+              </div>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label>Technician <span style={{ color: 'red' }}>*</span></label>
+                <input type="text" list="techs" name="technician" value={bulkCommon.technician} onChange={handleBulkCommonChange} required placeholder="Select or type..." />
+              </div>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label>Workzone <span style={{ color: 'red' }}>*</span></label>
+                <select name="workzone" value={bulkCommon.workzone} onChange={handleBulkCommonChange} required>
+                  <option value="">Select...</option>
+                  {Object.entries(WORKZONES).map(([region, zones]) => (
+                    <optgroup key={region} label={region}>
+                      {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                    </optgroup>
                   ))}
-                </optgroup>
-              ))}
-            </select>
+                </select>
+              </div>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label>Status</label>
+                <select name="status" value={bulkCommon.status} onChange={handleBulkCommonChange}>
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label>HD Officer <span style={{ color: 'red' }}>*</span></label>
+                <input type="text" list="hds" name="hdOfficer" value={bulkCommon.hdOfficer} onChange={handleBulkCommonChange} required placeholder="Select or type..." />
+              </div>
+            </div>
           </div>
 
+          <div className="table-container" style={{ overflowX: 'auto' }}>
+            <table className="data-table" style={{ fontSize: '0.9rem' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '40px' }}>#</th>
+                  <th style={{ width: '100px' }}>Type</th>
+                  <th style={{ width: '140px' }}>Incident</th>
+                  <th style={{ width: '160px' }}>Customer Name</th>
+                  <th style={{ width: '140px' }}>Service ID</th>
+                  <th style={{ width: '130px' }}>Service Type</th>
+                  <th style={{ minWidth: '200px' }}>Perbaikan (Action)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bulkRows.map((row, idx) => (
+                  <tr key={idx}>
+                    <td>{idx + 1}</td>
+                    <td style={{ padding: '4px' }}>
+                      <select name="ticketType" value={row.ticketType} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px' }}>
+                        {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input type="text" name="incident" value={row.incident} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="INC..." style={{ width: '100%', padding: '4px' }} />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input type="text" name="customerName" value={row.customerName} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px' }} />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input type="text" name="serviceId" value={row.serviceId} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px' }} />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <select name="serviceType" value={row.serviceType} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px' }}>
+                        {getServiceTypeOptions(row.ticketType)}
+                      </select>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input type="text" name="repair" value={row.repair} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Action taken..." style={{ width: '95%', padding: '4px' }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+            <button type="button" onClick={addBulkRow} className="btn-secondary" style={{ fontSize: '0.9rem' }}>
+              + Add Row
+            </button>
+            <button type="submit" className="btn-primary" style={{ flex: 1 }}>
+              Submit All Valid Rows
+            </button>
+          </div>
+        </form>
+      )}
+
+      {mode === 'NOTEPAD' && (
+        <div className="glass-panel" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
+          <div style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
+            <p style={{ marginTop: 0 }}><strong>Format Copy-Paste (Order - Tab Separated):</strong></p>
+            <code style={{ display: 'block', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', whiteSpace: 'nowrap', overflowX: 'auto' }}>
+              HD Officer | Type | Workzone | Technician | Status | Incident | Customer Name | Service ID | Service Type | Perbaikan
+            </code>
+          </div>
           <div className="input-group">
-            <label>Petugas HD (HD Officer) <span style={{ color: 'red' }}>*</span></label>
-            <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleChange} required placeholder="Select or type..." />
-            <datalist id="hds">
-              {HD_OFFICERS.map(h => <option key={h} value={h} />)}
-            </datalist>
+            <label>Date for tickets:</label>
+            <input type="date" value={notepadDate} onChange={e => setNotepadDate(e.target.value)} />
+          </div>
+          <textarea
+            value={notepadContent}
+            onChange={e => setNotepadContent(e.target.value)}
+            placeholder={`Paste spreadsheet rows here...\nExample:\nUSER_HD\tREGULER\tBDK\tTEKNISI\tOpen\tINC123\tCustName\t12234\tINTERNET\tReboot`}
+            style={{
+              width: '100%',
+              height: '300px',
+              padding: '1rem',
+              fontFamily: 'monospace',
+              whiteSpace: 'pre',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              resize: 'both'
+            }}
+          />
+          <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+            <button onClick={handleNotepadSubmit} className="btn-primary">
+              Parse & Submit
+            </button>
           </div>
         </div>
-
-        <div className="form-actions">
-          <button type="submit" className="btn-primary">
-            {isUpdateMode ? 'Update Status' : 'Save Ticket'}
-          </button>
-        </div>
-      </form>
+      )}
     </div>
   )
 }
@@ -1063,363 +1305,7 @@ function TicketList({ tickets, loading }) {
   )
 }
 
-function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
-  // Global Settings
-  const [globalSettings, setGlobalSettings] = useState({
-    date: new Date().toISOString().split('T')[0],
-    hdOfficer: ''
-  })
 
-  // Rows
-  const [rows, setRows] = useState([
-    { id: 1, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '', technician: '', status: 'Open' },
-    { id: 2, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '', technician: '', status: 'Open' },
-    { id: 3, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '', technician: '', status: 'Open' }
-  ])
-
-  const handleGlobalChange = (e) => {
-    setGlobalSettings({ ...globalSettings, [e.target.name]: e.target.value })
-  }
-
-  const handleRowChange = (id, field, value) => {
-    setRows(rows.map(row => {
-      if (row.id === id) {
-        // Auto-logic for INFRACARE same as Single Form
-        if (field === 'type' && value === 'INFRACARE') {
-          return { ...row, [field]: value, customerName: '-', serviceId: '-', serviceType: 'Kabel Terjuntai' }
-        }
-        if (field === 'type' && value !== 'INFRACARE') {
-          return { ...row, [field]: value, customerName: '', serviceId: '', serviceType: 'INTERNET' }
-        }
-        return { ...row, [field]: value }
-      }
-      return row
-    }))
-  }
-
-  const addRow = () => {
-    setRows([...rows, {
-      id: Date.now(),
-      type: 'REGULER',
-      incident: '',
-      customerName: '',
-      serviceId: '',
-      serviceType: 'INTERNET',
-      repair: '',
-      workzone: '',
-      technician: '',
-      status: 'Open'
-    }])
-  }
-
-  const removeRow = (id) => {
-    if (rows.length > 1) {
-      setRows(rows.filter(r => r.id !== id))
-    }
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    // Validate Globals
-    if (!globalSettings.hdOfficer) {
-      alert('Please fill in Global Settings (HD Officer)')
-      return
-    }
-
-    // Filter valid rows (must have incident)
-    const validRows = rows.filter(r => r.incident.trim() !== '')
-    if (validRows.length === 0) {
-      alert('Please fill in at least one row with an Incident Number')
-      return
-    }
-
-    // Validate Row-level requirements
-    const missingFields = validRows.some(r => !r.workzone || !r.technician || !r.status)
-    /* 
-       Note: We strictly require Technician per row now.
-    */
-
-    if (missingFields) {
-      alert('Mohon lengkapi Workzone, Technician, dan Status untuk semua baris yang diisi.')
-      return
-    }
-
-    const newTickets = []
-
-    // Process each row
-    for (const row of validRows) {
-      const ticketData = {
-        id: Date.now().toString() + Math.random(),
-        date: globalSettings.date,
-        // Global fields
-        hdOfficer: globalSettings.hdOfficer,
-        // Row fields
-        technician: row.technician,
-        status: row.status,
-        workzone: row.workzone,
-        ticketType: row.type,
-        incident: row.incident,
-        customerName: row.customerName,
-        serviceId: row.serviceId,
-        serviceType: row.serviceType,
-        repair: row.repair,
-
-        isUpdate: false // Bulk usually for new entry
-      }
-
-      // API Call for each (Sequential to ensure order/safety)
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(ticketData)
-        })
-        newTickets.push(ticketData)
-      } catch (error) {
-        console.error('Error saving bulk ticket', row.incident, error)
-      }
-    }
-
-    alert(`Successfully saved ${newTickets.length} tickets!`)
-    onSubmit(newTickets)
-  }
-
-  return (
-    <div className="glass-panel" style={{ maxWidth: '1400px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Bulk Ticket Entry</h2>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.2)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-          <button
-            type="button"
-            onClick={onSwitchMode}
-            style={{
-              padding: '6px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontWeight: '400',
-              transition: 'all 0.2s'
-            }}
-          >
-            Single
-          </button>
-          <button
-            type="button"
-            style={{
-              padding: '6px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              background: 'var(--primary-color)',
-              color: 'white',
-              cursor: 'default',
-              fontWeight: '600',
-              transition: 'all 0.2s'
-            }}
-          >
-            Bulk Input (Masal)
-          </button>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {/* Global Settings */}
-        <div style={{
-          background: 'rgba(255,255,255,0.4)',
-          padding: '1.5rem',
-          borderRadius: '1rem',
-          marginBottom: '2rem',
-          border: '1px solid rgba(255,255,255,0.5)'
-        }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--primary-color)' }}>Global Settings</h3>
-          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            <div className="input-group">
-              <label>Date</label>
-              <input type="date" name="date" value={globalSettings.date} onChange={handleGlobalChange} required />
-            </div>
-            <div className="input-group">
-              <label>HD Officer *</label>
-              <input
-                type="text"
-                list="bulk-hds"
-                name="hdOfficer"
-                value={globalSettings.hdOfficer}
-                onChange={handleGlobalChange}
-                required
-                placeholder="Select or type..."
-              />
-              <datalist id="bulk-hds">
-                {HD_OFFICERS.map(h => <option key={h} value={h} />)}
-              </datalist>
-            </div>
-          </div>
-        </div>
-
-        {/* Dynamic Table */}
-        <div className="table-container" style={{ overflowX: 'auto', marginBottom: '1rem' }}>
-          <table className="glass-table" style={{ width: '100%', marginBottom: '1.5rem', borderSpacing: '0 10px', borderCollapse: 'separate' }}>
-            <thead>
-              <tr>
-                <th style={{ width: '40px' }}>#</th>
-                <th style={{ width: '100px' }}>Type</th>
-                <th style={{ width: '130px' }}>Workzone</th>
-                <th style={{ width: '150px' }}>Technician *</th>
-                <th style={{ width: '100px' }}>Status</th>
-                <th style={{ width: '130px' }}>Incident</th>
-                <th style={{ width: '180px' }}>Customer Name</th>
-                <th style={{ width: '130px' }}>Service ID</th>
-                <th style={{ width: '130px' }}>Service Type</th>
-                <th style={{ width: '40px' }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <React.Fragment key={row.id}>
-                  {/* Row 1: Main Info */}
-                  <tr style={{ background: 'rgba(255,255,255,0.5)' }}>
-                    <td rowSpan="2" style={{ verticalAlign: 'middle', textAlign: 'center', fontWeight: 'bold' }}>{index + 1}</td>
-                    <td>
-                      <select
-                        value={row.type}
-                        onChange={(e) => handleRowChange(row.id, 'type', e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      >
-                        {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </td>
-                    <td>
-                      <select
-                        value={row.workzone}
-                        onChange={(e) => handleRowChange(row.id, 'workzone', e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                        required
-                      >
-                        <option value="">Select...</option>
-                        {Object.entries(WORKZONES).map(([region, zones]) => (
-                          <optgroup key={region} label={region}>
-                            {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                          </optgroup>
-                        ))}
-                      </select>
-                    </td>
-
-                    {/* New Row-Level Technician */}
-                    <td>
-                      <input
-                        type="text"
-                        list={`bulk-techs-${row.id}`}
-                        value={row.technician}
-                        onChange={(e) => handleRowChange(row.id, 'technician', e.target.value)}
-                        placeholder="Select..."
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                      <datalist id={`bulk-techs-${row.id}`}>
-                        {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
-                      </datalist>
-                    </td>
-
-                    {/* New Row-Level Status */}
-                    <td>
-                      <select
-                        value={row.status}
-                        onChange={(e) => handleRowChange(row.id, 'status', e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      >
-                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </td>
-
-                    <td>
-                      <input
-                        type="text"
-                        value={row.incident}
-                        onChange={(e) => handleRowChange(row.id, 'incident', e.target.value)}
-                        placeholder="INC..."
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={row.customerName}
-                        onChange={(e) => handleRowChange(row.id, 'customerName', e.target.value)}
-                        disabled={row.type === 'INFRACARE'}
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={row.serviceId}
-                        onChange={(e) => handleRowChange(row.id, 'serviceId', e.target.value)}
-                        disabled={row.type === 'INFRACARE'}
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                    </td>
-                    <td>
-                      <select
-                        value={row.serviceType}
-                        onChange={(e) => handleRowChange(row.id, 'serviceType', e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      >
-                        {row.type === 'INFRACARE' ? (
-                          SERVICE_TYPES['INFRACARE'].map(s => <option key={s} value={s}>{s}</option>)
-                        ) : (
-                          Object.entries(SERVICE_TYPES).map(([cat, services]) => {
-                            if (cat === 'INFRACARE') return null;
-                            return <optgroup key={cat} label={cat}>{services.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
-                          })
-                        )}
-                      </select>
-                    </td>
-                    <td rowSpan="2" style={{ verticalAlign: 'middle', textAlign: 'center' }}>
-                      {rows.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeRow(row.id)}
-                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem' }}
-                        >
-                          &times;
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                  {/* Row 2: Action Taken (Full Width) */}
-                  <tr style={{ background: 'rgba(255,255,255,0.3)' }}>
-                    <td colSpan="8" style={{ padding: '0.5rem 1rem' }}>
-                      <input
-                        type="text"
-                        value={row.repair}
-                        onChange={(e) => handleRowChange(row.id, 'repair', e.target.value)}
-                        placeholder="Perbaikan / Action Taken (Wajib diisi)"
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <button
-          type="button"
-          onClick={addRow}
-          className="btn-secondary"
-          style={{ marginRight: '1rem' }}
-        >
-          + Add Row
-        </button>
-
-        <button type="submit" className="btn-primary" style={{ width: 'auto', padding: '1rem 3rem' }}>
-          Submit All Valid Rows
-        </button>
-      </form>
-    </div>
-  )
-}
 
 function ProductivityDashboard({ tickets }) {
   // Filter State
