@@ -179,14 +179,37 @@ const WORKZONES = {
 
 const API_URL = '/api/tickets'
 
-// User Credentials
-const USERS = [
+// User Credentials (Initial Seed)
+const DEFAULT_USERS = [
   { username: 'dias', password: 'Xeon2108', role: 'admin' },
   { username: 'didit', password: 'Inibaru9191!', role: 'admin' },
-  { username: 'HD', password: 'HD123', role: 'staff' }
+  { username: 'HD', password: 'HD123', role: 'staff' },
+  // New HD Users
+  { username: '20960854', password: 'TA20960854', role: 'staff' },
+  { username: '19960032', password: 'TA19960032', role: 'staff' },
+  { username: '20840062', password: 'TA20840062', role: 'staff' },
+  { username: '18860050', password: 'TA18860050', role: 'staff' },
+  { username: '995007', password: 'TA995007', role: 'staff' },
+  { username: '20940689', password: 'TA20940689', role: 'staff' },
+  { username: '20930813', password: 'TA20930813', role: 'staff' },
+  { username: '19950311', password: 'TA19950311', role: 'staff' },
+  { username: '19900131', password: 'TA19900131', role: 'staff' },
+  { username: '19890089', password: 'TA19890089', role: 'staff' },
 ]
 
 function App() {
+  // Initialize Users DB from localStorage or default
+  const [usersDB, setUsersDB] = useState(() => {
+    const saved = localStorage.getItem('ticketTracker_users_db')
+    if (saved) return JSON.parse(saved)
+    return DEFAULT_USERS
+  })
+
+  // Sync usersDB to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ticketTracker_users_db', JSON.stringify(usersDB))
+  }, [usersDB])
+
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('ticketTrackerUser')
     return saved ? JSON.parse(saved) : null
@@ -196,65 +219,9 @@ function App() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchTickets()
-  }, [])
+  // ... fetchTickets useEffect ...
 
-  const fetchTickets = async () => {
-    try {
-      const response = await fetch(API_URL)
-      const data = await response.json()
-      // Google Sheets returns the array. If it's empty or error, handle safe.
-      if (Array.isArray(data)) {
-        // Reverse to show newest first initially
-        // BUT we need to deduplicate. Since we append to sheets, later rows are updates.
-        // We want the LATEST entry for each incident.
-
-        const latestTicketsMap = new Map()
-
-        data.forEach(ticket => {
-          if (ticket.incident) {
-            // Overwrite existing entry, effectively keeping the last one found (which is the newest in appended sheet)
-            latestTicketsMap.set(ticket.incident, ticket)
-          } else {
-            // Tickets without incident ID (legacy?) - keep them or ignore? 
-            // Let's keep them with a unique key just in case, or just map them.
-            // Actually, if no incident ID, we can't really update it. 
-            // Let's assume all valid tickets have incident IDs.
-            latestTicketsMap.set(Date.now() + Math.random(), ticket)
-          }
-        })
-
-        const deduplicatedTickets = Array.from(latestTicketsMap.values()).reverse() // Show newest updates first
-        setTickets(deduplicatedTickets)
-      }
-    } catch (error) {
-      console.error('Error fetching tickets:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const addTicket = (ticketOrTickets) => {
-    const newItems = Array.isArray(ticketOrTickets) ? ticketOrTickets : [ticketOrTickets]
-
-    setTickets(prev => {
-      let current = [...prev]
-      // Process updates/inserts
-      // We process sequentially. For updates, remove old first.
-      // Note: If multiple updates for same incident in one batch, order matters (last one wins).
-      newItems.forEach(ticket => {
-        if (ticket.isUpdate) {
-          current = current.filter(t => t.incident !== ticket.incident)
-        }
-        // Add to top
-        current = [ticket, ...current]
-      })
-      return current
-    })
-
-    setView('dashboard')
-  }
+  // ... addTicket ...
 
   const handleLogin = (authenticatedUser) => {
     setUser(authenticatedUser)
@@ -266,10 +233,18 @@ function App() {
     setUser(null)
     localStorage.removeItem('ticketTrackerUser')
     setView('entry')
+    setEntryMode('single')
+  }
+
+  const changePassword = (newPassword) => {
+    setUsersDB(prevDB => prevDB.map(u =>
+      u.username === user.username ? { ...u, password: newPassword } : u
+    ))
+    alert('Password changed successfully!')
   }
 
   if (!user) {
-    return <LoginForm onLogin={handleLogin} />
+    return <LoginForm onLogin={handleLogin} usersDB={usersDB} />
   }
 
   return (
@@ -307,17 +282,36 @@ function App() {
           </nav>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative' }}>
           <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
             Hi, <strong>{user.username}</strong>
           </span>
-          <button onClick={handleLogout} className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+
+          <button
+            className="btn-secondary"
+            onClick={() => setView(view === 'change-password' ? 'entry' : 'change-password')}
+            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            🔑 Pass
+          </button>
+
+          <button onClick={handleLogout} className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
             Logout
           </button>
         </div>
       </header>
 
       <main>
+        {view === 'change-password' && (
+          <ChangePasswordForm
+            user={user}
+            onChangePassword={(newPass) => {
+              changePassword(newPass)
+              setView('entry')
+            }}
+            onCancel={() => setView('entry')}
+          />
+        )}
         {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} />}
         {view === 'entry' && (
           entryMode === 'single'
@@ -331,14 +325,15 @@ function App() {
   )
 }
 
-function LoginForm({ onLogin }) {
+function LoginForm({ onLogin, usersDB }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const foundUser = USERS.find(u => u.username === username && u.password === password)
+    // Use the DB passed from parent
+    const foundUser = usersDB.find(u => u.username === username && u.password === password)
 
     if (foundUser) {
       onLogin({ username: foundUser.username, role: foundUser.role })
@@ -394,6 +389,46 @@ function LoginForm({ onLogin }) {
           </button>
         </form>
       </div>
+    </div>
+  )
+}
+
+function ChangePasswordForm({ user, onChangePassword, onCancel }) {
+  const [newPass, setNewPass] = useState('')
+  const [confirmPass, setConfirmPass] = useState('')
+  const [error, setError] = useState('')
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (newPass !== confirmPass) {
+      setError('New passwords do not match')
+      return
+    }
+    if (newPass.length < 4) {
+      setError('Password must be at least 4 chars')
+      return
+    }
+    onChangePassword(newPass)
+  }
+
+  return (
+    <div className="glass-panel" style={{ maxWidth: '400px', margin: '2rem auto' }}>
+      <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Change Password</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="input-group">
+          <label>New Password</label>
+          <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} required />
+        </div>
+        <div className="input-group">
+          <label>Confirm New Password</label>
+          <input type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} required />
+        </div>
+        {error && <p style={{ color: 'var(--danger-color)', marginBottom: '1rem' }}>{error}</p>}
+        <div className="form-actions" style={{ justifyContent: 'center', gap: '1rem' }}>
+          <button type="button" onClick={onCancel} className="btn-secondary">Cancel</button>
+          <button type="submit" className="btn-primary">Update Password</button>
+        </div>
+      </form>
     </div>
   )
 }
