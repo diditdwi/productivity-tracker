@@ -819,7 +819,7 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
 
           <div className="input-group">
             <label>Technician <span style={{ color: 'red' }}>*</span></label>
-            <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleChange} required placeholder="Select or type..." disabled={isUpdateMode} />
+            <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleChange} required placeholder="Select or type..." />
             <datalist id="techs">
               {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
             </datalist>
