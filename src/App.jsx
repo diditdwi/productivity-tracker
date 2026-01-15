@@ -1577,10 +1577,10 @@ function ProductivityDashboard({ tickets }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
         <div className="glass-panel">
           <h2>Technician Productivity</h2>
-          <div className="table-container">
+          <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="data-table">
               <thead>
-                <tr>
+                <tr style={{ position: 'sticky', top: 0, background: 'rgba(30, 41, 59, 0.95)', zIndex: 1 }}>
                   <th>Technician</th>
                   <th>Daily ({filterDay}/{filterMonth + 1})</th>
                   <th>Month</th>
@@ -1607,10 +1607,10 @@ function ProductivityDashboard({ tickets }) {
 
         <div className="glass-panel">
           <h2>HD Officer Productivity</h2>
-          <div className="table-container">
+          <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="data-table">
               <thead>
-                <tr>
+                <tr style={{ position: 'sticky', top: 0, background: 'rgba(30, 41, 59, 0.95)', zIndex: 1 }}>
                   <th>Officer</th>
                   <th>Daily ({filterDay}/{filterMonth + 1})</th>
                   <th>Month</th>
