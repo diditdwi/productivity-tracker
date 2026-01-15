@@ -418,18 +418,33 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
 
   // Check for duplicate incident when incident number changes
   useEffect(() => {
-    if (!formData.incident) return
+    if (!formData.incident) {
+      setIsUpdateMode(false)
+      return
+    }
 
-    const existingTicket = tickets.find(t => t.incident === formData.incident)
+    const searchInc = formData.incident.trim().toLowerCase()
+    const existingTicket = tickets.find(t => t.incident && t.incident.toLowerCase() === searchInc)
+
     if (existingTicket) {
       setIsUpdateMode(true)
       setFormData(prev => ({
+        ...prev, // Keep current form state (like type if somehow changed) but override with ticket data
         ...existingTicket,
         date: new Date().toISOString().split('T')[0], // Updates happen "today"
-        status: existingTicket.status // Keep old status initially, user changes it
+        status: existingTicket.status // Keep old status initially
       }))
     } else {
       setIsUpdateMode(false)
+      // Only reset other fields if we were previously in update mode? 
+      // No, if user types a new (unique) INC, we want a clean slate or keep what they typed?
+      // Better to check if we were previously in update mode to decide whether to clear.
+      // For now, let's just leave it. If they switch from a valid INC to invalid, 
+      // it stays as "New Ticket" but keeps the data they might have just loaded? 
+      // That might be confusing. 
+      // Use strict approach: if not found, it's a new ticket.
+      // But clearing everything might be annoying if they are just fixing a typo.
+      // Compromise: Just set update mode to false.
     }
   }, [formData.incident, tickets])
 
