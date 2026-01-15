@@ -862,16 +862,16 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
   const [globalSettings, setGlobalSettings] = useState({
     date: new Date().toISOString().split('T')[0],
     technician: '',
-    workzone: '',
+    // workzone removed from global
     status: 'Open',
     hdOfficer: ''
   })
 
   // Rows
   const [rows, setRows] = useState([
-    { id: 1, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '' },
-    { id: 2, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '' },
-    { id: 3, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '' }
+    { id: 1, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '' },
+    { id: 2, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '' },
+    { id: 3, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '' }
   ])
 
   const handleGlobalChange = (e) => {
@@ -902,7 +902,8 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
       customerName: '',
       serviceId: '',
       serviceType: 'INTERNET',
-      repair: ''
+      repair: '',
+      workzone: ''
     }])
   }
 
@@ -916,8 +917,8 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
     e.preventDefault()
 
     // Validate Globals
-    if (!globalSettings.technician || !globalSettings.hdOfficer || !globalSettings.workzone) {
-      alert('Please fill in all Global Settings (Technician, Workzone, HD Officer)')
+    if (!globalSettings.technician || !globalSettings.hdOfficer) {
+      alert('Please fill in all Global Settings (Technician, HD Officer)')
       return
     }
 
@@ -925,6 +926,13 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
     const validRows = rows.filter(r => r.incident.trim() !== '')
     if (validRows.length === 0) {
       alert('Please fill in at least one row with an Incident Number')
+      return
+    }
+
+    // Validate Row-level requirements (Workzone)
+    const missingWorkzone = validRows.some(r => !r.workzone)
+    if (missingWorkzone) {
+      alert('Please select a Workzone for all active rows.')
       return
     }
 
@@ -937,10 +945,10 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
         date: globalSettings.date,
         // Global fields
         technician: globalSettings.technician,
-        workzone: globalSettings.workzone,
         status: globalSettings.status,
         hdOfficer: globalSettings.hdOfficer,
         // Row fields
+        workzone: row.workzone, // Moved to row
         ticketType: row.type,
         incident: row.incident,
         customerName: row.customerName,
@@ -1038,17 +1046,9 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
                 {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
               </datalist>
             </div>
-            <div className="input-group">
-              <label>Workzone *</label>
-              <select name="workzone" value={globalSettings.workzone} onChange={handleGlobalChange} required>
-                <option value="">Select...</option>
-                {Object.entries(WORKZONES).map(([region, zones]) => (
-                  <optgroup key={region} label={region}>
-                    {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
+
+            {/* Workzone removed from here */}
+
             <div className="input-group">
               <label>Status</label>
               <select name="status" value={globalSettings.status} onChange={handleGlobalChange}>
@@ -1081,6 +1081,7 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
               <tr>
                 <th style={{ width: '50px' }}>#</th>
                 <th style={{ width: '120px' }}>Type</th>
+                <th style={{ width: '150px' }}>Workzone</th>
                 <th style={{ width: '150px' }}>Incident</th>
                 <th style={{ width: '200px' }}>Customer Name</th>
                 <th style={{ width: '150px' }}>Service ID</th>
@@ -1100,6 +1101,21 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
                       style={{ width: '100%', padding: '0.5rem' }}
                     >
                       {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      value={row.workzone}
+                      onChange={(e) => handleRowChange(row.id, 'workzone', e.target.value)}
+                      style={{ width: '100%', padding: '0.5rem' }}
+                      required
+                    >
+                      <option value="">Select...</option>
+                      {Object.entries(WORKZONES).map(([region, zones]) => (
+                        <optgroup key={region} label={region}>
+                          {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                        </optgroup>
+                      ))}
                     </select>
                   </td>
                   <td>
