@@ -229,6 +229,8 @@ function App() {
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 
+  console.log('App Rendering. User:', user)
+
   // ... fetchTickets useEffect ...
 
   // ... addTicket ...
@@ -261,7 +263,7 @@ function App() {
     <div className="app-container">
       <header>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <h1>TicketTracker</h1>
+          <h1>TicketTracker v2.0</h1>
           <nav>
             <button
               className={`nav-btn ${view === 'entry' ? 'active' : ''}`}
