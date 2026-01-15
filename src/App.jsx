@@ -1427,20 +1427,35 @@ function ProductivityDashboard({ tickets }) {
     return d.getDate() === todayDate
   }).length
 
-  // 2. Group by Technician (Current Month)
+  // 2. Group by Technician (Current Month & Today)
   const techStats = currentMonthTickets.reduce((acc, curr) => {
     // Normalize the name from the ticket before counting
     const rawTech = curr.technician || 'Unknown'
     const tech = normalizeTechName(rawTech)
 
-    acc[tech] = (acc[tech] || 0) + 1
+    if (!acc[tech]) acc[tech] = { month: 0, today: 0 }
+
+    acc[tech].month += 1
+
+    const d = new Date(curr.date)
+    if (d.getDate() === todayDate) {
+      acc[tech].today += 1
+    }
+
     return acc
   }, {})
 
-  // 3. Group by HD Officer (Current Month)
+  // 3. Group by HD Officer (Current Month & Today)
   const hdStats = currentMonthTickets.reduce((acc, curr) => {
     const hd = curr.hdOfficer || 'Unknown'
-    acc[hd] = (acc[hd] || 0) + 1
+    if (!acc[hd]) acc[hd] = { month: 0, today: 0 }
+
+    acc[hd].month += 1
+
+    const d = new Date(curr.date)
+    if (d.getDate() === todayDate) {
+      acc[hd].today += 1
+    }
     return acc
   }, {})
 
@@ -1524,24 +1539,28 @@ function ProductivityDashboard({ tickets }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
         <div className="glass-panel">
-          <h2>Technician Productivity (Current Month)</h2>
+          <h2>Technician Productivity</h2>
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Technician</th>
-                  <th>Total (Month)</th>
+                  <th>Today</th>
+                  <th>Month</th>
                   <th>Avg / Day</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(techStats)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([tech, count]) => (
+                  .sort(([, a], [, b]) => b.month - a.month)
+                  .map(([tech, stats]) => (
                     <tr key={tech}>
                       <td>{tech}</td>
-                      <td>{count}</td>
-                      <td>{(count / todayDate).toFixed(1)}</td>
+                      <td style={{ fontWeight: 'bold', color: stats.today > 0 ? '#4ade80' : 'inherit' }}>
+                        {stats.today > 0 ? `+${stats.today}` : '-'}
+                      </td>
+                      <td>{stats.month}</td>
+                      <td>{(stats.month / todayDate).toFixed(1)}</td>
                     </tr>
                   ))}
               </tbody>
@@ -1550,24 +1569,28 @@ function ProductivityDashboard({ tickets }) {
         </div>
 
         <div className="glass-panel">
-          <h2>HD Officer Productivity (Current Month)</h2>
+          <h2>HD Officer Productivity</h2>
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Officer</th>
-                  <th>Total (Month)</th>
+                  <th>Today</th>
+                  <th>Month</th>
                   <th>Avg / Day</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(hdStats)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([hd, count]) => (
+                  .sort(([, a], [, b]) => b.month - a.month)
+                  .map(([hd, stats]) => (
                     <tr key={hd}>
                       <td>{hd}</td>
-                      <td>{count}</td>
-                      <td>{(count / todayDate).toFixed(1)}</td>
+                      <td style={{ fontWeight: 'bold', color: stats.today > 0 ? '#4ade80' : 'inherit' }}>
+                        {stats.today > 0 ? `+${stats.today}` : '-'}
+                      </td>
+                      <td>{stats.month}</td>
+                      <td>{(stats.month / todayDate).toFixed(1)}</td>
                     </tr>
                   ))}
               </tbody>
