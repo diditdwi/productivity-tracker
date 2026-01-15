@@ -319,13 +319,11 @@ function App() {
 
       <main>
         {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} />}
-        {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} />}
         {view === 'entry' && (
           entryMode === 'single'
             ? <TicketForm onSubmit={addTicket} tickets={tickets} onSwitchMode={() => setEntryMode('bulk')} />
             : <BulkTicketForm onSubmit={addTicket} tickets={tickets} onSwitchMode={() => setEntryMode('single')} />
         )}
-        {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'daily-report' && <DailyReportDashboard tickets={tickets} />}
       </main>
