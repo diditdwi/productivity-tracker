@@ -652,7 +652,7 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
 
           <div className="input-group">
             <label>Perbaikan (Action Taken)</label>
-            <input type="text" name="repair" value={formData.repair} onChange={handleChange} required disabled={isUpdateMode} />
+            <input type="text" name="repair" value={formData.repair} onChange={handleChange} required />
           </div>
 
           <div className="input-group">
@@ -678,7 +678,7 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
 
           <div className="input-group">
             <label>Petugas HD (HD Officer)</label>
-            <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleChange} required placeholder="Select or type..." disabled={isUpdateMode} />
+            <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleChange} required placeholder="Select or type..." />
             <datalist id="hds">
               {HD_OFFICERS.map(h => <option key={h} value={h} />)}
             </datalist>
