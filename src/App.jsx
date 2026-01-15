@@ -591,6 +591,12 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    // Validation: Mandatory Fields
+    if (!formData.technician || !formData.workzone || !formData.hdOfficer) {
+      alert('Mohon lengkapi: Technician, Workzone, dan HD Officer harus diisi!')
+      return
+    }
+
     const newTicket = {
       ...formData,
       id: Date.now().toString(),
