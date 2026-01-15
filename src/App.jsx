@@ -1399,12 +1399,15 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
 }
 
 function ProductivityDashboard({ tickets }) {
-  // Calculate stats
-  const now = new Date()
-  const todayDate = now.getDate()
-  const todayMonth = now.getMonth()
-  const todayYear = now.getFullYear()
-  const monthName = now.toLocaleString('default', { month: 'long' })
+  // Filter State
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+
+  // Derived Constants from Selected Date
+  const filterDate = new Date(selectedDate)
+  const filterDay = filterDate.getDate()
+  const filterMonth = filterDate.getMonth()
+  const filterYear = filterDate.getFullYear()
+  const monthName = filterDate.toLocaleString('default', { month: 'long' })
 
   // Helper to normalize technician name (match "Name Only" to "NIK - Name" from list if possible)
   const normalizeTechName = (inputName) => {
@@ -1413,54 +1416,54 @@ function ProductivityDashboard({ tickets }) {
     return match || inputName
   }
 
-  // 1. Filter for Current Month Only
+  // 1. Filter for Selected Month Only
   const currentMonthTickets = tickets.filter(t => {
     if (!t.date) return false
     const d = new Date(t.date)
     return !isNaN(d.getTime()) &&
-      d.getMonth() === todayMonth &&
-      d.getFullYear() === todayYear
+      d.getMonth() === filterMonth &&
+      d.getFullYear() === filterYear
   })
 
+  // 2. Daily Total (Selected Day)
   const dailyTotal = currentMonthTickets.filter(t => {
     const d = new Date(t.date)
-    return d.getDate() === todayDate
+    return d.getDate() === filterDay
   }).length
 
-  // 2. Group by Technician (Current Month & Today)
+  // 3. Group by Technician
   const techStats = currentMonthTickets.reduce((acc, curr) => {
-    // Normalize the name from the ticket before counting
     const rawTech = curr.technician || 'Unknown'
     const tech = normalizeTechName(rawTech)
 
-    if (!acc[tech]) acc[tech] = { month: 0, today: 0 }
+    if (!acc[tech]) acc[tech] = { month: 0, day: 0 }
 
     acc[tech].month += 1
 
     const d = new Date(curr.date)
-    if (d.getDate() === todayDate) {
-      acc[tech].today += 1
+    if (d.getDate() === filterDay) {
+      acc[tech].day += 1
     }
 
     return acc
   }, {})
 
-  // 3. Group by HD Officer (Current Month & Today)
+  // 4. Group by HD Officer
   const hdStats = currentMonthTickets.reduce((acc, curr) => {
     const hd = curr.hdOfficer || 'Unknown'
-    if (!acc[hd]) acc[hd] = { month: 0, today: 0 }
+    if (!acc[hd]) acc[hd] = { month: 0, day: 0 }
 
     acc[hd].month += 1
 
     const d = new Date(curr.date)
-    if (d.getDate() === todayDate) {
-      acc[hd].today += 1
+    if (d.getDate() === filterDay) {
+      acc[hd].day += 1
     }
     return acc
   }, {})
 
   // Monthly Chart Logic
-  const daysInMonth = new Date(todayYear, todayMonth + 1, 0).getDate()
+  const daysInMonth = new Date(filterYear, filterMonth + 1, 0).getDate()
   const monthlyData = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1
     const count = currentMonthTickets.filter(t => {
@@ -1475,7 +1478,19 @@ function ProductivityDashboard({ tickets }) {
   return (
     <div>
       <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-        <h2 style={{ marginBottom: '1.5rem' }}>Monthly Performance ({monthName} {todayYear})</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: 0 }}>Monthly Performance ({monthName} {filterYear})</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label>Select Date:</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+            />
+          </div>
+        </div>
+
         <div style={{
           display: 'flex',
           alignItems: 'flex-end',
@@ -1502,13 +1517,13 @@ function ProductivityDashboard({ tickets }) {
                   style={{
                     width: '100%',
                     height: `${height}%`,
-                    background: data.count > 0 ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.1)',
+                    background: data.day === filterDay ? '#fbbf24' : (data.count > 0 ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.1)'),
                     borderRadius: '4px 4px 0 0',
                     transition: 'height 0.3s ease',
                     minHeight: data.count > 0 ? '4px' : '0'
                   }}
                 />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '0.7rem', color: data.day === filterDay ? '#fbbf24' : 'var(--text-secondary)', fontWeight: data.day === filterDay ? 'bold' : 'normal' }}>
                   {data.day % 2 !== 0 ? data.day : ''}
                 </span>
               </div>
@@ -1522,14 +1537,14 @@ function ProductivityDashboard({ tickets }) {
 
       <div className="stats-grid" style={{ marginBottom: '2rem' }}>
         <div className="stat-card">
-          <h3>Daily Tickets (Today)</h3>
+          <h3>Daily Tickets ({filterDay}/{filterMonth + 1})</h3>
           <div className="stat-value">{dailyTotal}</div>
-          <div className="stat-sub">{now.toLocaleDateString()}</div>
+          <div className="stat-sub">{filterDate.toLocaleDateString()}</div>
         </div>
         <div className="stat-card">
-          <h3>Total Tickets (This Month)</h3>
+          <h3>Total Tickets ({monthName})</h3>
           <div className="stat-value">{currentMonthTickets.length}</div>
-          <div className="stat-sub">Avg: {(currentMonthTickets.length / todayDate).toFixed(1)} / day</div>
+          <div className="stat-sub">Avg: {(currentMonthTickets.length / filterDay).toFixed(1)} / day</div>
         </div>
         <div className="stat-card">
           <h3>Total Tickets (All Time)</h3>
@@ -1545,7 +1560,7 @@ function ProductivityDashboard({ tickets }) {
               <thead>
                 <tr>
                   <th>Technician</th>
-                  <th>Today</th>
+                  <th>Daily ({filterDay}/{filterMonth + 1})</th>
                   <th>Month</th>
                   <th>Avg / Day</th>
                 </tr>
@@ -1556,11 +1571,11 @@ function ProductivityDashboard({ tickets }) {
                   .map(([tech, stats]) => (
                     <tr key={tech}>
                       <td>{tech}</td>
-                      <td style={{ fontWeight: 'bold', color: stats.today > 0 ? '#4ade80' : 'inherit' }}>
-                        {stats.today > 0 ? `+${stats.today}` : '-'}
+                      <td style={{ fontWeight: 'bold', color: stats.day > 0 ? '#4ade80' : 'inherit' }}>
+                        {stats.day > 0 ? `+${stats.day}` : '-'}
                       </td>
                       <td>{stats.month}</td>
-                      <td>{(stats.month / todayDate).toFixed(1)}</td>
+                      <td>{(stats.month / filterDay).toFixed(1)}</td>
                     </tr>
                   ))}
               </tbody>
@@ -1575,7 +1590,7 @@ function ProductivityDashboard({ tickets }) {
               <thead>
                 <tr>
                   <th>Officer</th>
-                  <th>Today</th>
+                  <th>Daily ({filterDay}/{filterMonth + 1})</th>
                   <th>Month</th>
                   <th>Avg / Day</th>
                 </tr>
@@ -1586,11 +1601,11 @@ function ProductivityDashboard({ tickets }) {
                   .map(([hd, stats]) => (
                     <tr key={hd}>
                       <td>{hd}</td>
-                      <td style={{ fontWeight: 'bold', color: stats.today > 0 ? '#4ade80' : 'inherit' }}>
-                        {stats.today > 0 ? `+${stats.today}` : '-'}
+                      <td style={{ fontWeight: 'bold', color: stats.day > 0 ? '#4ade80' : 'inherit' }}>
+                        {stats.day > 0 ? `+${stats.day}` : '-'}
                       </td>
                       <td>{stats.month}</td>
-                      <td>{(stats.month / todayDate).toFixed(1)}</td>
+                      <td>{(stats.month / filterDay).toFixed(1)}</td>
                     </tr>
                   ))}
               </tbody>
