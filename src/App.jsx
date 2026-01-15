@@ -231,9 +231,60 @@ function App() {
 
   console.log('App Rendering. User:', user)
 
-  // ... fetchTickets useEffect ...
+  useEffect(() => {
+    fetchTickets()
+  }, [])
 
-  // ... addTicket ...
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch(API_URL)
+      const data = await response.json()
+      // Google Sheets returns the array. If it's empty or error, handle safe.
+      if (Array.isArray(data)) {
+        // Reverse to show newest first initially
+        // BUT we need to deduplicate. Since we append to sheets, later rows are updates.
+        // We want the LATEST entry for each incident.
+
+        const latestTicketsMap = new Map()
+
+        data.forEach(ticket => {
+          if (ticket.incident) {
+            // Overwrite existing entry, effectively keeping the last one found (which is the newest in appended sheet)
+            latestTicketsMap.set(ticket.incident, ticket)
+          } else {
+            latestTicketsMap.set(Date.now() + Math.random(), ticket)
+          }
+        })
+
+        const deduplicatedTickets = Array.from(latestTicketsMap.values()).reverse() // Show newest updates first
+        setTickets(deduplicatedTickets)
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addTicket = (ticketOrTickets) => {
+    const newItems = Array.isArray(ticketOrTickets) ? ticketOrTickets : [ticketOrTickets]
+
+    setTickets(prev => {
+      let current = [...prev]
+      // Process updates/inserts
+      // We process sequentially. For updates, remove old first.
+      newItems.forEach(ticket => {
+        if (ticket.isUpdate) {
+          current = current.filter(t => t.incident !== ticket.incident)
+        }
+        // Add to top
+        current = [ticket, ...current]
+      })
+      return current
+    })
+
+    setView('dashboard')
+  }
 
   const handleLogin = (authenticatedUser) => {
     setUser(authenticatedUser)
