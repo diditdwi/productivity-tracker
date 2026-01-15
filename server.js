@@ -1,141 +1,292 @@
 import express from 'express';
 import cors from 'cors';
-import { google } from 'googleapis';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import puppeteer from 'puppeteer';
+import * as OTPAuth from 'otpauth';
+import https from 'https';
 
 const app = express();
+const PORT = 3001;
+
+// --- CONFIGURATION ---
+const LOGIN_URL = 'https://oss-incident.telkom.co.id/jw/web/userview/ticketIncidentService/ticketIncidentService/_/welcome';
+const USERNAME = '93158327';
+const PASSWORD = 'Intandw01@';
+const SECRET_STRING = 'R7GJGPZRNP5RXREUGUCIKIDWIPOGSJXQ&issuer=insera-sso.telkom.co.id';
+const SECRET = SECRET_STRING.split('&')[0];
+
+// --- GLOBAL STATE ---
+let browser = null;
+let page = null;
+let isSessionActive = false;
+let isLoggingIn = false;
+
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3001;
+// --- HELPERS ---
+function getNetworkTime() {
+    return new Promise((resolve) => {
+        const req = https.request('https://insera-sso.telkom.co.id/jw/web/login', { method: 'HEAD' }, (res) => {
+            if (res.headers['date']) resolve(new Date(res.headers['date']).getTime());
+            else resolve(Date.now());
+        });
+        req.on('error', () => resolve(Date.now()));
+        req.end();
+    });
+}
 
-// Configuration
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '';
-const SHEET_NAME = process.env.SHEET_NAME || 'All tiket';
+async function initBrowserAndLogin() {
+    if (isLoggingIn || isSessionActive) return;
+    isLoggingIn = true;
+    console.log('Initializing Browser Session...');
 
-// Service Account Auth
-const auth = new google.auth.GoogleAuth({
-    keyFile: path.join(__dirname, 'service-account.json'),
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
-
-const sheets = google.sheets({ version: 'v4', auth });
-
-app.get('/api/tickets', async (req, res) => {
     try {
-        if (!SPREADSHEET_ID) {
-            console.warn('SPREADSHEET_ID not set');
-            return res.json([]);
+        if (!browser) {
+            browser = await puppeteer.launch({
+                headless: false, // VISIBLE for debugging
+                defaultViewport: null,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            page = await browser.newPage();
         }
-        const getRes = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A:M`,
-        });
 
-        const rows = getRes.data.values || [];
-        const tickets = rows.slice(1).map((row, index) => ({
-            id: index + '-' + row[2], // unique-ish id
-            date: row[0],
-            ticketType: row[1],
-            incident: row[2],
-            customerName: row[3],
-            serviceId: row[4],
-            serviceType: row[5],
-            technician: row[6],
-            labcode: row[7],
-            repair: row[8],
-            status: row[9],
-            workzone: row[10],
-            hdOfficer: row[11],
-            timestamp: row[12]
-        })).reverse();
+        console.log('Navigating to login...');
+        await page.goto(LOGIN_URL, { waitUntil: 'networkidle0' });
 
-        res.json(tickets);
-    } catch (error) {
-        console.error('Error fetching tickets:', error);
-        res.status(500).json({ error: error.message });
+        if (page.url().includes('/jw/setup')) {
+            const client = await page.target().createCDPSession();
+            await client.send('Network.clearBrowserCookies');
+            await client.send('Network.clearBrowserCache');
+            await page.goto(LOGIN_URL, { waitUntil: 'networkidle0' });
+        }
+
+        try {
+            if (await page.$('#j_username')) {
+                await page.type('#j_username', USERNAME);
+                await page.type('#j_password', PASSWORD);
+                const ssoBtn = await page.$('#openIDLogin');
+                if (ssoBtn) await ssoBtn.click();
+                else await page.click('input[type="submit"]');
+                try { await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 }); } catch (e) { }
+            }
+        } catch (e) { }
+
+        let currentUrl = page.url();
+
+        if (currentUrl.includes('JwtSsoWebService')) {
+            await page.goto(LOGIN_URL, { waitUntil: 'domcontentloaded' });
+        }
+
+        if (page.url().includes('insera-sso')) {
+            await page.waitForSelector('#fake-username');
+            await page.evaluate((u, p) => {
+                const uField = document.querySelector('#j_username') || document.querySelector('input[name="j_username"]');
+                const pField = document.querySelector('#j_password') || document.querySelector('input[name="j_password"]');
+                if (uField) uField.value = u;
+                if (pField) pField.value = p;
+            }, USERNAME, PASSWORD);
+
+            await page.type('#fake-username', USERNAME);
+            await page.type('#fake-password', PASSWORD);
+            try {
+                await page.evaluate(() => {
+                    const cb = document.querySelector('#acceptTerms');
+                    if (cb && !cb.checked) cb.click();
+                });
+            } catch (e) { }
+            await page.click('#fake-login');
+            try { await page.waitForNavigation({ waitUntil: 'networkidle0' }); } catch (e) { }
+        }
+
+        const otpFrameElement = await page.$('#jqueryDialogFrame');
+        if (otpFrameElement) {
+            console.log('Generating OTP...');
+            const totp = new OTPAuth.TOTP({
+                issuer: 'insera-sso.telkom.co.id',
+                label: USERNAME,
+                algorithm: 'SHA1',
+                digits: 6,
+                period: 30,
+                secret: OTPAuth.Secret.fromBase32(SECRET)
+            });
+            const serverTime = await getNetworkTime();
+            const token = totp.generate({ timestamp: serverTime });
+
+            const otpFrame = await otpFrameElement.contentFrame();
+            await otpFrame.type('#pin', token);
+            await otpFrame.click('.form-button');
+            await page.waitForNavigation({ waitUntil: 'networkidle0' });
+        }
+
+        console.log('Login Successful. Session Active.');
+        isSessionActive = true;
+
+    } catch (e) {
+        console.error('Login Failed:', e);
+        if (browser) await browser.close();
+        browser = null;
+    } finally {
+        isLoggingIn = false;
     }
-});
+}
 
-app.post('/api/tickets', async (req, res) => {
+// --- API ENDPOINTS ---
+
+app.get('/api/scrape', async (req, res) => {
+    const inc = req.query.inc;
+    if (!inc) return res.status(400).json({ error: 'Missing inc' });
+
+    console.log(`Searching for: ${inc}`);
+
+    if (!isSessionActive) {
+        if (!isLoggingIn) await initBrowserAndLogin();
+        else {
+            while (isLoggingIn) await new Promise(r => setTimeout(r, 1000));
+        }
+    }
+
+    if (!isSessionActive || !page) {
+        return res.status(500).json({ error: 'Failed to initialize session. Please try again.' });
+    }
+
     try {
-        const ticket = req.body;
-        const {
-            date, ticketType, incident, customerName, serviceId,
-            serviceType, technician, labcode, repair, status,
-            workzone, hdOfficer
-        } = ticket;
-
-        if (!SPREADSHEET_ID) throw new Error('SPREADSHEET_ID is missing');
-
-        // 1. Check for existing
-        const getRes = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!C:C`, // Column C is Incident
-        });
-
-        const rows = getRes.data.values || [];
-        let rowIndex = -1;
-
-        const targetIncident = String(incident).trim().toUpperCase();
-
-        // Find row index (1-based)
-        for (let i = 0; i < rows.length; i++) {
-            // rows[i][0] because we fetched only one column C
-            const sheetIncident = String(rows[i][0] || '').trim().toUpperCase();
-            if (sheetIncident === targetIncident && targetIncident.length > 0) {
-                rowIndex = i + 1;
-                break;
+        // Auto-Recovery Check
+        const url = page.url();
+        if (url.includes('login') || url.includes('insera-sso') || url.includes('setup')) {
+            console.log('Session appears expired. Re-initializing...');
+            isSessionActive = false;
+            await initBrowserAndLogin();
+            if (!isSessionActive) {
+                return res.status(500).json({ error: 'Session expired. Relogin attempt failed.' });
             }
         }
 
-        const rowData = [
-            date,
-            ticketType,
-            incident,
-            customerName,
-            serviceId,
-            serviceType,
-            technician,
-            labcode || '',
-            repair,
-            status,
-            workzone,
-            hdOfficer,
-            new Date().toLocaleString()
-        ];
+        // Wait for Search Input
+        const hasInput = await page.evaluate(() => {
+            return !!(document.querySelector('input[placeholder*="Find"]') || document.querySelector('#quickSearchInput'));
+        });
 
-        if (rowIndex !== -1) {
-            await sheets.spreadsheets.values.update({
-                spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!A${rowIndex}`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [rowData] }
-            });
-            res.json({ message: 'Updated', type: 'UPDATE' });
-        } else {
-            await sheets.spreadsheets.values.append({
-                spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!A:A`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [rowData] }
-            });
-            res.json({ message: 'Created', type: 'CREATE' });
+        if (!hasInput) {
+            console.log('Search bar not ready. Waiting...');
+            try {
+                await page.waitForFunction(() => {
+                    return document.querySelector('input[placeholder*="Find"]') ||
+                        document.querySelector('#quickSearchInput') ||
+                        document.querySelector('input.quickSearch');
+                }, { timeout: 8000 });
+            } catch (e) {
+                console.log('Wait timeout. Go to Welcome...');
+                await page.goto(LOGIN_URL, { waitUntil: 'networkidle0' });
+            }
         }
 
-    } catch (error) {
-        console.error('Error saving ticket:', error);
-        res.status(500).json({ error: error.message });
+        // Find Input
+        let searchInput = null;
+        try {
+            await page.waitForFunction(() => {
+                return document.querySelector('input[placeholder*="Find"]') ||
+                    document.querySelector('#quickSearchInput') ||
+                    document.querySelector('input.quickSearch');
+            }, { timeout: 10000 });
+
+            const selectors = ['input[placeholder*="Find"]', '#quickSearchInput', 'input.quickSearch'];
+            for (const sel of selectors) {
+                searchInput = await page.$(sel);
+                if (searchInput) break;
+            }
+        } catch (e) { }
+
+        if (!searchInput) {
+            const path = 'server_error_search_missing.png';
+            await page.screenshot({ path });
+            throw new Error(`Search bar not found. Saved screenshot to ${path}`);
+        }
+
+        // --- ROBUST TYPE (Fix for "Not Clickable") ---
+        await page.evaluate((el, text) => {
+            el.value = '';
+            el.focus();
+            // Setting value directly often works best for these forms
+            el.value = text;
+        }, searchInput, inc);
+
+        // Press Enter to trigger search
+        await page.keyboard.press('Enter');
+
+        // Wait for Results
+        try {
+            await page.waitForFunction(() => {
+                return document.body.innerText.includes('Service ID') ||
+                    document.body.innerText.includes('Customer Name') ||
+                    document.body.innerText.includes('Workzone');
+            }, { timeout: 12000 });
+        } catch (e) { console.log('Wait timeout, trying scrape anyway'); }
+
+        // --- SCRAPE (Fix for Customer Name) ---
+        const scrapedData = await page.evaluate(() => {
+            const data = {};
+
+            const getRowInputs = (str) => {
+                const els = Array.from(document.querySelectorAll('label, th, td, span, strong'));
+                const label = els.find(el => el.innerText && el.innerText.trim() === str);
+                if (!label) return [];
+
+                let inputs = [];
+                // 1. Same Container
+                if (label.parentElement) {
+                    inputs = inputs.concat(Array.from(label.parentElement.querySelectorAll('input:not([type="hidden"])')));
+                    // 2. Next Sibling Container (e.g. Next TD)
+                    const nextContainer = label.parentElement.nextElementSibling;
+                    if (nextContainer) {
+                        inputs = inputs.concat(Array.from(nextContainer.querySelectorAll('input:not([type="hidden"])')));
+                    }
+                }
+                return inputs;
+            };
+
+            // 1. Customer Name (Logic: if 2 inputs found, 2nd is Name)
+            const customerInputs = getRowInputs('Customer ID');
+            if (customerInputs.length >= 2) {
+                data.customerName = customerInputs[1].value;
+            } else if (customerInputs.length === 1) {
+                // Fallback: split by space/tab
+                const val = customerInputs[0].value;
+                // Heuristic: if starts with number, split
+                if (/^\d+\s/.test(val)) {
+                    data.customerName = val.replace(/^\d+\s+/, '');
+                } else {
+                    data.customerName = val;
+                }
+            } else {
+                // Last ditch: check "Customer Name" label
+                const nameInputs = getRowInputs('Customer Name');
+                if (nameInputs.length > 0) data.customerName = nameInputs[0].value;
+            }
+
+            const sidInputs = getRowInputs('Service ID');
+            if (sidInputs.length > 0) data.serviceId = sidInputs[0].value;
+
+            const typeInputs = getRowInputs('Service Type');
+            if (typeInputs.length > 0) data.serviceType = typeInputs[0].value;
+
+            // Workzone often single input
+            const zoneInputs = getRowInputs('Workzone');
+            if (zoneInputs.length > 0) data.workzone = zoneInputs[0].value;
+
+            return data;
+        });
+
+        console.log('Found:', scrapedData);
+        res.json(scrapedData);
+
+    } catch (e) {
+        console.error('Search Error:', e.message);
+        if (e.message.includes('Search bar not found') || e.message.includes('Session closed')) isSessionActive = false;
+        res.status(500).json({ error: `Error: ${e.message}` });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Persistent Server running on http://localhost:${PORT}`);
+    initBrowserAndLogin();
 });

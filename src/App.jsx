@@ -535,6 +535,44 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
     }
   }
 
+  const [isScraping, setIsScraping] = useState(false)
+
+  const handleScrape = async () => {
+    if (!formData.incident) {
+      alert('Please enter an Incident Number first')
+      return
+    }
+
+    setIsScraping(true)
+    try {
+      // Use relative path so it flows through Vite Proxy (works on Localhost, LAN, and Tunnels)
+      const res = await fetch(`/api/scrape?inc=${formData.incident}`)
+      const data = await res.json()
+
+      if (data.error) throw new Error(data.error)
+
+      setFormData(prev => ({
+        ...prev,
+        customerName: data.customerName || prev.customerName,
+        serviceId: data.serviceId || prev.serviceId,
+        // Try to match workzone if possible, or just set it
+        // If the dropdown matches exactly, it will select. 
+        // If not, it might show empty, so we might need fuzzy matching later.
+        workzone: data.workzone || prev.workzone,
+        // We could also map Service Type if strictly standard
+        serviceType: data.serviceType === 'INTERNET' ? 'INTERNET' : (data.serviceType === 'IPTV' ? 'IPTV' : prev.serviceType)
+      }))
+
+      alert(`Found: ${data.customerName} (${data.serviceType})`)
+
+    } catch (e) {
+      console.error(e)
+      alert('Scraping failed: ' + (e.message || 'Unknown error'))
+    } finally {
+      setIsScraping(false)
+    }
+  }
+
   // Dynamic Service Types based on Ticket Type
   const getServiceTypeOptions = () => {
     if (formData.ticketType === 'INFRACARE') {
@@ -613,15 +651,34 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
 
           <div className="input-group">
             <label>Incident No.</label>
-            <input
-              type="text"
-              name="incident"
-              placeholder="INC12345"
-              value={formData.incident}
-              onChange={handleChange}
-              required
-            // Incident field always editable to allow searching/clearing
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                name="incident"
+                placeholder="INC12345"
+                value={formData.incident}
+                onChange={handleChange}
+                required
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={handleScrape}
+                disabled={isScraping}
+                style={{
+                  background: 'var(--primary-color)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  padding: '0 12px',
+                  fontWeight: 'bold'
+                }}
+                title="Scrape from OSS"
+              >
+                {isScraping ? '...' : '🔍'}
+              </button>
+            </div>
             {isUpdateMode && <small style={{ color: 'var(--primary-color)' }}>Existing ticket found. Update status mode.</small>}
           </div>
 
@@ -745,6 +802,12 @@ function TicketList({ tickets, loading }) {
 
   // GAUL Check Logic
   const checkGaul = (currentTicket) => {
+    // Skip GAUL for INFRACARE as they use generic Service IDs (Kabel Terjuntai etc)
+    // Debugging: Log if we see Infracare but it didn't match
+    if (currentTicket.ticketType && currentTicket.ticketType.includes('INFRA')) console.log('Checking ticket:', currentTicket.ticketType, currentTicket.incident)
+
+    if (currentTicket.ticketType === 'INFRACARE') return false
+
     if (!currentTicket.serviceId || !currentTicket.date) return false
 
     // Find *other* tickets with same Service ID that are OLDER (to flag the current one as repeat)
