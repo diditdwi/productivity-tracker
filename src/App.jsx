@@ -424,7 +424,10 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
     }
 
     const searchInc = formData.incident.trim().toLowerCase()
-    const existingTicket = tickets.find(t => t.incident && t.incident.toLowerCase() === searchInc)
+
+    // FIND FIX: Ensure we trim the STORED ticket incident as well, 
+    // because Google Sheets often has trailing/leading whitespace.
+    const existingTicket = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === searchInc)
 
     if (existingTicket) {
       setIsUpdateMode(true)
