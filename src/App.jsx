@@ -1214,6 +1214,23 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
               <input type="date" name="date" value={globalSettings.date} onChange={handleGlobalChange} required />
             </div>
             <div className="input-group">
+              <label>HD Officer *</label>
+              <input
+                type="text"
+                list="bulk-hds"
+                name="hdOfficer"
+                value={globalSettings.hdOfficer}
+                onChange={handleGlobalChange}
+                required
+                placeholder="Select or type..."
+              />
+              <datalist id="bulk-hds">
+                {HD_OFFICERS.map(h => <option key={h} value={h} />)}
+              </datalist>
+            </div>
+          </div>
+          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', marginTop: '1rem' }}>
+            <div className="input-group">
               <label>Technician *</label>
               <input
                 type="text"
@@ -1229,30 +1246,11 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
                 {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
               </datalist>
             </div>
-
-            {/* Workzone removed from here */}
-
             <div className="input-group">
               <label>Status</label>
               <select name="status" value={globalSettings.status} onChange={handleGlobalChange}>
                 {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-            </div>
-            <div className="input-group">
-              <label>HD Officer *</label>
-              <input
-                type="text"
-                list="bulk-hds"
-                name="hdOfficer"
-                value={globalSettings.hdOfficer}
-                onChange={handleGlobalChange}
-                required
-                placeholder="Select or type..."
-                style={{ border: '1px solid #0ea5e9' }}
-              />
-              <datalist id="bulk-hds">
-                {HD_OFFICERS.map(h => <option key={h} value={h} />)}
-              </datalist>
             </div>
           </div>
         </div>
