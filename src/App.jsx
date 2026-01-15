@@ -818,7 +818,7 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
           </div>
 
           <div className="input-group">
-            <label>Technician</label>
+            <label>Technician <span style={{ color: 'red' }}>*</span></label>
             <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleChange} required placeholder="Select or type..." disabled={isUpdateMode} />
             <datalist id="techs">
               {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
@@ -840,7 +840,7 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
           </div>
 
           <div className="input-group">
-            <label>Workzone</label>
+            <label>Workzone <span style={{ color: 'red' }}>*</span></label>
             <select name="workzone" value={formData.workzone} onChange={handleChange} disabled={isUpdateMode}>
               <option value="">Select Workzone...</option>
               {Object.entries(WORKZONES).map(([region, zones]) => (
@@ -854,7 +854,7 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
           </div>
 
           <div className="input-group">
-            <label>Petugas HD (HD Officer)</label>
+            <label>Petugas HD (HD Officer) <span style={{ color: 'red' }}>*</span></label>
             <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleChange} required placeholder="Select or type..." />
             <datalist id="hds">
               {HD_OFFICERS.map(h => <option key={h} value={h} />)}
