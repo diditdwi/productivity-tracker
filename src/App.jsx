@@ -1044,17 +1044,14 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
   // Global Settings
   const [globalSettings, setGlobalSettings] = useState({
     date: new Date().toISOString().split('T')[0],
-    technician: '',
-    // workzone removed from global
-    status: 'Open',
     hdOfficer: ''
   })
 
   // Rows
   const [rows, setRows] = useState([
-    { id: 1, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '' },
-    { id: 2, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '' },
-    { id: 3, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '' }
+    { id: 1, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '', technician: '', status: 'Open' },
+    { id: 2, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '', technician: '', status: 'Open' },
+    { id: 3, type: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', workzone: '', technician: '', status: 'Open' }
   ])
 
   const handleGlobalChange = (e) => {
@@ -1086,7 +1083,9 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
       serviceId: '',
       serviceType: 'INTERNET',
       repair: '',
-      workzone: ''
+      workzone: '',
+      technician: '',
+      status: 'Open'
     }])
   }
 
@@ -1100,8 +1099,8 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
     e.preventDefault()
 
     // Validate Globals
-    if (!globalSettings.technician || !globalSettings.hdOfficer) {
-      alert('Please fill in all Global Settings (Technician, HD Officer)')
+    if (!globalSettings.hdOfficer) {
+      alert('Please fill in Global Settings (HD Officer)')
       return
     }
 
@@ -1112,10 +1111,14 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
       return
     }
 
-    // Validate Row-level requirements (Workzone)
-    const missingWorkzone = validRows.some(r => !r.workzone)
-    if (missingWorkzone) {
-      alert('Please select a Workzone for all active rows.')
+    // Validate Row-level requirements
+    const missingFields = validRows.some(r => !r.workzone || !r.technician || !r.status)
+    /* 
+       Note: We strictly require Technician per row now.
+    */
+
+    if (missingFields) {
+      alert('Mohon lengkapi Workzone, Technician, dan Status untuk semua baris yang diisi.')
       return
     }
 
@@ -1127,11 +1130,11 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
         id: Date.now().toString() + Math.random(),
         date: globalSettings.date,
         // Global fields
-        technician: globalSettings.technician,
-        status: globalSettings.status,
         hdOfficer: globalSettings.hdOfficer,
         // Row fields
-        workzone: row.workzone, // Moved to row
+        technician: row.technician,
+        status: row.status,
+        workzone: row.workzone,
         ticketType: row.type,
         incident: row.incident,
         customerName: row.customerName,
@@ -1160,7 +1163,7 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
   }
 
   return (
-    <div className="glass-panel" style={{ maxWidth: '1200px' }}>
+    <div className="glass-panel" style={{ maxWidth: '1400px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Bulk Ticket Entry</h2>
         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.2)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -1207,8 +1210,8 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
           marginBottom: '2rem',
           border: '1px solid rgba(255,255,255,0.5)'
         }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--primary-color)' }}>Global Settings (Applied to all rows)</h3>
-          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--primary-color)' }}>Global Settings</h3>
+          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
             <div className="input-group">
               <label>Date</label>
               <input type="date" name="date" value={globalSettings.date} onChange={handleGlobalChange} required />
@@ -1229,30 +1232,6 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
               </datalist>
             </div>
           </div>
-          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', marginTop: '1rem' }}>
-            <div className="input-group">
-              <label>Technician *</label>
-              <input
-                type="text"
-                list="bulk-techs"
-                name="technician"
-                value={globalSettings.technician}
-                onChange={handleGlobalChange}
-                required
-                placeholder="Select or type..."
-                style={{ border: '1px solid #ef4444' }} // Highlight as requested
-              />
-              <datalist id="bulk-techs">
-                {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
-              </datalist>
-            </div>
-            <div className="input-group">
-              <label>Status</label>
-              <select name="status" value={globalSettings.status} onChange={handleGlobalChange}>
-                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
         </div>
 
         {/* Dynamic Table */}
@@ -1263,6 +1242,8 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
                 <th style={{ width: '40px' }}>#</th>
                 <th style={{ width: '100px' }}>Type</th>
                 <th style={{ width: '130px' }}>Workzone</th>
+                <th style={{ width: '150px' }}>Technician *</th>
+                <th style={{ width: '100px' }}>Status</th>
                 <th style={{ width: '130px' }}>Incident</th>
                 <th style={{ width: '180px' }}>Customer Name</th>
                 <th style={{ width: '130px' }}>Service ID</th>
@@ -1300,6 +1281,33 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
                         ))}
                       </select>
                     </td>
+
+                    {/* New Row-Level Technician */}
+                    <td>
+                      <input
+                        type="text"
+                        list={`bulk-techs-${row.id}`}
+                        value={row.technician}
+                        onChange={(e) => handleRowChange(row.id, 'technician', e.target.value)}
+                        placeholder="Select..."
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      />
+                      <datalist id={`bulk-techs-${row.id}`}>
+                        {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
+                      </datalist>
+                    </td>
+
+                    {/* New Row-Level Status */}
+                    <td>
+                      <select
+                        value={row.status}
+                        onChange={(e) => handleRowChange(row.id, 'status', e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      >
+                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
+
                     <td>
                       <input
                         type="text"
@@ -1357,7 +1365,7 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
                   </tr>
                   {/* Row 2: Action Taken (Full Width) */}
                   <tr style={{ background: 'rgba(255,255,255,0.3)' }}>
-                    <td colSpan="6" style={{ padding: '0.5rem 1rem' }}>
+                    <td colSpan="8" style={{ padding: '0.5rem 1rem' }}>
                       <input
                         type="text"
                         value={row.repair}
