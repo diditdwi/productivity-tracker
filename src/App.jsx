@@ -1257,113 +1257,117 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
 
         {/* Dynamic Table */}
         <div className="table-container" style={{ overflowX: 'auto', marginBottom: '1rem' }}>
-          <table className="data-table">
+          <table className="glass-table" style={{ width: '100%', marginBottom: '1.5rem', borderSpacing: '0 10px', borderCollapse: 'separate' }}>
             <thead>
               <tr>
-                <th style={{ width: '50px' }}>#</th>
-                <th style={{ width: '120px' }}>Type</th>
-                <th style={{ width: '150px' }}>Workzone</th>
-                <th style={{ width: '150px' }}>Incident</th>
-                <th style={{ width: '200px' }}>Customer Name</th>
-                <th style={{ width: '150px' }}>Service ID</th>
-                <th style={{ width: '150px' }}>Service Type</th>
-                <th>Perbaikan (Action)</th>
-                <th style={{ width: '50px' }}></th>
+                <th style={{ width: '40px' }}>#</th>
+                <th style={{ width: '100px' }}>Type</th>
+                <th style={{ width: '130px' }}>Workzone</th>
+                <th style={{ width: '130px' }}>Incident</th>
+                <th style={{ width: '180px' }}>Customer Name</th>
+                <th style={{ width: '130px' }}>Service ID</th>
+                <th style={{ width: '130px' }}>Service Type</th>
+                <th style={{ width: '40px' }}></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row, index) => (
-                <tr key={row.id}>
-                  <td>{index + 1}</td>
-                  <td>
-                    <select
-                      value={row.type}
-                      onChange={(e) => handleRowChange(row.id, 'type', e.target.value)}
-                      style={{ width: '100%', padding: '0.5rem' }}
-                    >
-                      {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    <select
-                      value={row.workzone}
-                      onChange={(e) => handleRowChange(row.id, 'workzone', e.target.value)}
-                      style={{ width: '100%', padding: '0.5rem' }}
-                      required
-                    >
-                      <option value="">Select...</option>
-                      {Object.entries(WORKZONES).map(([region, zones]) => (
-                        <optgroup key={region} label={region}>
-                          {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={row.incident}
-                      onChange={(e) => handleRowChange(row.id, 'incident', e.target.value)}
-                      placeholder="INC..."
-                      style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={row.customerName}
-                      onChange={(e) => handleRowChange(row.id, 'customerName', e.target.value)}
-                      disabled={row.type === 'INFRACARE'}
-                      style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={row.serviceId}
-                      onChange={(e) => handleRowChange(row.id, 'serviceId', e.target.value)}
-                      disabled={row.type === 'INFRACARE'}
-                      style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                  </td>
-                  <td>
-                    <select
-                      value={row.serviceType}
-                      onChange={(e) => handleRowChange(row.id, 'serviceType', e.target.value)}
-                      style={{ width: '100%', padding: '0.5rem' }}
-                    >
-                      {/* Simplified options for bulk, or full map? Let's use simplified or copy logic */}
-                      {row.type === 'INFRACARE' ? (
-                        SERVICE_TYPES['INFRACARE'].map(s => <option key={s} value={s}>{s}</option>)
-                      ) : (
-                        Object.entries(SERVICE_TYPES).map(([cat, services]) => {
-                          if (cat === 'INFRACARE') return null;
-                          return <optgroup key={cat} label={cat}>{services.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
-                        })
-                      )}
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={row.repair}
-                      onChange={(e) => handleRowChange(row.id, 'repair', e.target.value)}
-                      placeholder="Action taken..."
-                      style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                  </td>
-                  <td>
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeRow(row.id)}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem' }}
+                <React.Fragment key={row.id}>
+                  {/* Row 1: Main Info */}
+                  <tr style={{ background: 'rgba(255,255,255,0.5)' }}>
+                    <td rowSpan="2" style={{ verticalAlign: 'middle', textAlign: 'center', fontWeight: 'bold' }}>{index + 1}</td>
+                    <td>
+                      <select
+                        value={row.type}
+                        onChange={(e) => handleRowChange(row.id, 'type', e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
                       >
-                        &times;
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                        {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        value={row.workzone}
+                        onChange={(e) => handleRowChange(row.id, 'workzone', e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                        required
+                      >
+                        <option value="">Select...</option>
+                        {Object.entries(WORKZONES).map(([region, zones]) => (
+                          <optgroup key={region} label={region}>
+                            {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={row.incident}
+                        onChange={(e) => handleRowChange(row.id, 'incident', e.target.value)}
+                        placeholder="INC..."
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={row.customerName}
+                        onChange={(e) => handleRowChange(row.id, 'customerName', e.target.value)}
+                        disabled={row.type === 'INFRACARE'}
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={row.serviceId}
+                        onChange={(e) => handleRowChange(row.id, 'serviceId', e.target.value)}
+                        disabled={row.type === 'INFRACARE'}
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      />
+                    </td>
+                    <td>
+                      <select
+                        value={row.serviceType}
+                        onChange={(e) => handleRowChange(row.id, 'serviceType', e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      >
+                        {row.type === 'INFRACARE' ? (
+                          SERVICE_TYPES['INFRACARE'].map(s => <option key={s} value={s}>{s}</option>)
+                        ) : (
+                          Object.entries(SERVICE_TYPES).map(([cat, services]) => {
+                            if (cat === 'INFRACARE') return null;
+                            return <optgroup key={cat} label={cat}>{services.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
+                          })
+                        )}
+                      </select>
+                    </td>
+                    <td rowSpan="2" style={{ verticalAlign: 'middle', textAlign: 'center' }}>
+                      {rows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRow(row.id)}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem' }}
+                        >
+                          &times;
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                  {/* Row 2: Action Taken (Full Width) */}
+                  <tr style={{ background: 'rgba(255,255,255,0.3)' }}>
+                    <td colSpan="6" style={{ padding: '0.5rem 1rem' }}>
+                      <input
+                        type="text"
+                        value={row.repair}
+                        onChange={(e) => handleRowChange(row.id, 'repair', e.target.value)}
+                        placeholder="Perbaikan / Action Taken (Wajib diisi)"
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                      />
+                    </td>
+                  </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
