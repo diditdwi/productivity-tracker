@@ -323,7 +323,7 @@ function App() {
         {view === 'entry' && (
           entryMode === 'single'
             ? <TicketForm onSubmit={addTicket} tickets={tickets} onSwitchMode={() => setEntryMode('bulk')} />
-            : <BulkTicketForm onSubmit={addBulkTickets} tickets={tickets} onSwitchMode={() => setEntryMode('single')} />
+            : <BulkTicketForm onSubmit={addTicket} tickets={tickets} onSwitchMode={() => setEntryMode('single')} />
         )}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
