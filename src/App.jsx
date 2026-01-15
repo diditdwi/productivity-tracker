@@ -1580,7 +1580,7 @@ function ProductivityDashboard({ tickets }) {
           <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="data-table">
               <thead>
-                <tr style={{ position: 'sticky', top: 0, background: 'rgba(30, 41, 59, 0.95)', zIndex: 1 }}>
+                <tr style={{ position: 'sticky', top: 0, background: 'rgba(255, 255, 255, 0.95)', zIndex: 1, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   <th>Technician</th>
                   <th>Daily ({filterDay}/{filterMonth + 1})</th>
                   <th>Month</th>
@@ -1610,7 +1610,7 @@ function ProductivityDashboard({ tickets }) {
           <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="data-table">
               <thead>
-                <tr style={{ position: 'sticky', top: 0, background: 'rgba(30, 41, 59, 0.95)', zIndex: 1 }}>
+                <tr style={{ position: 'sticky', top: 0, background: 'rgba(255, 255, 255, 0.95)', zIndex: 1, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   <th>Officer</th>
                   <th>Daily ({filterDay}/{filterMonth + 1})</th>
                   <th>Month</th>
