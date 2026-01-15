@@ -547,14 +547,39 @@ function TicketForm({ onSubmit, tickets, onSwitchMode }) {
         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
           {isUpdateMode ? 'Update Ticket Status' : 'New Ticket Entry'}
         </h2>
-        <button
-          type="button"
-          onClick={onSwitchMode}
-          className="btn-secondary"
-          style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
-        >
-          Switch to Bulk Input
-        </button>
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.2)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <button
+            type="button"
+            style={{
+              padding: '6px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: 'var(--primary-color)',
+              color: 'white',
+              cursor: 'default',
+              fontWeight: '600',
+              transition: 'all 0.2s'
+            }}
+          >
+            Single
+          </button>
+          <button
+            type="button"
+            onClick={onSwitchMode}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontWeight: '400',
+              transition: 'all 0.2s'
+            }}
+          >
+            Bulk Input (Masal)
+          </button>
+        </div>
       </div>
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
@@ -947,19 +972,35 @@ function BulkTicketForm({ onSubmit, tickets, onSwitchMode }) {
     <div className="glass-panel" style={{ maxWidth: '1200px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Bulk Ticket Entry</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.2)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
           <button
             type="button"
             onClick={onSwitchMode}
-            className="btn-secondary"
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem', background: 'rgba(255,255,255,0.5)' }}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontWeight: '400',
+              transition: 'all 0.2s'
+            }}
           >
             Single
           </button>
           <button
             type="button"
-            className="btn-primary"
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem', cursor: 'default' }}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: 'var(--primary-color)',
+              color: 'white',
+              cursor: 'default',
+              fontWeight: '600',
+              transition: 'all 0.2s'
+            }}
           >
             Bulk Input (Masal)
           </button>
