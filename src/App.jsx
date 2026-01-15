@@ -200,8 +200,12 @@ const DEFAULT_USERS = [
 function App() {
   // Initialize Users DB from localStorage or default
   const [usersDB, setUsersDB] = useState(() => {
-    const saved = localStorage.getItem('ticketTracker_users_db')
-    if (saved) return JSON.parse(saved)
+    try {
+      const saved = localStorage.getItem('ticketTracker_users_db')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to parse users DB', e)
+    }
     return DEFAULT_USERS
   })
 
@@ -211,8 +215,14 @@ function App() {
   }, [usersDB])
 
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('ticketTrackerUser')
-    return saved ? JSON.parse(saved) : null
+    try {
+      const saved = localStorage.getItem('ticketTrackerUser')
+      // Ensure it's not "undefined" string
+      if (saved && saved !== 'undefined') return JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to parse user session', e)
+    }
+    return null
   })
   const [view, setView] = useState('entry')
   const [entryMode, setEntryMode] = useState('single')
