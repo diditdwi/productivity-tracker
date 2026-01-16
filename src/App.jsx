@@ -854,7 +854,12 @@ function TicketForm({ onSubmit, tickets }) {
       }
 
       // Auto-Resolve HD and Tech
-      const resolvedHd = resolveMapping(hd, HD_OFFICERS)
+      let resolvedHd = resolveMapping(hd, HD_OFFICERS)
+      // Fallback: If HD not found in HD list, check Technician list (maybe they are cross-functional)
+      if (resolvedHd === hd.trim()) {
+        resolvedHd = resolveMapping(hd, TEKNISI_LIST)
+      }
+
       const resolvedTech = resolveMapping(tech, TEKNISI_LIST)
 
       const ticketData = {
