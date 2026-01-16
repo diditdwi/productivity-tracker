@@ -808,22 +808,31 @@ function TicketForm({ onSubmit, tickets }) {
       if (!val) return val
       const cleanVal = val.trim()
 
-      // 1. Exact match in list
-      if (list.includes(cleanVal)) return cleanVal
+      console.log(`Attempting to resolve: "${cleanVal}"`)
 
-      // 2. Match by NIK (Starts with "NIK -")
-      const foundByNik = list.find(item => item.startsWith(cleanVal + ' -'))
-      if (foundByNik) return foundByNik
+      const found = list.find(item => {
+        // Handle items that might not match the "NIK - Name" pattern perfectly
+        const separatorIndex = item.indexOf(' - ')
+        if (separatorIndex === -1) return item.trim() === cleanVal
 
-      // 3. Match by Name (Case-insensitive check of the name part)
-      const foundByName = list.find(item => {
-        const parts = item.split(' - ')
-        if (parts.length < 2) return false
-        const name = parts[1].trim().toLowerCase()
-        return name === cleanVal.toLowerCase()
+        const nik = item.substring(0, separatorIndex).trim()
+        const name = item.substring(separatorIndex + 3).trim().toLowerCase()
+
+        // Check exact NIK match
+        if (nik === cleanVal) return true
+
+        // Check Name match (case-insensitive)
+        if (name === cleanVal.toLowerCase()) return true
+
+        return false
       })
-      if (foundByName) return foundByName
 
+      if (found) {
+        console.log(`Resolved "${cleanVal}" to "${found}"`)
+        return found
+      }
+
+      console.log(`Could not resolve "${cleanVal}"`)
       return cleanVal
     }
 
