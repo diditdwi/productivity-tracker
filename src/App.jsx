@@ -343,52 +343,41 @@ function App() {
   return (
     <div className="app-container">
       <header>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <h1>TicketTracker v2.0</h1>
-          <nav>
-            <button
-              className={`nav-btn ${view === 'entry' ? 'active' : ''}`}
-              onClick={() => setView('entry')}
-            >
-              Entry Data
-            </button>
-            <button
-              className={`nav-btn ${view === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setView('dashboard')}
-            >
-              Dashboard
-            </button>
-            {user.role === 'admin' && (
-              <button
-                className={`nav-btn ${view === 'productivity' ? 'active' : ''}`}
-                onClick={() => setView('productivity')}
-              >
-                Productivity
-              </button>
-            )}
-            <button
-              className={`nav-btn ${view === 'daily-report' ? 'active' : ''}`}
-              onClick={() => setView('daily-report')}
-            >
-              Report Harian
-            </button>
-          </nav>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative' }}>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Hi, <strong>{user.username}</strong>
-          </span>
-
+        <h1>TicketTracker</h1>
+        <nav>
           <button
-            className="btn-secondary"
-            onClick={() => setView(view === 'change-password' ? 'entry' : 'change-password')}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+            className={`nav-btn ${view === 'entry' ? 'active' : ''}`}
+            onClick={() => { setView('entry'); setEditingTicket(null); }}
           >
-            🔑 Pass
+            Entry Data
           </button>
-
-          <button onClick={handleLogout} className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+          <button
+            className={`nav-btn ${view === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setView('dashboard')}
+          >
+            Dashboard
+          </button>
+          {user.role === 'admin' && (
+            <button
+              className={`nav-btn ${view === 'productivity' ? 'active' : ''}`}
+              onClick={() => setView('productivity')}
+            >
+              Productivity
+            </button>
+          )}
+          <button
+            className={`nav-btn ${view === 'daily-report' ? 'active' : ''}`}
+            onClick={() => setView('daily-report')}
+          >
+            Daily Report
+          </button>
+        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Welcome, <strong>{user.username}</strong></span>
+          <button onClick={() => setView('change-password')} className="nav-btn" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
+            Password
+          </button>
+          <button onClick={handleLogout} className="nav-btn" style={{ color: 'var(--danger-color)' }}>
             Logout
           </button>
         </div>
@@ -405,9 +394,9 @@ function App() {
             onCancel={() => setView('entry')}
           />
         )}
-        {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} />}
+        {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} onEditTicket={handleEditTicket} />}
         {view === 'entry' && (
-          <TicketForm onSubmit={addTicket} tickets={tickets} />
+          <TicketForm onSubmit={handleTicketSubmit} tickets={tickets} initialData={editingTicket} />
         )}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'daily-report' && <DailyReportDashboard tickets={tickets} />}
@@ -530,7 +519,7 @@ function ChangePasswordForm({ user, onChangePassword, onCancel }) {
 
 const BULK_ROW_COUNT = 5
 
-function TicketForm({ onSubmit, tickets }) {
+function TicketForm({ onSubmit, tickets, initialData }) {
   const [mode, setMode] = useState('SINGLE') // SINGLE | BULK | NOTEPAD
 
   // SINGLE MODE STATE
@@ -573,29 +562,63 @@ function TicketForm({ onSubmit, tickets }) {
   const [notepadContent, setNotepadContent] = useState('')
   const [notepadDate, setNotepadDate] = useState(new Date().toISOString().split('T')[0])
 
+  // Populate form when editing via click from Dashboard
+  useEffect(() => {
+    if (initialData) {
+      setMode('SINGLE')
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        // Ensure critical fields are present
+        ticketType: initialData.ticketType || 'REGULER',
+        serviceType: initialData.serviceType || 'INTERNET',
+        status: initialData.status || 'Open'
+      }))
+      setIsUpdateMode(true)
+    }
+  }, [initialData])
+
   // --- SINGLE MODE LOGIC ---
   useEffect(() => {
     if (mode !== 'SINGLE') return
     if (!formData.incident) {
+      // Only reset update mode if we are NOT currently editing a specific ticket passed via props
+      // OR if the user manually cleared the input. 
+      // Actually, if user clears input, existingTicket will be undefined, so logic holds.
       setIsUpdateMode(false)
       return
     }
 
     const searchInc = formData.incident.trim().toLowerCase()
+
+    // Safety check: if we are editing via click, initialData.incident might match.
+    // But this effect runs on every formData.incident change.
+
     const existingTicket = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === searchInc)
 
     if (existingTicket) {
       setIsUpdateMode(true)
-      setFormData(prev => ({
-        ...prev,
-        ...existingTicket,
-        date: new Date().toISOString().split('T')[0],
-        status: existingTicket.status
-      }))
+
+      setFormData(prev => {
+        // If we heavily modify the form, we want to know if we are still working on the "same" ticket context
+        // If the ticket we found matches the one we started editing (initialData), keep the original date.
+        // Otherwise, if it's a different ticket or we didn't start with one, default to Today's date (assuming new update entry).
+
+        const isSameAsInitial = initialData && initialData.incident === existingTicket.incident;
+        const newDate = isSameAsInitial ? existingTicket.date : new Date().toISOString().split('T')[0];
+
+        return {
+          ...prev,
+          ...existingTicket,
+          date: newDate,
+          status: existingTicket.status
+        }
+      })
     } else {
-      setIsUpdateMode(false)
+      // If no match found, it's a new ticket (unless we are in the middle of typing)
+      // setIsUpdateMode(false) Handled at top
     }
-  }, [formData.incident, tickets, mode])
+  }, [formData.incident, tickets, mode, initialData])
 
   useEffect(() => {
     if (mode !== 'SINGLE') return
@@ -1406,7 +1429,18 @@ function TicketList({ tickets, loading }) {
                 return (
                   <tr key={ticket.id}>
                     <td>{ticket.date}</td>
-                    <td>{ticket.incident}</td>
+                    <td
+                      onClick={() => onEditTicket(ticket)}
+                      style={{
+                        cursor: 'pointer',
+                        color: 'var(--primary-color)',
+                        fontWeight: 'bold',
+                        textDecoration: 'underline'
+                      }}
+                      title="Click to Edit"
+                    >
+                      {ticket.incident}
+                    </td>
                     <td>{ticket.customerName}</td>
                     <td>
                       <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
