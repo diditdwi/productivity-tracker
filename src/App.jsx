@@ -1178,6 +1178,13 @@ function TicketList({ tickets, loading }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterDate, setFilterDate] = useState('')
   const [filterType, setFilterType] = useState('ALL')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+
+  // Reset to first page when filtering
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterDate, filterType])
 
   const filteredTickets = tickets.filter(ticket => {
     const term = searchTerm.toLowerCase()
@@ -1189,11 +1196,9 @@ function TicketList({ tickets, loading }) {
 
     let matchesDate = true
     if (filterDate) {
-      // Robust date comparison
       try {
         const ticketDate = new Date(ticket.date)
         const filter = new Date(filterDate)
-        // Compare YYYY-MM-DD parts
         matchesDate = ticketDate.getFullYear() === filter.getFullYear() &&
           ticketDate.getMonth() === filter.getMonth() &&
           ticketDate.getDate() === filter.getDate()
@@ -1207,41 +1212,30 @@ function TicketList({ tickets, loading }) {
     return matchesSearch && matchesDate && matchesType
   })
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage)
+
   // GAUL Check Logic
   const checkGaul = (currentTicket) => {
-    // Skip GAUL for INFRACARE as they use generic Service IDs (Kabel Terjuntai etc)
-    // Debugging: Log if we see Infracare but it didn't match
     if (currentTicket.ticketType && currentTicket.ticketType.includes('INFRA')) console.log('Checking ticket:', currentTicket.ticketType, currentTicket.incident)
-
     if (currentTicket.ticketType === 'INFRACARE') return false
-
     if (!currentTicket.serviceId || !currentTicket.date) return false
 
-    // Find *other* tickets with same Service ID that are OLDER (to flag the current one as repeat)
-    // Actually, usually we flag the NEW one as GAUL if there was a previous one recently.
-    // So we look for any ticket with same serviceID that has a date BEFORE currentTicket.date
-    // AND the difference is <= 30 days.
-
     const currentDate = new Date(currentTicket.date)
-
-    // Safety check for invalid dates
     if (isNaN(currentDate.getTime())) return false
 
     return tickets.some(otherTicket => {
-      if (otherTicket.id === currentTicket.id) return false // Skip self
+      if (otherTicket.id === currentTicket.id) return false
       if (otherTicket.serviceId !== currentTicket.serviceId) return false
 
       const otherDate = new Date(otherTicket.date)
       if (isNaN(otherDate.getTime())) return false
 
-      // Check if other ticket is older (or same day but we want to flag duplicates generally? 
-      // Requirement: "masuk dalam dibawah 30 hari")
-      // Let's assume we flag the *current* ticket if it entered and found a history < 30 days.
-
       const diffTime = currentDate - otherDate
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-      // We only care if other ticket is OLDER (diffDays > 0) and within 30 days
       return diffDays > 0 && diffDays <= 30
     })
   }
@@ -1310,7 +1304,7 @@ function TicketList({ tickets, loading }) {
                 </td>
               </tr>
             ) : (
-              filteredTickets.map(ticket => {
+              paginatedTickets.map(ticket => {
                 const isGaul = checkGaul(ticket)
                 return (
                   <tr key={ticket.id}>
@@ -1339,6 +1333,55 @@ function TicketList({ tickets, loading }) {
           </tbody>
         </table>
       </div>
+
+      {!loading && filteredTickets.length > 0 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '1.5rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid var(--border-color)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Rows per page:</label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              style={{ padding: '0.3rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+            >
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTickets.length)} of {filteredTickets.length}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="btn-secondary"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', opacity: currentPage === 1 ? 0.5 : 1 }}
+            >
+              Previous
+            </button>
+            <span style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', fontSize: '0.9rem', fontWeight: 600 }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="btn-secondary"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', opacity: currentPage === totalPages ? 0.5 : 1 }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
