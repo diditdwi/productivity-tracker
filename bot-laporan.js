@@ -107,7 +107,7 @@ bot.on('message', async (msg) => {
     // Log ID for User
     if (chatType === 'group' || chatType === 'supergroup') {
         console.log(`\n📢 PESAN DARI GRUP: "${msg.chat.title}"`);
-        console.log(`🆔 ID GRUP: ${chatId}`);
+        console.log(`🆔 ID GRUP ASLI: ${chatId}`); // COPY ID INI
         console.log(`👤 Pengirim: ${msg.from.first_name}\n`);
     }
 

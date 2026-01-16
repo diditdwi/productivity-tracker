@@ -2001,12 +2001,16 @@ Mohon segera dicek.${mentionText}`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, groupId: group })
       });
-      if (res.ok) alert('✅ Terkirim ke Grup!');
-      else alert('❌ Gagal kirim ke Grup.');
-      setSendModal({ ...sendModal, isOpen: false });
+      if (res.ok) {
+        alert('✅ Terkirim ke Grup!');
+        setSendModal({ ...sendModal, isOpen: false });
+      } else {
+        const errData = await res.json();
+        alert(`❌ Gagal kirim: ${errData.error || 'Unknown error'}`);
+      }
     } catch (e) {
       console.error(e);
-      alert('Error sending to group');
+      alert(`Error sending to group: ${e.message}`);
     } finally {
       setLoading(false);
     }
