@@ -119,7 +119,7 @@ export default async function handler(req, res) {
                 status,
                 workzone,
                 hdOfficer,
-                new Date().toLocaleString()
+                new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour12: false })
             ];
 
             if (rowIndex !== -1) {
