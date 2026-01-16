@@ -1963,18 +1963,31 @@ function LaporanLangsungDashboard({ onGenerate }) {
     }
   }
 
+  const handleShareToGroup = (r) => {
+    const text = `*LAPORAN LANGSUNG*
+No Tiket: ${r.ticketId}
+Nama: ${r.nama}
+Alamat: ${r.alamat}
+Kendala: ${r.keluhan}
+Status: OPEN`.trim()
+
+    navigator.clipboard.writeText(text)
+    alert('Format untuk Grup berhasil disalin!')
+  }
+
   const handleShareToTech = (r) => {
-    const text = `*TIKET GANGGUAN*
+    const text = `*ORDER TEKNISI*
 No Tiket: ${r.ticketId}
 Nama: ${r.nama}
 Alamat: ${r.alamat}
 No Layanan: ${r.noInternet}
 Kendala: ${r.keluhan}
 SN ONT: ${r.snOnt}
-PIC Contact: ${r.pic}`.trim()
+CP: ${r.pic}
+Mohon segera dicek.`.trim()
 
     navigator.clipboard.writeText(text)
-    alert('Format tiket berhasil disalin! Siap dikirim ke Teknisi.')
+    alert('Format untuk Teknisi berhasil disalin!')
   }
 
   return (
@@ -1998,7 +2011,7 @@ PIC Contact: ${r.pic}`.trim()
               <th>PIC</th>
               <th>Status</th>
               <th>No Tiket</th>
-              <th>Kirim ke Teknisi</th>
+              <th style={{ minWidth: '200px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -2025,9 +2038,12 @@ PIC Contact: ${r.pic}`.trim()
                   <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
                     {r.ticketId}
                   </td>
-                  <td>
-                    <button className="btn-small btn-secondary" onClick={() => handleShareToTech(r)}>
-                      Copy Format
+                  <td style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn-small btn-secondary" onClick={() => handleShareToGroup(r)} title="Copy untuk Grup">
+                      Grup
+                    </button>
+                    <button className="btn-small btn-primary" onClick={() => handleShareToTech(r)} title="Copy untuk Teknisi">
+                      Teknisi
                     </button>
                   </td>
                 </tr>
