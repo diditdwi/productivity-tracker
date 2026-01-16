@@ -1963,9 +1963,13 @@ function LaporanLangsungDashboard({ onGenerate }) {
     }
   }
 
-  const handleShareToGroup = async (r) => {
-    // 1. Confirm
-    if (!confirm('Kirim ORDER TEKNISI ini ke Grup?')) return;
+  const handleProcessAndSend = async (r) => {
+    const techUsername = prompt("Masukkan Username Telegram Teknisi untuk di-mention (kosongkan jika tidak ada):", "");
+
+    let mentionText = "";
+    if (techUsername) {
+      mentionText = `\n\nCC: @${techUsername.replace('@', '')}`;
+    }
 
     const message = `*ORDER TEKNISI*
 No Tiket: ${r.ticketId}
@@ -1975,7 +1979,7 @@ No Layanan: ${r.noInternet}
 Kendala: ${r.keluhan}
 SN ONT: ${r.snOnt}
 CP: ${r.pic}
-Mohon segera dicek.`;
+Mohon segera dicek.${mentionText}`;
 
     try {
       const res = await fetch('/api/send-telegram-group', {
@@ -1983,7 +1987,7 @@ Mohon segera dicek.`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message })
       });
-      if (res.ok) alert('✅ Terkirim ke Grup!');
+      if (res.ok) alert('✅ Terkirim ke Grup (dengan Mention)!');
       else alert('❌ Gagal kirim ke Grup.');
     } catch (e) {
       console.error(e);
@@ -1992,29 +1996,7 @@ Mohon segera dicek.`;
   }
 
   const handleShareToTech = (r) => {
-    const techUsername = prompt("Masukkan Username Telegram Teknisi (tanpa @):", "");
-    if (!techUsername) return;
-
-    const message = `*ORDER TEKNISI*
-No Tiket: ${r.ticketId}
-Nama: ${r.nama}
-Alamat: ${r.alamat}
-No Layanan: ${r.noInternet}
-Kendala: ${r.keluhan}
-SN ONT: ${r.snOnt}
-CP: ${r.pic}
-Mohon segera dicek.`;
-
-    // Open Telegram Deep Link to Chat with Pre-filled message
-    // Note: Telegram Web doesn't support pre-filling message for users easily, 
-    // but we can try opening a direct link or just copying and telling them to paste.
-    // BETTER APPROACH: Use the Bot to send it if we knew the ChatID. 
-    // But since we only have Username, we can't easily DM them via Bot unless they started it.
-    // SO: We will Copy to Clipboard and Open their Chat.
-
-    navigator.clipboard.writeText(message);
-    window.open(`https://t.me/${techUsername}`, '_blank');
-    alert('Pesan disalin! Silakan PASTE di chat teknisi.');
+    // Legacy function removed/merged
   }
 
   return (
@@ -2065,12 +2047,9 @@ Mohon segera dicek.`;
                   <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
                     {r.ticketId}
                   </td>
-                  <td style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-small btn-secondary" onClick={() => handleShareToGroup(r)} title="Kirim ke Grup">
-                      Kirim Grup
-                    </button>
-                    <button className="btn-small btn-primary" onClick={() => handleShareToTech(r)} title="Kirim ke Teknisi">
-                      Kirim Teknisi
+                  <td>
+                    <button className="btn-small btn-secondary" onClick={() => handleProcessAndSend(r)} title="Kirim ke Grup & Mention">
+                      Kirim ke Grup
                     </button>
                   </td>
                 </tr>
