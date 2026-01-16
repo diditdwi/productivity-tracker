@@ -1183,7 +1183,8 @@ function TicketList({ tickets, loading }) {
     const term = searchTerm.toLowerCase()
     const matchesSearch = (
       (ticket.incident && ticket.incident.toLowerCase().includes(term)) ||
-      (ticket.serviceId && ticket.serviceId.toString().toLowerCase().includes(term))
+      (ticket.serviceId && ticket.serviceId.toString().toLowerCase().includes(term)) ||
+      (ticket.hdOfficer && ticket.hdOfficer.toLowerCase().includes(term))
     )
 
     let matchesDate = true
