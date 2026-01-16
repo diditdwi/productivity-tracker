@@ -555,9 +555,6 @@ function TicketForm({ onSubmit, tickets, initialData }) {
   // BULK MODE STATE
   const [bulkCommon, setBulkCommon] = useState({
     date: new Date().toISOString().split('T')[0],
-    technician: '',
-    status: 'Open',
-    workzone: '',
     hdOfficer: ''
   })
   const [bulkRows, setBulkRows] = useState(
@@ -567,7 +564,10 @@ function TicketForm({ onSubmit, tickets, initialData }) {
       customerName: '',
       serviceId: '',
       serviceType: 'INTERNET',
-      repair: ''
+      repair: '',
+      technician: '',
+      workzone: '',
+      status: 'Open'
     }))
   )
 
@@ -774,7 +774,7 @@ function TicketForm({ onSubmit, tickets, initialData }) {
   }
 
   const addBulkRow = () => {
-    setBulkRows(prev => [...prev, { ticketType: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '' }])
+    setBulkRows(prev => [...prev, { ticketType: 'REGULER', incident: '', customerName: '', serviceId: '', serviceType: 'INTERNET', repair: '', technician: '', workzone: '', status: 'Open' }])
   }
 
   const handleBulkSubmit = async (e) => {
@@ -792,8 +792,16 @@ function TicketForm({ onSubmit, tickets, initialData }) {
       return
     }
 
-    if (!bulkCommon.technician || !bulkCommon.workzone || !bulkCommon.hdOfficer) {
-      alert("Please fill all Global Settings (Technician, Workzone, HD Officer).")
+    // Validate global
+    if (!bulkCommon.hdOfficer) {
+      alert("Please fill HD Officer in Global Settings.")
+      return
+    }
+
+    // Validate rows
+    const incompleteRows = validRows.filter(r => !r.technician || !r.workzone)
+    if (incompleteRows.length > 0) {
+      alert("Please fill Technician and Workzone for all rows with an Incident.")
       return
     }
 
@@ -1139,27 +1147,6 @@ function TicketForm({ onSubmit, tickets, initialData }) {
                 <input type="date" name="date" value={bulkCommon.date} onChange={handleBulkCommonChange} required />
               </div>
               <div className="input-group" style={{ marginBottom: 0 }}>
-                <label>Technician <span style={{ color: 'red' }}>*</span></label>
-                <input type="text" list="techs" name="technician" value={bulkCommon.technician} onChange={handleBulkCommonChange} required placeholder="Select or type..." />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label>Workzone <span style={{ color: 'red' }}>*</span></label>
-                <select name="workzone" value={bulkCommon.workzone} onChange={handleBulkCommonChange} required>
-                  <option value="">Select...</option>
-                  {Object.entries(WORKZONES).map(([region, zones]) => (
-                    <optgroup key={region} label={region}>
-                      {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label>Status</label>
-                <select name="status" value={bulkCommon.status} onChange={handleBulkCommonChange}>
-                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
                 <label>HD Officer <span style={{ color: 'red' }}>*</span></label>
                 <input type="text" list="hds" name="hdOfficer" value={bulkCommon.hdOfficer} onChange={handleBulkCommonChange} required placeholder="Select or type..." />
               </div>
@@ -1176,6 +1163,9 @@ function TicketForm({ onSubmit, tickets, initialData }) {
                   <th style={{ width: '160px' }}>Customer Name</th>
                   <th style={{ width: '140px' }}>Service ID</th>
                   <th style={{ width: '130px' }}>Service Type</th>
+                  <th style={{ width: '150px' }}>Technician</th>
+                  <th style={{ width: '120px' }}>Workzone</th>
+                  <th style={{ width: '100px' }}>Status</th>
                   <th style={{ minWidth: '200px' }}>Perbaikan (Action)</th>
                 </tr>
               </thead>
@@ -1203,7 +1193,25 @@ function TicketForm({ onSubmit, tickets, initialData }) {
                       </select>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="text" name="repair" value={row.repair} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Action taken..." style={{ width: '95%', padding: '4px' }} />
+                      <input type="text" list="techs" name="technician" value={row.technician} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Tech..." style={{ width: '100%', padding: '4px' }} />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <select name="workzone" value={row.workzone} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px' }}>
+                        <option value="">WZ...</option>
+                        {Object.entries(WORKZONES).map(([region, zones]) => (
+                          <optgroup key={region} label={region}>
+                            {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <select name="status" value={row.status} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px' }}>
+                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input type="text" name="repair" value={row.repair} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Action..." style={{ width: '100%', padding: '4px' }} />
                     </td>
                   </tr>
                 ))}
