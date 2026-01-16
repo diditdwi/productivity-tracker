@@ -917,7 +917,7 @@ function TicketForm({ onSubmit, tickets }) {
 
             <div className="input-group">
               <label>Ticket Type</label>
-              <select name="ticketType" value={formData.ticketType} onChange={handleSingleChange} disabled={isUpdateMode}>
+              <select name="ticketType" value={formData.ticketType} onChange={handleSingleChange}>
                 {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
@@ -948,12 +948,12 @@ function TicketForm({ onSubmit, tickets }) {
 
             <div className="input-group">
               <label>Service ID (SID/Inet/Tlp)</label>
-              <input type="text" name="serviceId" value={formData.serviceId} onChange={handleSingleChange} required disabled={isUpdateMode || formData.ticketType === 'INFRACARE'} />
+              <input type="text" name="serviceId" value={formData.serviceId} onChange={handleSingleChange} required disabled={formData.ticketType === 'INFRACARE'} />
             </div>
 
             <div className="input-group">
               <label>Service Type</label>
-              <select name="serviceType" value={formData.serviceType} onChange={handleSingleChange} disabled={isUpdateMode}>
+              <select name="serviceType" value={formData.serviceType} onChange={handleSingleChange}>
                 {getServiceTypeOptions(formData.ticketType)}
               </select>
             </div>
