@@ -384,6 +384,12 @@ function App() {
           >
             Daily Report
           </button>
+          <button
+            className={`nav-btn ${view === 'laporan-langsung' ? 'active' : ''}`}
+            onClick={() => setView('laporan-langsung')}
+          >
+            Laporan Langsung
+          </button>
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ color: 'var(--text-secondary)' }}>Welcome, <strong>{user.username}</strong></span>
@@ -413,6 +419,12 @@ function App() {
         )}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'daily-report' && <DailyReportDashboard tickets={tickets} />}
+        {view === 'laporan-langsung' && (
+          <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
+            <h2>Laporan Langsung</h2>
+            <p style={{ color: 'var(--text-secondary)' }}>Fitur ini sedang dalam pengembangan.</p>
+          </div>
+        )}
       </main>
     </div>
   )
