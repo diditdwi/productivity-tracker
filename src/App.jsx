@@ -1063,7 +1063,7 @@ function TicketForm({ onSubmit, tickets, initialData }) {
             </div>
 
             <div className="input-group">
-              <label>Customer Name</label>
+              <label>{formData.ticketType === 'INFRACARE' ? 'ODP Name' : 'Customer Name'}</label>
               <input type="text" name="customerName" value={formData.customerName} onChange={handleSingleChange} required />
             </div>
 
