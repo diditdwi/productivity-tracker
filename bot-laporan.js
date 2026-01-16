@@ -1,12 +1,13 @@
 
+import 'dotenv/config'; // Load .env
 import TelegramBot from 'node-telegram-bot-api';
 import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
 // --- CONFIG ---
-const TOKEN = '8545250993:AAEYsWRdrMNL5tE-igA0q24GcLDC0Ah47Z0';
-const SPREADSHEET_ID = '1PvOheQ9IO8Xs6aBGAn96AxItQYyLmmkEk0kKgdsUkfk';
+const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '1PvOheQ9IO8Xs6aBGAn96AxItQYyLmmkEk0kKgdsUkfk';
 const SHEET_NAME = 'Laporan Langsung';
 const KEY_FILE_PATH = path.join(process.cwd(), 'service-account.json');
 

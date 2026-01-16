@@ -1961,10 +1961,24 @@ function LaporanLangsungDashboard({ onGenerate }) {
     }
   }
 
+  const handleShareToTech = (r) => {
+    const text = `*TIKET GANGGUAN*
+No Tiket: ${r.ticketId}
+Nama: ${r.nama}
+Alamat: ${r.alamat}
+No Layanan: ${r.noInternet}
+Kendala: ${r.keluhan}
+SN ONT: ${r.snOnt}
+PIC Contact: ${r.pic}`.trim()
+
+    navigator.clipboard.writeText(text)
+    alert('Format tiket berhasil disalin! Siap dikirim ke Teknisi.')
+  }
+
   return (
     <div className="glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>Laporan Langsung (Telegram Bot)</h2>
+        <h2>LAPORAN LANGSUNG</h2>
         <button className="btn-secondary" onClick={fetchLaporan}>Refresh</button>
       </div>
 
@@ -1982,13 +1996,14 @@ function LaporanLangsungDashboard({ onGenerate }) {
               <th>PIC</th>
               <th>Status</th>
               <th>No Tiket</th>
+              <th>Kirim ke Teknisi</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
+              <tr><td colSpan="11" style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
             ) : reports.length === 0 ? (
-              <tr><td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>Belum ada laporan masuk.</td></tr>
+              <tr><td colSpan="11" style={{ textAlign: 'center', padding: '2rem' }}>Belum ada laporan masuk.</td></tr>
             ) : (
               reports.map(r => (
                 <tr key={r.id}>
@@ -2007,6 +2022,11 @@ function LaporanLangsungDashboard({ onGenerate }) {
                   </td>
                   <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
                     {r.ticketId}
+                  </td>
+                  <td>
+                    <button className="btn-small btn-secondary" onClick={() => handleShareToTech(r)}>
+                      Copy Format
+                    </button>
                   </td>
                 </tr>
               ))
