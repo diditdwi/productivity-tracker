@@ -337,16 +337,43 @@ function App() {
   }
 
   const [editingTicket, setEditingTicket] = useState(null)
+  const [isNewTicketFromReport, setIsNewTicketFromReport] = useState(false)
 
   const handleEditTicket = (ticket) => {
     setEditingTicket(ticket)
+    setIsNewTicketFromReport(false)
+    setView('entry')
+  }
+
+  const handleGenerateTicketFromReport = (report) => {
+    const actionText = `Keluhan: ${report.keluhan} | Alamat: ${report.alamat} | SN: ${report.snOnt}`
+
+    // Map Report to Ticket Data
+    const newTicketData = {
+      ticketType: 'REGULER', // Default
+      incident: '', // User must fill
+      customerName: report.nama,
+      serviceId: report.noInternet,
+      serviceType: report.layanan.toLowerCase().includes('inet') ? 'INTERNET' : 'VOICE',
+      technician: report.pic,
+      repair: actionText,
+      status: 'Open',
+      workzone: '', // User fill
+      hdOfficer: user.username,
+      date: new Date().toISOString().split('T')[0]
+    }
+
+    setEditingTicket(newTicketData)
+    setIsNewTicketFromReport(true) // Flag as NEW, not update
     setView('entry')
   }
 
   // Wrapper to clean up editing state on submission
+  // Wrapper to clean up editing state on submission
   const handleTicketSubmit = async (payload) => {
     await addTicket(payload)
     setEditingTicket(null)
+    setIsNewTicketFromReport(false)
   }
 
   if (!user) {
@@ -415,16 +442,11 @@ function App() {
         )}
         {view === 'dashboard' && <TicketList tickets={tickets} loading={loading} onEditTicket={handleEditTicket} />}
         {view === 'entry' && (
-          <TicketForm onSubmit={handleTicketSubmit} tickets={tickets} initialData={editingTicket} />
+          <TicketForm onSubmit={handleTicketSubmit} tickets={tickets} initialData={editingTicket} isNewFromReport={isNewTicketFromReport} />
         )}
         {view === 'productivity' && user.role === 'admin' && <ProductivityDashboard tickets={tickets} />}
         {view === 'daily-report' && <DailyReportDashboard tickets={tickets} />}
-        {view === 'laporan-langsung' && (
-          <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
-            <h2>Laporan Langsung</h2>
-            <p style={{ color: 'var(--text-secondary)' }}>Fitur ini sedang dalam pengembangan.</p>
-          </div>
-        )}
+        {view === 'laporan-langsung' && <LaporanLangsungDashboard onGenerate={handleGenerateTicketFromReport} />}
       </main>
     </div>
   )
@@ -544,7 +566,7 @@ function ChangePasswordForm({ user, onChangePassword, onCancel }) {
 
 const BULK_ROW_COUNT = 5
 
-function TicketForm({ onSubmit, tickets, initialData }) {
+function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
   const [mode, setMode] = useState('SINGLE') // SINGLE | BULK | NOTEPAD
 
   // SINGLE MODE STATE
@@ -599,9 +621,11 @@ function TicketForm({ onSubmit, tickets, initialData }) {
         serviceType: initialData.serviceType || 'INTERNET',
         status: initialData.status || 'Open'
       }))
-      setIsUpdateMode(true)
+
+      // If it comes from 'Generate Ticket' (Laporan Langsung), treat as NEW (false), otherwise Update (true)
+      setIsUpdateMode(isNewFromReport ? false : true)
     }
-  }, [initialData])
+  }, [initialData, isNewFromReport])
 
   // --- SINGLE MODE LOGIC ---
   useEffect(() => {
@@ -1907,6 +1931,87 @@ function DailyReportDashboard({ tickets }) {
               </tr>
             </tfoot>
           )}
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function LaporanLangsungDashboard({ onGenerate }) {
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchLaporan()
+    const interval = setInterval(fetchLaporan, 30000) // Auto refresh
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchLaporan = async () => {
+    try {
+      const res = await fetch('/api/laporan-langsung')
+      if (res.ok) {
+        const data = await res.json()
+        setReports(data)
+      }
+    } catch (e) {
+      console.error('Failed to fetch reports', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="glass-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h2>Laporan Langsung (Telegram Bot)</h2>
+        <button className="btn-secondary" onClick={fetchLaporan}>Refresh</button>
+      </div>
+
+      <div className="table-container">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Nama</th>
+              <th>Alamat</th>
+              <th>No Internet</th>
+              <th>Keluhan</th>
+              <th>Layanan</th>
+              <th>SN ONT</th>
+              <th>PIC</th>
+              <th>Status</th>
+              <th>No Tiket</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
+            ) : reports.length === 0 ? (
+              <tr><td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>Belum ada laporan masuk.</td></tr>
+            ) : (
+              reports.map(r => (
+                <tr key={r.id}>
+                  <td>{r.timestamp}</td>
+                  <td style={{ fontWeight: 'bold' }}>{r.nama}</td>
+                  <td>{r.alamat}</td>
+                  <td>{r.noInternet}</td>
+                  <td>{r.keluhan}</td>
+                  <td>{r.layanan}</td>
+                  <td>{r.snOnt}</td>
+                  <td>{r.pic}</td>
+                  <td>
+                    <span className={`status-badge status-${r.status.toLowerCase().replace(' ', '-')}`}>
+                      {r.status}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
+                    {r.ticketId}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
         </table>
       </div>
     </div>

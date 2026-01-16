@@ -3,6 +3,9 @@ import cors from 'cors';
 import puppeteer from 'puppeteer';
 import * as OTPAuth from 'otpauth';
 import https from 'https';
+import { google } from 'googleapis';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 const PORT = 3001;
@@ -36,6 +39,9 @@ function getNetworkTime() {
 }
 
 async function initBrowserAndLogin() {
+    console.log('Login functionality is currently DISABLED.');
+    return; // Disabled by user request
+
     if (isLoggingIn || isSessionActive) return;
     isLoggingIn = true;
     console.log('Initializing Browser Session...');
@@ -131,6 +137,59 @@ async function initBrowserAndLogin() {
 }
 
 // --- API ENDPOINTS ---
+
+const KEY_FILE_PATH = path.join(process.cwd(), 'service-account.json');
+const SHEET_ID_LAPORAN = '1PvOheQ9IO8Xs6aBGAn96AxItQYyLmmkEk0kKgdsUkfk';
+
+const getSheetsClient = () => {
+    const auth = new google.auth.GoogleAuth({
+        keyFile: KEY_FILE_PATH,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    return google.sheets({ version: 'v4', auth });
+};
+
+app.get('/api/laporan-langsung', async (req, res) => {
+    try {
+        const sheets = getSheetsClient();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SHEET_ID_LAPORAN,
+            range: "'Laporan Langsung'!A:Z",
+        });
+
+        const rows = response.data.values || [];
+        console.log('Fetched Laporan Rows:', rows.length);
+
+        // Header Check: If row[0] contains "Timestamp" or "Nama", assume it's a header and slice it.
+        let dataRows = rows;
+        if (rows.length > 0) {
+            const firstRow = rows[0];
+            const isHeader = firstRow[0] && (firstRow[0].toLowerCase().includes('timestamp') || firstRow[0].toLowerCase().includes('waktu'));
+            if (isHeader) {
+                dataRows = rows.slice(1);
+            }
+        }
+
+        const data = dataRows.map((row, idx) => ({
+            id: idx,
+            timestamp: row[0] || '-',
+            nama: row[1] || '-',
+            alamat: row[2] || '-',
+            noInternet: row[3] || '-',
+            keluhan: row[4] || '-',
+            layanan: row[5] || '-',
+            snOnt: row[6] || '-',
+            pic: row[7] || '-',
+            status: row[8] || 'Open',
+            ticketId: row[9] || '-'
+        })).reverse();
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching Laporan Langsung:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 app.get('/api/scrape', async (req, res) => {
     const inc = req.query.inc;
@@ -288,5 +347,5 @@ app.get('/api/scrape', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Persistent Server running on http://localhost:${PORT}`);
-    initBrowserAndLogin();
+    // initBrowserAndLogin(); // Disabled by user request
 });
