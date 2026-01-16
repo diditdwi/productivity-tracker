@@ -458,6 +458,8 @@ function LoginForm({ onLogin, usersDB }) {
             <label>Username</label>
             <input
               type="text"
+              name="username"
+              autoComplete="username"
               value={username}
               onChange={e => setUsername(e.target.value)}
               required
@@ -468,6 +470,8 @@ function LoginForm({ onLogin, usersDB }) {
             <label>Password</label>
             <input
               type="password"
+              name="password"
+              autoComplete="current-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
