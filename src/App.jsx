@@ -1661,7 +1661,7 @@ function ProductivityDashboard({ tickets }) {
         <div style={{
           position: 'relative',
           height: '240px',
-          padding: '20px 0 30px 0',
+          padding: '20px 10px 30px 40px', /* Increased Left Padding */
           borderBottom: '1px solid var(--border-color)',
           marginTop: '1rem'
         }}>
@@ -1670,17 +1670,19 @@ function ProductivityDashboard({ tickets }) {
             <div key={ratio} style={{
               position: 'absolute',
               bottom: `${30 + (ratio * 200)}px`,
-              left: 0,
+              left: '40px', /* Align start of grid line with padding */
               right: 0,
               borderTop: ratio === 0 ? 'none' : '1px dashed var(--border-color)',
               zIndex: 0
             }}>
               <span style={{
                 position: 'absolute',
-                left: '-25px',
+                left: '-35px', /* Position in padding area */
                 top: '-8px',
                 fontSize: '0.65rem',
-                color: 'var(--secondary)'
+                color: 'var(--secondary)',
+                width: '30px',
+                textAlign: 'right'
               }}>
                 {Math.round(maxCount * ratio)}
               </span>
@@ -1694,8 +1696,7 @@ function ProductivityDashboard({ tickets }) {
             height: '200px',
             gap: '6px',
             position: 'relative',
-            zIndex: 1,
-            marginLeft: '5px' /* Space for Y-axis labels */
+            zIndex: 1
           }}>
             {monthlyData.map((data) => {
               const height = maxCount > 0 ? (data.count / maxCount) * 100 : 0

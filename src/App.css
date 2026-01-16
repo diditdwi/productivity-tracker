@@ -359,7 +359,23 @@ nav {
   box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
 }
 
-.btn-telegram:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
+/* Modern Refresh Button */
+.btn-refresh {
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  /* Softer corners */
+  font-weight: 600;
+  font-size: 0.8rem;
+  box-shadow: var(--shadow-sm);
+  /* Subtle depth */
+}
+
+.btn-refresh:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f0f9ff;
+  transform: translateY(-1px);
 }
