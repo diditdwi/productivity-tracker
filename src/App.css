@@ -1,5 +1,3 @@
-/* ... (existing styles) ... */
-
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 :root {
@@ -7,189 +5,327 @@
   --primary-dark: #0284c7;
   --primary-light: #e0f2fe;
   --secondary: #64748b;
-  --bg-body: #f1f5f9;
+  --bg-body: #f8fafc;
   --surface: #ffffff;
   --border: #e2e8f0;
   --danger: #ef4444;
   --success: #10b981;
   --warning: #f59e0b;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* Soft Modern Shadows */
+  --shadow-sm: 0 2px 4px rgba(148, 163, 184, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(148, 163, 184, 0.1), 0 2px 4px -1px rgba(148, 163, 184, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(148, 163, 184, 0.1), 0 4px 6px -2px rgba(148, 163, 184, 0.05);
+  --shadow-glow: 0 0 15px rgba(14, 165, 233, 0.15);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  outline: none;
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   background-color: var(--bg-body);
-  color: #0f172a;
+  color: #1e293b;
   line-height: 1.5;
-  font-size: 14px;
-  /* Slightly smaller base font */
-  overflow-x: hidden;
-  /* Prevent body horizontal scroll */
+  font-size: 13px;
+  /* Compact font size */
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
-  max-width: 1500px;
-  width: 98%;
+  max-width: 1400px;
+  width: 96%;
   margin: 1rem auto;
   padding: 0 0.5rem;
 }
 
-/* Header Compact */
+/* --- Header & Navigation --- */
 header {
   background: var(--surface);
-  padding: 0.75rem 1.5rem;
-  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
   box-shadow: var(--shadow-sm);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border: 1px solid var(--border);
 }
 
 header h1 {
-  font-size: 1.25rem;
-  margin-right: 1rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-right: 1.5rem;
+  letter-spacing: -0.02em;
 }
 
 nav {
+  display: flex;
   gap: 0.25rem;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 99px;
+  /* Capsule shape container */
 }
 
 .nav-btn {
-  padding: 0.4rem 1rem;
+  background: transparent;
+  /* Fix grey box issue */
+  border: none;
+  color: var(--secondary);
+  padding: 0.35rem 0.85rem;
+  border-radius: 99px;
+  cursor: pointer;
+  font-weight: 600;
   font-size: 0.8rem;
+  transition: all 0.2s ease;
 }
 
-/* Panels */
+.nav-btn:hover {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.nav-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transform: scale(1.02);
+}
+
+/* --- Panels (Glass/Card Effect) --- */
 .glass-panel {
   background: var(--surface);
-  border-radius: 1rem;
-  padding: 1.5rem;
+  border-radius: 12px;
+  padding: 1.25rem;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Forms & Inputs --- */
+.form-grid {
+  /* No default grid here, controlled in JSX for density */
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.input-group label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.input-group input,
+.input-group select {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 0.75rem;
+  /* Comfortable but compact */
+  border-radius: 8px;
+  /* Smooth corners */
+  font-size: 0.85rem;
+  color: #0f172a;
+  transition: all 0.2s;
   width: 100%;
 }
 
-/* Tables Compact */
+.input-group input:focus,
+.input-group select:focus {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+  /* Blue glow ring */
+}
+
+/* --- Tables --- */
 .table-container {
-  overflow-x: auto;
-  border-radius: 0.75rem;
+  border-radius: 10px;
   border: 1px solid var(--border);
-  width: 100%;
+  overflow: hidden;
+  /* Rounded corners for table */
+  background: var(--surface);
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
-  table-layout: auto;
-  /* Allow auto resizing */
-}
-
-.data-table th,
-.data-table td {
-  padding: 0.6rem 0.8rem;
-  /* Reduced padding */
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  /* Prevent wrapping by default, rely on truncation */
+  font-size: 0.8rem;
 }
 
 .data-table th {
-  background: #f8fafc;
-  font-size: 0.7rem;
+  background: #f1f5f9;
+  color: var(--secondary);
+  font-weight: 700;
   text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.02em;
 }
 
-/* Truncation Utility */
+.data-table td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.data-table tr:hover td {
+  background: #f8fafc;
+  /* Hover highlight row */
+}
+
+/* Truncation Helper */
 .truncate-cell {
-  max-width: 200px;
-  /* Default max width */
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Forms */
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.input-group label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--secondary);
-}
-
-.input-group input,
-.input-group select {
-  padding: 0.6rem;
-  font-size: 0.9rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-}
-
-/* Buttons */
+/* --- Buttons --- */
 .btn-primary,
 .btn-secondary,
 .btn-danger,
-.btn-telegram {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
+.btn-telegram,
+.btn-refresh {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  text-decoration: none;
 }
 
+/* Modern Primary Button */
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
   color: white;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
 }
 
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px -2px rgba(14, 165, 233, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button */
 .btn-secondary {
   background: white;
   border: 1px solid #e2e8f0;
   color: #475569;
 }
 
-.btn-telegram {
-  background: #0ea5e9;
-  color: white;
-  border-radius: 2rem;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--primary);
 }
 
-/* Status Badges */
-.status-badge {
-  padding: 0.2rem 0.6rem;
+/* Telegram Button */
+.btn-telegram {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: white;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 20px;
+}
+
+.btn-telegram:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);
+}
+
+/* Refresh Button */
+.btn-refresh {
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--secondary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+.btn-refresh:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* --- Utilities --- */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
   font-size: 0.7rem;
+}
+
+.badge-gaul {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  margin-left: 5px;
+}
+
+/* Status Colors */
+.status-badge {
+  padding: 0.25rem 0.6rem;
   border-radius: 99px;
+  font-size: 0.7rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .status-open {
   background: #e0f2fe;
-  color: #0284c7;
+  color: #0369a1;
 }
 
+.status-in-progress {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.status-resolved,
 .status-closed {
   background: #dcfce7;
   color: #15803d;
