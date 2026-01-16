@@ -1353,6 +1353,7 @@ function TicketList({ tickets, loading }) {
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
+              <option value={10000}>All</option>
             </select>
             <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTickets.length)} of {filteredTickets.length}
