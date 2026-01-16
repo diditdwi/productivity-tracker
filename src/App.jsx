@@ -638,7 +638,6 @@ function TicketForm({ onSubmit, tickets, initialData }) {
     if (formData.ticketType === 'INFRACARE') {
       setFormData(prev => ({
         ...prev,
-        customerName: '-',
         serviceId: '-'
       }))
     }
@@ -650,7 +649,7 @@ function TicketForm({ onSubmit, tickets, initialData }) {
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        customerName: '-',
+        customerName: '',
         serviceId: '-',
         serviceType: 'Kabel Terjuntai'
       }))
