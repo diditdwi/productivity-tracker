@@ -1939,9 +1939,16 @@ function DailyReportDashboard({ tickets }) {
   )
 }
 
+const TELEGRAM_GROUPS = [
+  { name: 'RJW', id: '-1001374270728' },
+  { name: 'SOR', id: '-1001230361821' },
+  { name: 'CMI', id: '-1001328230875' }
+];
+
 function LaporanLangsungDashboard({ onGenerate }) {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sendModal, setSendModal] = useState({ isOpen: false, report: null, tech: '', group: TELEGRAM_GROUPS[0].id })
 
   useEffect(() => {
     fetchLaporan()
@@ -1963,35 +1970,45 @@ function LaporanLangsungDashboard({ onGenerate }) {
     }
   }
 
-  const handleProcessAndSend = async (r) => {
-    const techUsername = prompt("Masukkan Username Telegram Teknisi untuk di-mention (kosongkan jika tidak ada):", "");
+  const handleProcessAndSend = (r) => {
+    setSendModal({ isOpen: true, report: r, tech: '', group: TELEGRAM_GROUPS[0].id });
+  }
+
+  const confirmSend = async () => {
+    const { report, tech, group } = sendModal;
+    if (!report) return;
+
+    setLoading(true); // Reuse loading state or create new one if needed, but here simple usage
 
     let mentionText = "";
-    if (techUsername) {
-      mentionText = `\n\nCC: @${techUsername.replace('@', '')}`;
+    if (tech) {
+      mentionText = `\n\nCC: @${tech.replace('@', '')}`;
     }
 
     const message = `*ORDER TEKNISI*
-No Tiket: ${r.ticketId}
-Nama: ${r.nama}
-Alamat: ${r.alamat}
-No Layanan: ${r.noInternet}
-Kendala: ${r.keluhan}
-SN ONT: ${r.snOnt}
-CP: ${r.pic}
+No Tiket: ${report.ticketId}
+Nama: ${report.nama}
+Alamat: ${report.alamat}
+No Layanan: ${report.noInternet}
+Kendala: ${report.keluhan}
+SN ONT: ${report.snOnt}
+CP: ${report.pic}
 Mohon segera dicek.${mentionText}`;
 
     try {
       const res = await fetch('/api/send-telegram-group', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, groupId: group })
       });
-      if (res.ok) alert('✅ Terkirim ke Grup (dengan Mention)!');
+      if (res.ok) alert('✅ Terkirim ke Grup!');
       else alert('❌ Gagal kirim ke Grup.');
+      setSendModal({ ...sendModal, isOpen: false });
     } catch (e) {
       console.error(e);
       alert('Error sending to group');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -2069,7 +2086,51 @@ Mohon segera dicek.${mentionText}`;
           </tbody>
         </table>
       </div>
-    </div>
+
+
+      {/* SEND MODAL */}
+      {
+        sendModal.isOpen && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+          }}>
+            <div className="glass-panel" style={{ width: '400px', padding: '2rem', animation: 'fadeIn 0.2s' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order ke Grup</h3>
+
+              <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label>Pilih Grup Tujuan</label>
+                <select
+                  value={sendModal.group}
+                  onChange={e => setSendModal({ ...sendModal, group: e.target.value })}
+                >
+                  {TELEGRAM_GROUPS.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Username Teknisi (Untuk Mention)</label>
+                <input
+                  type="text"
+                  placeholder="Contoh: ahmad (tanpa @)"
+                  value={sendModal.tech}
+                  onChange={e => setSendModal({ ...sendModal, tech: e.target.value })}
+                />
+              </div>
+
+              <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
+                <button className="btn-secondary" onClick={() => setSendModal({ ...sendModal, isOpen: false })}>Batal</button>
+                <button className="btn-telegram" onClick={confirmSend}>
+                  Kirim Sekarang ✈️
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   )
 }
 

@@ -6,13 +6,14 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { message } = req.body;
+    const { message, groupId } = req.body;
     if (!message) {
         return res.status(400).json({ error: 'Message is required' });
     }
 
     const TOKEN = process.env.TELEGRAM_BOT_TOKEN; // Get from Vercel Env
-    const GROUP_ID = '-1001374270728'; // Hardcoded Group ID
+    // Default to RJW if not provided, but frontend should provide it
+    const TARGET_GROUP_ID = groupId || '-1001374270728';
 
     if (!TOKEN) {
         return res.status(500).json({ error: 'Bot Token not configured' });
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
 
     try {
         const bot = new TelegramBot(TOKEN, { polling: false }); // No polling for API
-        await bot.sendMessage(GROUP_ID, message, { parse_mode: 'Markdown' });
+        await bot.sendMessage(TARGET_GROUP_ID, message, { parse_mode: 'Markdown' });
         res.status(200).json({ success: true });
     } catch (error) {
         console.error('Telegram API Error:', error);
