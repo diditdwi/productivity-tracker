@@ -943,7 +943,7 @@ function TicketForm({ onSubmit, tickets }) {
 
             <div className="input-group">
               <label>Customer Name</label>
-              <input type="text" name="customerName" value={formData.customerName} onChange={handleSingleChange} required disabled={isUpdateMode || formData.ticketType === 'INFRACARE'} />
+              <input type="text" name="customerName" value={formData.customerName} onChange={handleSingleChange} required />
             </div>
 
             <div className="input-group">
@@ -960,7 +960,7 @@ function TicketForm({ onSubmit, tickets }) {
 
             <div className="input-group">
               <label>Technician <span style={{ color: 'red' }}>*</span></label>
-              <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleSingleChange} required placeholder="Select or type..." disabled={isUpdateMode} />
+              <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleSingleChange} required placeholder="Select or type..." />
               <datalist id="techs">
                 {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
               </datalist>
