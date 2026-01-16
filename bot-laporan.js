@@ -112,15 +112,33 @@ bot.on('message', async (msg) => {
 
     // Handle Answer
     let answer = text;
+    let isValid = true;
+    let errorMessage = '';
 
     // Special handling for Location step
     if (currentStep.isLocation) {
         if (location) {
             answer = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-        } else if (!text) {
-            // If neither text nor location, ignore
-            return;
+        } else if (text && text.trim() !== '') {
+            answer = text;
+        } else {
+            isValid = false;
+            errorMessage = '⚠️ Mohon kirim Lokasi (Share Location) atau ketik Alamat manual.';
         }
+    } else {
+        // Normal text steps: Mandatory check
+        if (!text || text.trim() === '') {
+            isValid = false;
+            errorMessage = '⚠️ Bagian ini wajib diisi, tidak boleh kosong.';
+        }
+    }
+
+    // If invalid, warn and re-ask
+    if (!isValid) {
+        bot.sendMessage(chatId, errorMessage).then(() => {
+            askQuestion(chatId, state.step);
+        });
+        return;
     }
 
     // Save Answer
