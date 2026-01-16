@@ -336,6 +336,19 @@ function App() {
     alert('Password changed successfully!')
   }
 
+  const [editingTicket, setEditingTicket] = useState(null)
+
+  const handleEditTicket = (ticket) => {
+    setEditingTicket(ticket)
+    setView('entry')
+  }
+
+  // Wrapper to clean up editing state on submission
+  const handleTicketSubmit = async (payload) => {
+    await addTicket(payload)
+    setEditingTicket(null)
+  }
+
   if (!user) {
     return <LoginForm onLogin={handleLogin} usersDB={usersDB} />
   }
