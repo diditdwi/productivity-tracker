@@ -1180,6 +1180,7 @@ function TicketList({ tickets, loading }) {
   const [filterType, setFilterType] = useState('ALL')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'descending' })
 
   // Reset to first page when filtering
   useEffect(() => {
@@ -1212,10 +1213,48 @@ function TicketList({ tickets, loading }) {
     return matchesSearch && matchesDate && matchesType
   })
 
+  // Sorting Logic
+  const sortedTickets = React.useMemo(() => {
+    let sortableItems = [...filteredTickets]
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key] || ''
+        let bValue = b[sortConfig.key] || ''
+
+        // Special handling for Service ID (numeric string) to sort numerically if possible
+        if (sortConfig.key === 'serviceId') {
+          const aNum = parseFloat(aValue)
+          const bNum = parseFloat(bValue)
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            aValue = aNum
+            bValue = bNum
+          }
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1
+        }
+        return 0
+      })
+    }
+    return sortableItems
+  }, [filteredTickets, sortConfig])
+
+  const requestSort = (key) => {
+    let direction = 'ascending'
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending'
+    }
+    setSortConfig({ key, direction })
+  }
+
   // Pagination Logic
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage)
+  const totalPages = Math.ceil(sortedTickets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage)
+  const paginatedTickets = sortedTickets.slice(startIndex, startIndex + itemsPerPage)
 
   // GAUL Check Logic
   const checkGaul = (currentTicket) => {
@@ -1238,6 +1277,11 @@ function TicketList({ tickets, loading }) {
 
       return diffDays > 0 && diffDays <= 30
     })
+  }
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return <span style={{ opacity: 0.3 }}>⇅</span>
+    return sortConfig.direction === 'ascending' ? '↑' : '↓'
   }
 
   return (
@@ -1280,14 +1324,14 @@ function TicketList({ tickets, loading }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Incident</th>
-              <th>Customer</th>
-              <th>Service</th>
-              <th>Type</th>
-              <th>Tech</th>
-              <th>Status</th>
-              <th>HD Officer</th>
+              <th onClick={() => requestSort('date')} style={{ cursor: 'pointer' }}>Date {getSortIcon('date')}</th>
+              <th onClick={() => requestSort('incident')} style={{ cursor: 'pointer' }}>Incident {getSortIcon('incident')}</th>
+              <th onClick={() => requestSort('customerName')} style={{ cursor: 'pointer' }}>Customer {getSortIcon('customerName')}</th>
+              <th onClick={() => requestSort('serviceId')} style={{ cursor: 'pointer' }}>Service {getSortIcon('serviceId')}</th>
+              <th onClick={() => requestSort('ticketType')} style={{ cursor: 'pointer' }}>Type {getSortIcon('ticketType')}</th>
+              <th onClick={() => requestSort('technician')} style={{ cursor: 'pointer' }}>Tech {getSortIcon('technician')}</th>
+              <th onClick={() => requestSort('status')} style={{ cursor: 'pointer' }}>Status {getSortIcon('status')}</th>
+              <th onClick={() => requestSort('hdOfficer')} style={{ cursor: 'pointer' }}>HD Officer {getSortIcon('hdOfficer')}</th>
             </tr>
           </thead>
           <tbody>
