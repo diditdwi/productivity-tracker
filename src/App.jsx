@@ -1963,20 +1963,11 @@ function LaporanLangsungDashboard({ onGenerate }) {
     }
   }
 
-  const handleShareToGroup = (r) => {
-    const text = `*LAPORAN LANGSUNG*
-No Tiket: ${r.ticketId}
-Nama: ${r.nama}
-Alamat: ${r.alamat}
-Kendala: ${r.keluhan}
-Status: OPEN`.trim()
+  const handleShareToGroup = async (r) => {
+    // 1. Confirm
+    if (!confirm('Kirim ORDER TEKNISI ini ke Grup?')) return;
 
-    navigator.clipboard.writeText(text)
-    alert('Format untuk Grup berhasil disalin!')
-  }
-
-  const handleShareToTech = (r) => {
-    const text = `*ORDER TEKNISI*
+    const message = `*ORDER TEKNISI*
 No Tiket: ${r.ticketId}
 Nama: ${r.nama}
 Alamat: ${r.alamat}
@@ -1984,10 +1975,46 @@ No Layanan: ${r.noInternet}
 Kendala: ${r.keluhan}
 SN ONT: ${r.snOnt}
 CP: ${r.pic}
-Mohon segera dicek.`.trim()
+Mohon segera dicek.`;
 
-    navigator.clipboard.writeText(text)
-    alert('Format untuk Teknisi berhasil disalin!')
+    try {
+      const res = await fetch('/api/send-telegram-group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      if (res.ok) alert('✅ Terkirim ke Grup!');
+      else alert('❌ Gagal kirim ke Grup.');
+    } catch (e) {
+      console.error(e);
+      alert('Error sending to group');
+    }
+  }
+
+  const handleShareToTech = (r) => {
+    const techUsername = prompt("Masukkan Username Telegram Teknisi (tanpa @):", "");
+    if (!techUsername) return;
+
+    const message = `*ORDER TEKNISI*
+No Tiket: ${r.ticketId}
+Nama: ${r.nama}
+Alamat: ${r.alamat}
+No Layanan: ${r.noInternet}
+Kendala: ${r.keluhan}
+SN ONT: ${r.snOnt}
+CP: ${r.pic}
+Mohon segera dicek.`;
+
+    // Open Telegram Deep Link to Chat with Pre-filled message
+    // Note: Telegram Web doesn't support pre-filling message for users easily, 
+    // but we can try opening a direct link or just copying and telling them to paste.
+    // BETTER APPROACH: Use the Bot to send it if we knew the ChatID. 
+    // But since we only have Username, we can't easily DM them via Bot unless they started it.
+    // SO: We will Copy to Clipboard and Open their Chat.
+
+    navigator.clipboard.writeText(message);
+    window.open(`https://t.me/${techUsername}`, '_blank');
+    alert('Pesan disalin! Silakan PASTE di chat teknisi.');
   }
 
   return (
@@ -2039,11 +2066,11 @@ Mohon segera dicek.`.trim()
                     {r.ticketId}
                   </td>
                   <td style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-small btn-secondary" onClick={() => handleShareToGroup(r)} title="Copy untuk Grup">
-                      Grup
+                    <button className="btn-small btn-secondary" onClick={() => handleShareToGroup(r)} title="Kirim ke Grup">
+                      Kirim Grup
                     </button>
-                    <button className="btn-small btn-primary" onClick={() => handleShareToTech(r)} title="Copy untuk Teknisi">
-                      Teknisi
+                    <button className="btn-small btn-primary" onClick={() => handleShareToTech(r)} title="Kirim ke Teknisi">
+                      Kirim Teknisi
                     </button>
                   </td>
                 </tr>

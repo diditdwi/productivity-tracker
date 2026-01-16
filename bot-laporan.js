@@ -102,6 +102,14 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
     const location = msg.location;
+    const chatType = msg.chat.type;
+
+    // Log ID for User
+    if (chatType === 'group' || chatType === 'supergroup') {
+        console.log(`\n📢 PESAN DARI GRUP: "${msg.chat.title}"`);
+        console.log(`🆔 ID GRUP: ${chatId}`);
+        console.log(`👤 Pengirim: ${msg.from.first_name}\n`);
+    }
 
     if (text === '/start') return; // Handled by onText
     if (!userState[chatId]) return;
