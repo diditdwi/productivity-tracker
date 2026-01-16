@@ -966,9 +966,6 @@ function TicketForm({ onSubmit, tickets }) {
                     borderColor: (formData.incident && !isValidIncident(formData.incident)) ? 'red' : undefined
                   }}
                 />
-                <button type="button" onClick={handleScrape} disabled={isScraping} className="btn-secondary" style={{ padding: '0 10px' }}>
-                  {isScraping ? '...' : '🔍'}
-                </button>
               </div>
               {formData.incident && !isValidIncident(formData.incident) && (
                 <small style={{ color: 'red' }}>Must start with "INC" or "LAPSUNG_"</small>
