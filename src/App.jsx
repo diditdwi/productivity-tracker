@@ -1659,46 +1659,110 @@ function ProductivityDashboard({ tickets }) {
         </div>
 
         <div style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          height: '200px',
-          gap: '5px',
-          padding: '1rem 0',
-          borderBottom: '1px solid var(--border-color)'
+          position: 'relative',
+          height: '240px',
+          padding: '20px 0 30px 0',
+          borderBottom: '1px solid var(--border-color)',
+          marginTop: '1rem'
         }}>
-          {monthlyData.map((data) => {
-            const height = (data.count / maxCount) * 100
-            return (
-              <div key={data.day} style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '5px',
-                height: '100%',
-                justifyContent: 'flex-end'
+          {/* Grid Lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map(ratio => (
+            <div key={ratio} style={{
+              position: 'absolute',
+              bottom: `${30 + (ratio * 200)}px`,
+              left: 0,
+              right: 0,
+              borderTop: ratio === 0 ? 'none' : '1px dashed var(--border-color)',
+              zIndex: 0
+            }}>
+              <span style={{
+                position: 'absolute',
+                left: '-25px',
+                top: '-8px',
+                fontSize: '0.65rem',
+                color: 'var(--secondary)'
               }}>
-                <div
-                  className="bar"
-                  title={`${data.day} ${monthName}: ${data.count} tickets`}
+                {Math.round(maxCount * ratio)}
+              </span>
+            </div>
+          ))}
+
+          {/* Bars Container */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            height: '200px',
+            gap: '6px',
+            position: 'relative',
+            zIndex: 1,
+            marginLeft: '5px' /* Space for Y-axis labels */
+          }}>
+            {monthlyData.map((data) => {
+              const height = maxCount > 0 ? (data.count / maxCount) * 100 : 0
+              const isSelected = data.day === filterDay
+              return (
+                <div key={data.day}
+                  className="bar-container"
                   style={{
-                    width: '100%',
-                    height: `${height}%`,
-                    background: data.day === filterDay ? '#fbbf24' : (data.count > 0 ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.1)'),
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'height 0.3s ease',
-                    minHeight: data.count > 0 ? '4px' : '0'
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    height: '100%',
+                    justifyContent: 'flex-end',
+                    position: 'relative',
+                    cursor: 'pointer'
                   }}
-                />
-                <span style={{ fontSize: '0.7rem', color: data.day === filterDay ? '#fbbf24' : 'var(--text-secondary)', fontWeight: data.day === filterDay ? 'bold' : 'normal' }}>
-                  {data.day % 2 !== 0 ? data.day : ''}
-                </span>
-              </div>
-            )
-          })}
+                  onClick={() => setSelectedDate(`${filterYear}-${String(filterMonth + 1).padStart(2, '0')}-${String(data.day).padStart(2, '0')}`)}
+                >
+                  {/* Tooltip on Hover (CSS enforced via class in App.css later or inline opacity) */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: `${height + 5}%`,
+                    background: '#1e293b',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    opacity: 0, // Hidden by default, handled by CSS hover
+                    pointerEvents: 'none',
+                    whiteSpace: 'nowrap',
+                    transition: 'opacity 0.2s',
+                    zIndex: 10,
+                    marginBottom: '5px'
+                  }} className="bar-tooltip">
+                    {data.count}
+                  </div>
+
+                  <div
+                    className="bar"
+                    style={{
+                      width: '100%',
+                      height: `${height}%`,
+                      background: isSelected ? '#f59e0b' : (data.count > 0 ? 'var(--grad-primary)' : 'rgba(203, 213, 225, 0.2)'),
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      minHeight: data.count > 0 ? '4px' : '0',
+                      boxShadow: isSelected ? '0 0 10px rgba(245, 158, 11, 0.4)' : 'none',
+                      opacity: data.count > 0 ? 1 : 0.5
+                    }}
+                  />
+                  <span style={{
+                    fontSize: '0.65rem',
+                    color: isSelected ? '#f59e0b' : 'var(--secondary)',
+                    fontWeight: isSelected ? 'bold' : '500',
+                    marginTop: '8px'
+                  }}>
+                    {data.day}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
-        <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-          Date (Day of Month)
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--secondary)', marginTop: '0.5rem' }}>
+          Date (Click bar to view details)
         </p>
       </div>
 

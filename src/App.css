@@ -110,7 +110,20 @@ nav {
   margin-bottom: 2rem;
 }
 
-/* --- Productivity Stats Grid (FIXED) --- */
+/* --- Chart Styles --- */
+.bar-container:hover .bar-tooltip {
+  opacity: 1 !important;
+  transform: translateY(-5px);
+}
+
+.bar-container:hover .bar {
+  opacity: 1 !important;
+  filter: brightness(1.1);
+  transform: scaleX(1.1);
+  /* Subtle width pop */
+}
+
+/* --- Productivity Stats Grid --- */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
