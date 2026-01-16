@@ -651,8 +651,20 @@ function TicketForm({ onSubmit, tickets }) {
     }
   }
 
+  // Validation Helper
+  const isValidIncident = (inc) => {
+    if (!inc) return false
+    const upper = inc.toUpperCase()
+    return upper.startsWith('INC') || upper.startsWith('LAPSUNG_')
+  }
+
   const handleSingleSubmit = async (e) => {
     e.preventDefault()
+
+    if (!isValidIncident(formData.incident)) {
+      alert('Incident No. harus diawali dengan "INC" atau "LAPSUNG_"')
+      return
+    }
 
     if (!formData.technician || !formData.workzone || !formData.hdOfficer) {
       alert('Mohon lengkapi: Technician, Workzone, dan HD Officer harus diisi!')
@@ -727,6 +739,13 @@ function TicketForm({ onSubmit, tickets }) {
       return
     }
 
+    // Validate Incidents
+    const invalidRows = validRows.filter(r => !isValidIncident(r.incident))
+    if (invalidRows.length > 0) {
+      alert(`Beberapa Incident No. tidak valid (harus diawali INC atau LAPSUNG_): \n${invalidRows.map(r => r.incident).join(', ')}`)
+      return
+    }
+
     if (!bulkCommon.technician || !bulkCommon.workzone || !bulkCommon.hdOfficer) {
       alert("Please fill all Global Settings (Technician, Workzone, HD Officer).")
       return
@@ -771,6 +790,7 @@ function TicketForm({ onSubmit, tickets }) {
 
     const lines = notepadContent.trim().split('\n')
     const parsedPayloads = []
+    const invalidIncidents = []
 
     // Expected Order: 
     // HD Officer | Type | Workzone | Technician | Status | Incident | Customer Name | Service ID | Service Type | Repair
@@ -784,6 +804,10 @@ function TicketForm({ onSubmit, tickets }) {
 
       // Mapping
       let [hd, type, wz, tech, status, inc, cust, sid, stype, repair] = cols
+
+      if (!isValidIncident(inc)) {
+        invalidIncidents.push(inc || 'Blank')
+      }
 
       const ticketData = {
         date: notepadDate,
@@ -800,6 +824,11 @@ function TicketForm({ onSubmit, tickets }) {
       }
 
       parsedPayloads.push(ticketData)
+    }
+
+    if (invalidIncidents.length > 0) {
+      alert(`Ditemukan Incident No. tidak valid (harus diawali INC atau LAPSUNG_): \n${invalidIncidents.join(', ')}`)
+      return
     }
 
     if (parsedPayloads.length === 0) {
