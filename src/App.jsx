@@ -2003,7 +2003,14 @@ Mohon segera dicek.${mentionText}`;
     <div className="glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h2>LAPORAN LANGSUNG</h2>
-        <button className="btn-secondary" onClick={fetchLaporan}>Refresh</button>
+        <button className="btn-refresh" onClick={fetchLaporan}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Refresh Data
+        </button>
       </div>
 
       <div className="table-container">
@@ -2048,8 +2055,12 @@ Mohon segera dicek.${mentionText}`;
                     {r.ticketId}
                   </td>
                   <td>
-                    <button className="btn-small btn-secondary" onClick={() => handleProcessAndSend(r)} title="Kirim ke Grup & Mention">
-                      Kirim ke Grup
+                    <button className="btn-telegram btn-small" onClick={() => handleProcessAndSend(r)} title="Kirim ke Grup & Mention">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                      </svg>
+                      Kirim & Proses
                     </button>
                   </td>
                 </tr>
