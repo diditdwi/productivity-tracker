@@ -792,6 +792,30 @@ function TicketForm({ onSubmit, tickets }) {
     const parsedPayloads = []
     const invalidIncidents = []
 
+    // Helper to resolve NIK <-> Name
+    const resolveMapping = (val, list) => {
+      if (!val) return val
+      const cleanVal = val.trim()
+
+      // 1. Exact match in list
+      if (list.includes(cleanVal)) return cleanVal
+
+      // 2. Match by NIK (Starts with "NIK -")
+      const foundByNik = list.find(item => item.startsWith(cleanVal + ' -'))
+      if (foundByNik) return foundByNik
+
+      // 3. Match by Name (Case-insensitive check of the name part)
+      const foundByName = list.find(item => {
+        const parts = item.split(' - ')
+        if (parts.length < 2) return false
+        const name = parts[1].trim().toLowerCase()
+        return name === cleanVal.toLowerCase()
+      })
+      if (foundByName) return foundByName
+
+      return cleanVal
+    }
+
     // Expected Order: 
     // HD Officer | Type | Workzone | Technician | Status | Incident | Customer Name | Service ID | Service Type | Repair
 
@@ -809,12 +833,16 @@ function TicketForm({ onSubmit, tickets }) {
         invalidIncidents.push(inc || 'Blank')
       }
 
+      // Auto-Resolve HD and Tech
+      const resolvedHd = resolveMapping(hd, HD_OFFICERS)
+      const resolvedTech = resolveMapping(tech, TEKNISI_LIST)
+
       const ticketData = {
         date: notepadDate,
-        hdOfficer: hd || 'Unknown',
+        hdOfficer: resolvedHd || 'Unknown',
         ticketType: type || 'REGULER',
         workzone: wz || 'Unknown',
-        technician: tech || 'Unknown',
+        technician: resolvedTech || 'Unknown',
         status: status || 'Open',
         incident: inc || `MANUAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         customerName: cust || '-',
