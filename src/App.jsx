@@ -1263,7 +1263,7 @@ function TicketForm({ onSubmit, tickets, initialData }) {
   )
 }
 
-function TicketList({ tickets, loading }) {
+function TicketList({ tickets, loading, onEditTicket }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterDate, setFilterDate] = useState('')
   const [filterType, setFilterType] = useState('ALL')
