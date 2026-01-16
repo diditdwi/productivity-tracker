@@ -247,7 +247,14 @@ function App() {
     }
     return null
   })
-  const [view, setView] = useState('entry')
+  const [view, setView] = useState(() => {
+    return localStorage.getItem('ticketTrackerView') || 'entry'
+  })
+
+  // Persist View
+  useEffect(() => {
+    localStorage.setItem('ticketTrackerView', view)
+  }, [view])
 
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
