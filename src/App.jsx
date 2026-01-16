@@ -1071,52 +1071,43 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
       </div>
 
       {mode === 'SINGLE' && (
-        <form onSubmit={handleSingleSubmit}>
-          <div className="form-grid">
+        <form onSubmit={handleSingleSubmit} style={{ maxWidth: '100%' }}>
+          {/* Dense Grid Layout for Single Screen View */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', alignItems: 'end' }}>
+
+            {/* ROW 1 */}
             <div className="input-group">
               <label>Date</label>
               <input type="date" name="date" value={formData.date} onChange={handleSingleChange} required />
             </div>
-
             <div className="input-group">
               <label>Ticket Type</label>
               <select name="ticketType" value={formData.ticketType} onChange={handleSingleChange}>
                 {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-
-            <div className="input-group">
-              <label>Incident No.</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  name="incident"
-                  placeholder="INC... or LAPSUNG_..."
-                  value={formData.incident}
-                  onChange={handleSingleChange}
-                  required
-                  style={{
-                    flex: 1,
-                    borderColor: (formData.incident && !isValidIncident(formData.incident)) ? 'red' : undefined
-                  }}
-                />
-              </div>
-              {formData.incident && !isValidIncident(formData.incident) && (
-                <small style={{ color: 'red' }}>Must start with "INC" or "LAPSUNG_"</small>
-              )}
-              {isUpdateMode && <small style={{ color: 'var(--primary-color)' }}>Existing ticket found. Update status mode.</small>}
+            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+              <label>Incident No. {isUpdateMode && <span style={{ color: 'var(--primary)', fontSize: '0.8em' }}>(Update Mode)</span>}</label>
+              <input
+                type="text"
+                name="incident"
+                placeholder="INC... or LAPSUNG_..."
+                value={formData.incident}
+                onChange={handleSingleChange}
+                required
+                style={{ borderColor: (formData.incident && !isValidIncident(formData.incident)) ? 'red' : undefined }}
+              />
             </div>
 
-            <div className="input-group">
+            {/* ROW 2 */}
+            <div className="input-group" style={{ gridColumn: 'span 2' }}>
               <label>{formData.ticketType === 'INFRACARE' ? 'ODP Name' : 'Customer Name'}</label>
               <input type="text" name="customerName" value={formData.customerName} onChange={handleSingleChange} required />
             </div>
-
             <div className="input-group">
-              <label>Service ID (SID/Inet/Tlp)</label>
+              <label>Service ID</label>
               <input type="text" name="serviceId" value={formData.serviceId} onChange={handleSingleChange} required disabled={formData.ticketType === 'INFRACARE'} />
             </div>
-
             <div className="input-group">
               <label>Service Type</label>
               <select name="serviceType" value={formData.serviceType} onChange={handleSingleChange}>
@@ -1124,54 +1115,50 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
               </select>
             </div>
 
-            <div className="input-group">
+            {/* ROW 3 */}
+            <div className="input-group" style={{ gridColumn: 'span 2' }}>
               <label>Technician <span style={{ color: 'red' }}>*</span></label>
               <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleSingleChange} required placeholder="Select or type..." />
-              <datalist id="techs">
-                {TEKNISI_LIST.map(t => <option key={t} value={t} />)}
-              </datalist>
+              <datalist id="techs">{TEKNISI_LIST.map(t => <option key={t} value={t} />)}</datalist>
+            </div>
+            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+              <label>Workzone <span style={{ color: 'red' }}>*</span></label>
+              <select name="workzone" value={formData.workzone} onChange={handleSingleChange} required disabled={isUpdateMode}>
+                <option value="">Select Workzone...</option>
+                {Object.entries(WORKZONES).map(([region, zones]) => (
+                  <optgroup key={region} label={region}>
+                    {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                  </optgroup>
+                ))}
+              </select>
             </div>
 
-            <div className="input-group">
-              <label>Perbaikan (Action Taken) <span style={{ color: 'red' }}>*</span></label>
+            {/* ROW 4 */}
+            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+              <label>Perbaikan (Action) <span style={{ color: 'red' }}>*</span></label>
               <input type="text" name="repair" value={formData.repair} onChange={handleSingleChange} required />
             </div>
-
             <div className="input-group">
               <label>Status</label>
               <select name="status" value={formData.status} onChange={handleSingleChange}>
                 {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-
             <div className="input-group">
-              <label>Workzone <span style={{ color: 'red' }}>*</span></label>
-              <select name="workzone" value={formData.workzone} onChange={handleSingleChange} required disabled={isUpdateMode}>
-                <option value="">Select Workzone...</option>
-                {Object.entries(WORKZONES).map(([region, zones]) => (
-                  <optgroup key={region} label={region}>
-                    {zones.map(zone => (
-                      <option key={zone} value={zone}>{zone}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <label>HD Officer <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleSingleChange} required placeholder="Select..." />
+              <datalist id="hds">{HD_OFFICERS.map(h => <option key={h} value={h} />)}</datalist>
             </div>
 
-            <div className="input-group">
-              <label>Petugas HD (HD Officer) <span style={{ color: 'red' }}>*</span></label>
-              <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleSingleChange} required placeholder="Select or type..." />
-              <datalist id="hds">
-                {HD_OFFICERS.map(h => <option key={h} value={h} />)}
-              </datalist>
+            {/* ACTION ROW */}
+            <div style={{ gridColumn: 'span 4', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button type="submit" className="btn-primary" style={{ minWidth: '200px' }}>
+                {isUpdateMode ? 'Update Status' : 'Save Ticket'}
+              </button>
             </div>
+
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary">
-              {isUpdateMode ? 'Update Status' : 'Save Ticket'}
-            </button>
-          </div>
         </form>
       )}
 
@@ -1801,6 +1788,11 @@ function ProductivityDashboard({ tickets }) {
 function DailyReportDashboard({ tickets }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedRegion, setSelectedRegion] = useState('ALL')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1) }, [selectedDate, selectedRegion])
 
   // Helper to determine Region from Workzone Code
   const getRegion = (wzCode) => {
@@ -1856,14 +1848,27 @@ function DailyReportDashboard({ tickets }) {
   }, {})
 
   const sortedTechs = Object.keys(reportData).sort()
-
   const REGIONS = ['ALL', ...Object.keys(WORKZONES), 'OTHERS']
+
+  // Pagination Logic
+  const totalPages = Math.ceil(sortedTechs.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedTechs = itemsPerPage === 10000 ? sortedTechs : sortedTechs.slice(startIndex, startIndex + itemsPerPage)
 
   return (
     <div className="glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2>Daily Report</h2>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
+            <label style={{ marginRight: '0.5rem', display: 'inline-block' }}>Rows:</label>
+            <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} style={{ padding: '0.4rem' }}>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={10000}>All</option>
+            </select>
+          </div>
           <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
             <label style={{ marginRight: '0.5rem', display: 'inline-block' }}>Region:</label>
             <select
@@ -1905,7 +1910,7 @@ function DailyReportDashboard({ tickets }) {
                 </td>
               </tr>
             ) : (
-              sortedTechs.map(tech => (
+              paginatedTechs.map(tech => (
                 <tr key={tech}>
                   <td style={{ fontWeight: '500' }}>{tech}</td>
                   {TICKET_TYPES.map(type => (
@@ -1935,6 +1940,15 @@ function DailyReportDashboard({ tickets }) {
           )}
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {sortedTechs.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem', alignItems: 'center' }}>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="btn-secondary btn-small">Previous</button>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Page {currentPage} of {totalPages}</span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="btn-secondary btn-small">Next</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -1949,6 +1963,13 @@ function LaporanLangsungDashboard({ onGenerate }) {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [sendModal, setSendModal] = useState({ isOpen: false, report: null, tech: '', group: TELEGRAM_GROUPS[0].id })
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+
+  // Pagination Logic
+  const totalPages = Math.ceil(reports.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedReports = itemsPerPage === 10000 ? reports : reports.slice(startIndex, startIndex + itemsPerPage)
 
   useEffect(() => {
     fetchLaporan()
@@ -2048,7 +2069,7 @@ Mohon segera dicek.${mentionText}`;
               <th>PIC</th>
               <th>Status</th>
               <th>No Tiket</th>
-              <th style={{ minWidth: '200px' }}>Actions</th>
+              <th style={{ minWidth: '150px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -2057,15 +2078,15 @@ Mohon segera dicek.${mentionText}`;
             ) : reports.length === 0 ? (
               <tr><td colSpan="11" style={{ textAlign: 'center', padding: '2rem' }}>Belum ada laporan masuk.</td></tr>
             ) : (
-              reports.map(r => (
+              paginatedReports.map(r => (
                 <tr key={r.id}>
-                  <td>{r.timestamp}</td>
-                  <td style={{ fontWeight: 'bold' }}>{r.nama}</td>
-                  <td>{r.alamat}</td>
-                  <td>{r.noInternet}</td>
-                  <td>{r.keluhan}</td>
+                  <td className="truncate-cell" style={{ maxWidth: '100px' }} title={r.timestamp}>{r.timestamp.split('T')[0]}</td>
+                  <td style={{ fontWeight: 'bold', maxWidth: '120px' }} className="truncate-cell">{r.nama}</td>
+                  <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.alamat}>{r.alamat}</td>
+                  <td className="truncate-cell">{r.noInternet}</td>
+                  <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.keluhan}>{r.keluhan}</td>
                   <td>{r.layanan}</td>
-                  <td>{r.snOnt}</td>
+                  <td className="truncate-cell" style={{ maxWidth: '100px' }}>{r.snOnt}</td>
                   <td>{r.pic}</td>
                   <td>
                     <span className={`status-badge status-${r.status.toLowerCase().replace(' ', '-')}`}>
@@ -2081,7 +2102,7 @@ Mohon segera dicek.${mentionText}`;
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                       </svg>
-                      Kirim & Proses
+                      Kirim
                     </button>
                   </td>
                 </tr>
@@ -2090,6 +2111,26 @@ Mohon segera dicek.${mentionText}`;
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {!loading && reports.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ fontSize: '0.9rem' }}>Rows:</label>
+            <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} style={{ padding: '0.3rem', borderRadius: '4px' }}>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={10000}>All</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="btn-secondary btn-small">Previous</button>
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Page {currentPage} of {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="btn-secondary btn-small">Next</button>
+          </div>
+        </div>
+      )}
 
 
       {/* SEND MODAL */}
