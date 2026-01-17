@@ -186,9 +186,19 @@ const getSheetsClient = () => {
     return google.sheets({ version: 'v4', auth });
 };
 
+function generateTicketId() {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const y = String(now.getFullYear()).slice(-2);
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `TICK-${d}${m}${y}-${random}`;
+}
+
 async function saveReportToSheet(data) {
     try {
         const sheets = getSheetsClient();
+        const ticketId = generateTicketId(); // Generate ID
         // Columns: Timestamp, Nama, Alamat, No Internet, Keluhan, Layanan, SN ONT, PIC, Status, TicketId
         const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
         const row = [
@@ -200,20 +210,20 @@ async function saveReportToSheet(data) {
             data.layanan || '-',
             data.snOnt || '-',
             data.pic || '-',
-            'Open', // Status default
-            '-'     // Ticket ID (Empty initially)
+            'Open',
+            ticketId // Save Generated ID
         ];
 
         await sheets.spreadsheets.values.append({
             spreadsheetId: SHEET_ID_LAPORAN,
-            range: "'Laporan Langsung'!A:A", // Append to end
+            range: "'Laporan Langsung'!A:A",
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [row] }
         });
-        return true;
+        return ticketId; // Return the ID
     } catch (error) {
         console.error('Error saving to sheet:', error);
-        return false;
+        return null;
     }
 }
 
@@ -251,13 +261,24 @@ waClient.on('message', async msg => {
         }
 
         // Save to Sheet
-        const success = await saveReportToSheet(data);
-        if (success) {
-            msg.reply(`✅ Laporan diterima dari Sdr/i *${data.nama || 'Pelanggan'}*.\nData telah tersimpan di sistem.`);
+        const ticketId = await saveReportToSheet(data);
+        if (ticketId) {
+            msg.reply(`✅ Laporan diterima!\n\nNo Tiket: *${ticketId}*\nAtas Nama: *${data.nama || 'Pelanggan'}*\n\nData telah tersimpan di sistem dan akan segera diproses.`);
         } else {
             msg.reply('❌ Maaf, terjadi kesalahan saat menyimpan laporan. Silakan coba lagi.');
         }
     }
+});
+
+// Prevent crash on WA library errors
+process.on('uncaughtException', (err) => {
+    console.error('Caught exception:', err);
+    // Don't exit, keep running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Don't exit
 });
 
 // WhatsApp: Get Groups
