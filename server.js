@@ -228,7 +228,7 @@ async function saveReportToSheet(data) {
 }
 
 // WhatsApp Message Handler
-waClient.on('message', async msg => {
+waClient.on('message_create', async msg => {
     const body = msg.body;
     // Check keyword
     if (body.trim().toUpperCase().startsWith('LAPOR') || body.trim().toUpperCase().startsWith('ORDER')) {
