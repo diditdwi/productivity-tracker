@@ -1170,7 +1170,7 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
 
       {mode === 'BULK' && (
         <form onSubmit={handleBulkSubmit}>
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
+          <div style={{ background: 'var(--surface)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
             <h3 style={{ marginTop: 0, fontSize: '1rem', color: 'var(--primary-color)' }}>Global Settings (Applied to all rows)</h3>
             <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               <div className="input-group" style={{ marginBottom: 0 }}>
@@ -1205,29 +1205,29 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
                   <tr key={idx}>
                     <td>{idx + 1}</td>
                     <td style={{ padding: '4px' }}>
-                      <select name="ticketType" value={row.ticketType} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px' }}>
+                      <select name="ticketType" value={row.ticketType} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}>
                         {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="text" name="incident" value={row.incident} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="INC..." style={{ width: '100%', padding: '4px' }} />
+                      <input type="text" name="incident" value={row.incident} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="INC..." style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }} />
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="text" name="customerName" value={row.customerName} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px' }} />
+                      <input type="text" name="customerName" value={row.customerName} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }} />
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="text" name="serviceId" value={row.serviceId} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px' }} />
+                      <input type="text" name="serviceId" value={row.serviceId} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }} />
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <select name="serviceType" value={row.serviceType} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px' }}>
+                      <select name="serviceType" value={row.serviceType} onChange={(e) => handleBulkRowChange(idx, e)} disabled={row.ticketType === 'INFRACARE'} style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}>
                         {getServiceTypeOptions(row.ticketType)}
                       </select>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="text" list="techs" name="technician" value={row.technician} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Tech..." style={{ width: '100%', padding: '4px' }} />
+                      <input type="text" list="techs" name="technician" value={row.technician} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Tech..." style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }} />
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <select name="workzone" value={row.workzone} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px' }}>
+                      <select name="workzone" value={row.workzone} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}>
                         <option value="">WZ...</option>
                         {Object.entries(WORKZONES).map(([region, zones]) => (
                           <optgroup key={region} label={region}>
@@ -1237,12 +1237,12 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
                       </select>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <select name="status" value={row.status} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px' }}>
+                      <select name="status" value={row.status} onChange={(e) => handleBulkRowChange(idx, e)} style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }}>
                         {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="text" name="repair" value={row.repair} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Action..." style={{ width: '100%', padding: '4px' }} />
+                      <input type="text" name="repair" value={row.repair} onChange={(e) => handleBulkRowChange(idx, e)} placeholder="Action..." style={{ width: '100%', padding: '4px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '4px' }} />
                     </td>
                   </tr>
                 ))}
@@ -1263,7 +1263,7 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
 
       {mode === 'NOTEPAD' && (
         <div className="glass-panel" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
-          <div style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
+          <div style={{ marginBottom: '1rem', background: 'var(--surface)', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid var(--border)' }}>
             <p style={{ marginTop: 0 }}><strong>Format Copy-Paste (Order - Pipe Separated '|'):</strong></p>
             <code style={{ display: 'block', padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', whiteSpace: 'nowrap', overflowX: 'auto' }}>
               HD Officer | Type | Workzone | Technician | Status | Incident | Customer Name | Service ID | Service Type | Perbaikan
@@ -1284,9 +1284,9 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
               fontFamily: 'monospace',
               whiteSpace: 'pre',
               borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              backgroundColor: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--input-bg)',
+              color: 'var(--text-main)',
               resize: 'both'
             }}
           />
