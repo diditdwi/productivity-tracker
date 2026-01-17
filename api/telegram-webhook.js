@@ -1,5 +1,4 @@
 
-import TelegramBot from 'node-telegram-bot-api';
 import { google } from 'googleapis';
 
 // --- CONFIG ---
@@ -7,8 +6,10 @@ const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '1PvOheQ9IO8Xs6aBGAn96AxItQYyLmmkEk0kKgdsUkfk';
 const SHEET_NAME = 'Laporan Langsung';
 
-// Decode Service Account from ENV variable (Base64 or JSON string) for Vercel
-// Vercel doesn't allow file uploads easily, so we use ENV for credentials
+// Debug Log (In-Memory, resets on cold start)
+let lastDebug = "No POST requests processed yet.";
+
+// --- AUTH ---
 const getAuth = () => {
     try {
         const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
@@ -17,13 +18,32 @@ const getAuth = () => {
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
     } catch (e) {
-        console.error("Google Auth Error: Pastikan Env Var GOOGLE_SERVICE_ACCOUNT diisi dengan JSON service account.", e);
         return null;
     }
 };
 
-// --- INIT ---
-const bot = new TelegramBot(TOKEN, { polling: false }); // Webhook mode (no polling)
+// --- TELEGRAM API HELPER ---
+async function sendMessage(chatId, text, options = {}) {
+    if (!TOKEN) return;
+    const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+    const payload = { chat_id: chatId, text, ...options };
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!data.ok) {
+            lastDebug = `Telegram API Reject: ${data.description}`;
+            console.error('Telegram Error:', data);
+        }
+    } catch (e) {
+        lastDebug = `Fetch Failed: ${e.message}`;
+        console.error('Fetch Error:', e);
+    }
+}
 
 // --- QUESTIONS ---
 const STEPS = [
@@ -36,7 +56,6 @@ const STEPS = [
     { key: 'pic', question: 'No PIC yang bisa dihubungi:', placeholder: 'NO HP/WA' }
 ];
 
-// Helper: Ask Question
 function getQuestionOptions(step) {
     const options = { parse_mode: 'Markdown' };
     if (step.isLocation) {
@@ -55,7 +74,7 @@ function getQuestionOptions(step) {
     return options;
 }
 
-// Helper: Save to Sheet
+// --- GOOGLE SHEETS HELPER ---
 async function saveToSheet(chatId, data) {
     const auth = getAuth();
     if (!auth) return "❌ Gagal Autentikasi Google Sheet";
@@ -85,129 +104,124 @@ async function saveToSheet(chatId, data) {
         });
         return { success: true, ticketId };
     } catch (error) {
-        console.error('Sheet Save Error:', error);
         return { success: false, error: error.message };
     }
 }
 
-// --- MAIN HANDLER (VERCEL FUNCTION) ---
-// Since Vercel functions are stateless, we can't use simple in-memory 'userState' object reliably 
-// if traffic is high or instances recycle. However, for a simple bot, we can use the 'Force Reply' technique 
-// to pass state context, or just rely on Vercel's warm instance memory (best effort).
-// For strict statelessness, we'd need a database (Redis/KV). 
-// Here, we'll implement a logic where we try to infer context or simplify the flow.
-// NOTE: For a multi-step form on Serverless without DB, 'Force Reply' is tricky because we lose the 'step' counter.
-// PROPOSAL: We will use a simple in-memory cache but warn it might reset. Ideally, use Vercel KV.
-// Let's implement a simplified in-memory map here. It works "most of the time" for low traffic.
+// --- STATE MANAGER ---
+const userState = new Map();
 
-const userState = new Map(); // Use Map for better performance
-
+// --- MAIN HANDLER ---
 export default async function handler(request, response) {
-    // Debugging: Check GET request to verify system status
+    // DIAGNOSTIC GET
     if (request.method !== 'POST') {
-        const status = TOKEN ? 'Token Configured ✅' : 'TOKEN MISSING ❌';
-        return response.status(200).send(`Telegram Bot Webhook is Active! Status: ${status}`);
+        const tokenStatus = TOKEN ? 'Configured ✅' : 'MISSING ❌';
+        return response.status(200).send(`
+            <h1>Bot Status</h1>
+            <p><strong>Token:</strong> ${tokenStatus}</p>
+            <p><strong>Last Log:</strong> ${lastDebug}</p>
+            <p>Time: ${new Date().toISOString()}</p>
+        `);
     }
 
     try {
         let { body } = request;
+
+        // Parsing Safe-guard
         if (typeof body === 'string') {
-            try { body = JSON.parse(body); } catch (e) { console.error('JSON Parse Error', e); }
+            try { body = JSON.parse(body); } catch (e) { lastDebug = "Body parse failed"; }
         }
 
-        // Process update
-        if (body && body.message) {
-            const msg = body.message;
-            const chatId = msg.chat.id;
-            const text = msg.text || '';
-            const location = msg.location;
+        if (!body || !body.message) {
+            lastDebug = "Received POST but no 'message' field found";
+            return response.status(200).send('OK');
+        }
 
-            // COMMAND: /start
-            if (text.trim().toLowerCase().startsWith('/start')) {
-                userState.set(chatId, { step: 0, data: {} });
-                const step = STEPS[0];
-                await bot.sendMessage(chatId, 'Halo! Terimakasih telah menghubungi Laporan Langsung', { reply_markup: { remove_keyboard: true } });
-                await bot.sendMessage(chatId, step.question, getQuestionOptions(step));
-                return response.status(200).send('OK');
-            }
+        const msg = body.message;
+        const chatId = msg.chat.id;
+        const text = (msg.text || '').trim();
+        const location = msg.location;
 
-            // CHECK STATE
-            if (!userState.has(chatId)) {
-                // If user chats without /start, guide them
-                await bot.sendMessage(chatId, 'Silakan ketik /start untuk memulai laporan.');
-                return response.status(200).send('OK');
-            }
+        lastDebug = `Processing msg from ${chatId}: ${text.substring(0, 20)}...`;
 
-            const state = userState.get(chatId);
-            const currentStep = STEPS[state.step];
+        // 1. COMMAND: /start
+        if (text.toLowerCase().startsWith('/start')) {
+            userState.set(chatId, { step: 0, data: {} });
+            const step = STEPS[0];
+            await sendMessage(chatId, 'Halo! Terimakasih telah menghubungi Laporan Langsung', { reply_markup: { remove_keyboard: true } });
+            await sendMessage(chatId, step.question, getQuestionOptions(step));
+            return response.status(200).send('OK');
+        }
 
-            // VALIDATE ANSWER
-            let answer = text;
-            let isValid = true;
-            let errorMessage = '';
+        // 2. CHECK STATE
+        if (!userState.has(chatId)) {
+            await sendMessage(chatId, 'Silakan ketik /start untuk memulai laporan.');
+            return response.status(200).send('OK');
+        }
 
-            if (currentStep.isLocation) {
-                if (location) {
-                    answer = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                } else if (text && text.trim() !== '') {
-                    answer = text;
-                } else {
-                    isValid = false;
-                    errorMessage = '⚠️ Mohon kirim Lokasi (Share Location) atau ketik Alamat manual.';
-                }
+        // 3. HANDLE STEPS
+        const state = userState.get(chatId);
+        const currentStep = STEPS[state.step];
+
+        let answer = text;
+        let isValid = true;
+        let errorMessage = '';
+
+        if (currentStep.isLocation) {
+            if (location) {
+                answer = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+            } else if (text && text !== '') {
+                answer = text;
             } else {
-                if (!text || text.trim() === '') {
-                    isValid = false;
-                    errorMessage = '⚠️ Bagian ini wajib diisi.';
-                }
+                isValid = false;
+                errorMessage = '⚠️ Mohon kirim Lokasi (Share Location) atau ketik Alamat manual.';
             }
-
-            if (!isValid) {
-                await bot.sendMessage(chatId, errorMessage);
-                await bot.sendMessage(chatId, currentStep.question, getQuestionOptions(currentStep));
-                return response.status(200).send('OK');
+        } else {
+            if (!text || text === '') {
+                isValid = false;
+                errorMessage = '⚠️ Bagian ini wajib diisi.';
             }
+        }
 
-            // SAVE DATA
-            state.data[currentStep.key] = answer;
+        if (!isValid) {
+            await sendMessage(chatId, errorMessage);
+            await sendMessage(chatId, currentStep.question, getQuestionOptions(currentStep));
+            return response.status(200).send('OK');
+        }
 
-            // NEXT STEP
-            if (state.step < STEPS.length - 1) {
-                state.step++;
-                const nextStep = STEPS[state.step];
-                userState.set(chatId, state); // Update state
-                await bot.sendMessage(chatId, nextStep.question, getQuestionOptions(nextStep));
+        // Save Answer
+        state.data[currentStep.key] = answer;
+
+        // Next Step or Finish
+        if (state.step < STEPS.length - 1) {
+            state.step++;
+            const nextStep = STEPS[state.step];
+            userState.set(chatId, state);
+            await sendMessage(chatId, nextStep.question, getQuestionOptions(nextStep));
+        } else {
+            await sendMessage(chatId, 'Sedang menyimpan data...', { reply_markup: { remove_keyboard: true } });
+            const result = await saveToSheet(chatId, state.data);
+
+            if (result.success) {
+                const summary = `
+✅ *LAPORAN DITERIMA*
+No. Tiket: ${result.ticketId}
+Nama: ${state.data.nama}
+Kendala: ${state.data.keluhan}
+
+Terima kasih!`.trim();
+                await sendMessage(chatId, summary, { parse_mode: 'Markdown' });
             } else {
-                // FINISH
-                await bot.sendMessage(chatId, 'Sedang menyimpan data...', { reply_markup: { remove_keyboard: true } });
-                const result = await saveToSheet(chatId, state.data);
-
-                if (result.success) {
-                    const summary = `
-✅ *LAPORAN DITERIMA & DISIMPAN*
-
-*No. Tiket:* ${result.ticketId}
-*Nama:* ${state.data.nama}
-*Alamat:* ${state.data.alamat}
-*No Layanan:* ${state.data.noInternet}
-*Kendala:* ${state.data.keluhan}
-*Layanan:* ${state.data.layanan}
-*SN ONT:* ${state.data.snOnt}
-*PIC Contact:* ${state.data.pic}
-
-Data telah masuk ke Dashboard. Terima kasih!`.trim();
-                    await bot.sendMessage(chatId, summary, { parse_mode: 'Markdown' });
-                } else {
-                    await bot.sendMessage(chatId, `❌ Gagal menyimpan: ${result.error}`);
-                }
-
-                userState.delete(chatId); // Clear session
+                await sendMessage(chatId, `❌ Gagal menyimpan: ${result.error}`);
             }
+            userState.delete(chatId);
         }
 
         response.status(200).send('OK');
+
     } catch (error) {
-        console.error('Webhook Error:', error);
-        response.status(500).send('Internal Server Error');
+        lastDebug = `Handler Crash: ${error.message}`;
+        console.error(error);
+        response.status(500).send('Internal Error');
     }
 }
