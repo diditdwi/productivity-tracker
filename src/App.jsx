@@ -1,7 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react'
 import html2canvas from 'html2canvas'
-import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
 import './App.css'
 
 // Initial data for dropdowns
@@ -1660,19 +1658,16 @@ function ProductivityDashboard({ tickets }) {
 
   const handleExportPDF = async () => {
     try {
-      // Dynamic imports to keep bundle size small
+      // Dynamic imports with robust initialization
       const { jsPDF } = await import('jspdf')
-      // jspdf-autotable auto-registers itself to jsPDF when imported, 
-      // but sometimes needs explicit 'applyPlugin' or just import logic depending on bundler.
-      // We will try simple import first, which usually works if side-effects are allowed.
-      await import('jspdf-autotable')
+      const { default: autoTable } = await import('jspdf-autotable')
 
       const doc = new jsPDF()
 
-      // Safety check: ensure autoTable exists
-      if (typeof doc.autoTable !== 'function') {
-        throw new Error("Plugin PDF Table gagal dimuat. Coba refresh halaman.")
-      }
+      // Explicitly register plugin if needed, although usually autoTable(doc) works
+      // or doc.autoTable() works if side-effect import is successful.
+      // Based on recent library changes, we can try calling it directly if attached, 
+      // or pass doc to the imported function.
 
       const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -1761,7 +1756,7 @@ function ProductivityDashboard({ tickets }) {
         return row
       })
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [['Technician', ...TICKET_TYPES, 'Total']],
         body: tableData,
