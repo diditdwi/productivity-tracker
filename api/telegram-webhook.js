@@ -141,9 +141,15 @@ export default async function handler(request, response) {
         const text = (msg.text || '').trim();
         const location = msg.location;
 
-        lastDebug = `Processing msg from ${chatId}: ${text.substring(0, 20)}...`;
+        lastDebug = `Processing msg from ${chatId} (${msg.chat.type}): ${text.substring(0, 20)}...`;
 
-        // Anti-Spam: Ignore old messages (> 60s)
+        // Anti-Spam (Groups): Ignore commands in Groups. Only allow Private chats.
+        if (msg.chat.type !== 'private') {
+            lastDebug = "Ignored group message";
+            return response.status(200).send('Ignored Group');
+        }
+
+        // Anti-Spam (Time): Ignore old messages (> 60s)
         const now = Math.floor(Date.now() / 1000);
         if (msg.date && msg.date < now - 60) {
             lastDebug = "Ignored stale message";
