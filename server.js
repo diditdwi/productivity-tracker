@@ -6,6 +6,9 @@ import https from 'https';
 import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
+import pkg from 'whatsapp-web.js';
+const { Client, LocalAuth } = pkg;
+import qrcode from 'qrcode-terminal';
 
 const app = express();
 const PORT = 3001;
@@ -22,6 +25,40 @@ let browser = null;
 let page = null;
 let isSessionActive = false;
 let isLoggingIn = false;
+
+// --- WHATSAPP CLIENT ---
+console.log('Initializing WhatsApp Client...');
+const waClient = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: true, // Run in background
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+});
+
+let isWaReady = false;
+
+waClient.on('qr', (qr) => {
+    console.log('WHATSAPP QR CODE RECEIVED:');
+    qrcode.generate(qr, { small: true });
+    console.log('Please scan the QR code with WhatsApp to log in.');
+});
+
+waClient.on('ready', () => {
+    console.log('WhatsApp Client is ready!');
+    isWaReady = true;
+});
+
+waClient.on('auth_failure', msg => {
+    console.error('WhatsApp Auth Failure:', msg);
+});
+
+waClient.on('disconnected', (reason) => {
+    console.log('WhatsApp Disconnected:', reason);
+    isWaReady = false;
+});
+
+waClient.initialize();
 
 app.use(cors());
 app.use(express.json());
@@ -148,6 +185,36 @@ const getSheetsClient = () => {
     });
     return google.sheets({ version: 'v4', auth });
 };
+
+// WhatsApp: Get Groups
+app.get('/api/wa-groups', async (req, res) => {
+    if (!isWaReady) return res.status(503).json({ error: 'WhatsApp not ready yet' });
+    try {
+        const chats = await waClient.getChats();
+        const groups = chats
+            .filter(c => c.isGroup)
+            .map(c => ({ id: c.id._serialized, name: c.name }));
+        res.json(groups);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// WhatsApp: Send Message
+app.post('/api/send-whatsapp', async (req, res) => {
+    if (!isWaReady) return res.status(503).json({ error: 'WhatsApp not ready yet' });
+
+    const { message, groupId } = req.body;
+    if (!message || !groupId) return res.status(400).json({ error: 'Missing message or groupId' });
+
+    try {
+        await waClient.sendMessage(groupId, message);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Send WA Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
 
 app.get('/api/laporan-langsung', async (req, res) => {
     try {

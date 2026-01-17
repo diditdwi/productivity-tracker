@@ -2037,7 +2037,8 @@ const TELEGRAM_GROUPS = [
 function LaporanLangsungDashboard({ onGenerate }) {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
-  const [sendModal, setSendModal] = useState({ isOpen: false, report: null, tech: '', group: TELEGRAM_GROUPS[0].id })
+  const [waGroups, setWaGroups] = useState([])
+  const [sendModal, setSendModal] = useState({ isOpen: false, report: null, tech: '', group: TELEGRAM_GROUPS[0].id, platform: 'TELEGRAM' })
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
 
@@ -2066,21 +2067,38 @@ function LaporanLangsungDashboard({ onGenerate }) {
     }
   }
 
+  const fetchWaGroups = async () => {
+    try {
+      const res = await fetch('/api/wa-groups')
+      if (res.ok) {
+        const data = await res.json()
+        setWaGroups(data)
+      }
+    } catch (e) {
+      console.error('Failed to fetch WA groups', e)
+    }
+  }
+
+  useEffect(() => {
+    fetchWaGroups() // Fetch groups on mount
+  }, [])
+
   const handleProcessAndSend = (r) => {
-    setSendModal({ isOpen: true, report: r, tech: '', group: TELEGRAM_GROUPS[0].id });
+    setSendModal({ isOpen: true, report: r, tech: '', group: TELEGRAM_GROUPS[0].id, platform: 'TELEGRAM' });
   }
 
   const confirmSend = async () => {
-    const { report, tech, group } = sendModal;
+    const { report, tech, group, platform } = sendModal;
     if (!report) return;
 
-    setLoading(true); // Reuse loading state or create new one if needed, but here simple usage
+    setLoading(true);
 
     let mentionText = "";
     if (tech) {
       mentionText = `\n\nCC: @${tech.replace('@', '')}`;
     }
 
+    // Common Message Format
     const message = `*ORDER TEKNISI*
 No Tiket: ${report.ticketId}
 Nama: ${report.nama}
@@ -2092,13 +2110,23 @@ CP: ${report.pic}
 Mohon segera dicek.${mentionText}`;
 
     try {
-      const res = await fetch('/api/send-telegram-group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, groupId: group })
-      });
+      let res;
+      if (platform === 'WHATSAPP') {
+        res = await fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, groupId: group })
+        });
+      } else {
+        res = await fetch('/api/send-telegram-group', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, groupId: group })
+        });
+      }
+
       if (res.ok) {
-        alert('✅ Terkirim ke Grup!');
+        alert(`✅ Terkirim ke ${platform === 'WHATSAPP' ? 'WhatsApp' : 'Telegram'}!`);
         setSendModal({ ...sendModal, isOpen: false });
       } else {
         const errData = await res.json();
@@ -2106,7 +2134,7 @@ Mohon segera dicek.${mentionText}`;
       }
     } catch (e) {
       console.error(e);
-      alert(`Error sending to group: ${e.message}`);
+      alert(`Error sending: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -2215,18 +2243,47 @@ Mohon segera dicek.${mentionText}`;
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
           }}>
-            <div className="glass-panel" style={{ width: '400px', padding: '2rem', animation: 'fadeIn 0.2s' }}>
-              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order ke Grup</h3>
+            <div className="glass-panel" style={{ width: '400px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
+              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order</h3>
+
+              {/* Platform Toggle */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                <button
+                  className={sendModal.platform === 'TELEGRAM' ? 'btn-telegram' : 'btn-secondary'}
+                  onClick={() => setSendModal(prev => ({ ...prev, platform: 'TELEGRAM', group: TELEGRAM_GROUPS[0].id }))}
+                  style={{ flex: 1 }}
+                >
+                  <span style={{ marginRight: '0.5rem' }}>✈️</span> Telegram
+                </button>
+                <button
+                  className={sendModal.platform === 'WHATSAPP' ? 'btn-success' : 'btn-secondary'}
+                  onClick={() => setSendModal(prev => ({ ...prev, platform: 'WHATSAPP', group: waGroups[0]?.id || '' }))}
+                  style={{ flex: 1, background: sendModal.platform === 'WHATSAPP' ? '#25D366' : '' }}
+                >
+                  <span style={{ marginRight: '0.5rem' }}>💬</span> WhatsApp
+                </button>
+              </div>
 
               <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label>Pilih Grup Tujuan</label>
+                <label>Pilih Grup Tujuan ({sendModal.platform})</label>
                 <select
                   value={sendModal.group}
                   onChange={e => setSendModal({ ...sendModal, group: e.target.value })}
+                  style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                 >
-                  {TELEGRAM_GROUPS.map(g => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
+                  {sendModal.platform === 'TELEGRAM' ? (
+                    TELEGRAM_GROUPS.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))
+                  ) : (
+                    waGroups.length > 0 ? (
+                      waGroups.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))
+                    ) : (
+                      <option value="">{waGroups.length === 0 ? 'Loading / No Groups...' : 'Select...'}</option>
+                    )
+                  )}
                 </select>
               </div>
 
@@ -2237,13 +2294,18 @@ Mohon segera dicek.${mentionText}`;
                   placeholder="Contoh: ahmad (tanpa @)"
                   value={sendModal.tech}
                   onChange={e => setSendModal({ ...sendModal, tech: e.target.value })}
+                  style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                 />
               </div>
 
               <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
                 <button className="btn-secondary" onClick={() => setSendModal({ ...sendModal, isOpen: false })}>Batal</button>
-                <button className="btn-telegram" onClick={confirmSend}>
-                  Kirim Sekarang ✈️
+                <button
+                  className={sendModal.platform === 'WHATSAPP' ? 'btn-success' : 'btn-telegram'}
+                  onClick={confirmSend}
+                  style={{ background: sendModal.platform === 'WHATSAPP' ? '#25D366' : '' }}
+                >
+                  Kirim ke {sendModal.platform === 'WHATSAPP' ? 'WhatsApp' : 'Telegram'}
                 </button>
               </div>
             </div>
