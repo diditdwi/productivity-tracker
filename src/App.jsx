@@ -234,6 +234,20 @@ function App() {
     return DEFAULT_USERS
   })
 
+  // Theme State
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('ticketTracker_theme') || 'light'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('ticketTracker_theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+  }
+
   // Sync usersDB to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('ticketTracker_users_db', JSON.stringify(usersDB))
@@ -420,12 +434,22 @@ function App() {
             Laporan Langsung
           </button>
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>Welcome, <strong>{user.username}</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="nav-btn"
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            style={{ fontSize: '1.2rem', padding: '0.4rem' }}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+
+          <span style={{ color: 'var(--text-scnd)', fontSize: '0.9rem' }}>Welcome, <strong>{user.username}</strong></span>
           <button onClick={() => setView('change-password')} className="nav-btn" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
             Password
           </button>
-          <button onClick={handleLogout} className="nav-btn" style={{ color: 'var(--danger-color)' }}>
+          <button onClick={handleLogout} className="nav-btn" style={{ color: 'var(--danger)' }}>
             Logout
           </button>
         </div>
