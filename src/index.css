@@ -39,9 +39,8 @@
 
 body {
   font-family: var(--font-family);
-  background: linear-gradient(135deg, #e0f2fe 0%, #e0e7ff 100%);
-  /* Sky to Indigo-ish Light */
-  color: var(--text-main);
+  /* background managed in App.css for theming */
+  /* color managed in App.css */
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
