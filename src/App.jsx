@@ -1,5 +1,7 @@
 ﻿import React, { useState, useEffect, useRef } from 'react'
 import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
 import './App.css'
 
 // Initial data for dropdowns
