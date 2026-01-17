@@ -1,4 +1,3 @@
-
 import { google } from 'googleapis';
 
 // --- CONFIG ---
@@ -144,6 +143,13 @@ export default async function handler(request, response) {
 
         lastDebug = `Processing msg from ${chatId}: ${text.substring(0, 20)}...`;
 
+        // Anti-Spam: Ignore old messages (> 60s)
+        const now = Math.floor(Date.now() / 1000);
+        if (msg.date && msg.date < now - 60) {
+            lastDebug = "Ignored stale message";
+            return response.status(200).send('Ignored');
+        }
+
         // 1. COMMAND: /start
         if (text.toLowerCase().startsWith('/start')) {
             userState.set(chatId, { step: 0, data: {} });
@@ -222,6 +228,7 @@ Terima kasih!`.trim();
     } catch (error) {
         lastDebug = `Handler Crash: ${error.message}`;
         console.error(error);
-        response.status(500).send('Internal Error');
+        // CRITICAL: Always return 200 to prevent Telegram Retry Loop
+        response.status(200).send('Error Logged');
     }
 }
