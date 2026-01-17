@@ -1657,111 +1657,117 @@ function ProductivityDashboard({ tickets }) {
   const chartRef = useRef(null)
 
   const handleExportPDF = async () => {
-    const { jsPDF } = await import('jspdf')
-    await import('jspdf-autotable')
+    try {
+      const { jsPDF } = await import('jspdf')
+      await import('jspdf-autotable')
 
-    const doc = new jsPDF()
-    const pageWidth = doc.internal.pageSize.getWidth()
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.getWidth()
 
-    // Title
-    doc.setFontSize(20)
-    doc.setTextColor(14, 165, 233) // Primary blue
-    doc.text('Productivity Report', pageWidth / 2, 20, { align: 'center' })
+      // Title
+      doc.setFontSize(20)
+      doc.setTextColor(14, 165, 233) // Primary blue
+      doc.text('Productivity Report', pageWidth / 2, 20, { align: 'center' })
 
-    // Date
-    doc.setFontSize(10)
-    doc.setTextColor(100, 116, 139) // Secondary gray
-    doc.text(`Period: ${monthName} ${filterYear}`, pageWidth / 2, 28, { align: 'center' })
-    doc.text(`Generated: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 34, { align: 'center' })
+      // Date
+      doc.setFontSize(10)
+      doc.setTextColor(100, 116, 139) // Secondary gray
+      doc.text(`Period: ${monthName} ${filterYear}`, pageWidth / 2, 28, { align: 'center' })
+      doc.text(`Generated: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 34, { align: 'center' })
 
-    // Summary Stats
-    doc.setFontSize(12)
-    doc.setTextColor(30, 41, 59) // Main text
-    let yPos = 45
+      // Summary Stats
+      doc.setFontSize(12)
+      doc.setTextColor(30, 41, 59) // Main text
+      let yPos = 45
 
-    const totalTickets = currentMonthTickets.length
-    const uniqueTechs = [...new Set(currentMonthTickets.map(t => t.technician))].length
-    const avgPerTech = uniqueTechs > 0 ? (totalTickets / uniqueTechs).toFixed(1) : 0
+      const totalTickets = currentMonthTickets.length
+      const uniqueTechs = [...new Set(currentMonthTickets.map(t => t.technician))].length
+      const avgPerTech = uniqueTechs > 0 ? (totalTickets / uniqueTechs).toFixed(1) : 0
 
-    doc.text(`📊 Total Tickets: ${totalTickets}`, 20, yPos)
-    yPos += 8
-    doc.text(`👷 Active Technicians: ${uniqueTechs}`, 20, yPos)
-    yPos += 8
-    doc.text(`📈 Average per Tech: ${avgPerTech}`, 20, yPos)
-    yPos += 15
+      doc.text(`Total Tickets: ${totalTickets}`, 20, yPos)
+      yPos += 8
+      doc.text(`Active Technicians: ${uniqueTechs}`, 20, yPos)
+      yPos += 8
+      doc.text(`Average per Tech: ${avgPerTech}`, 20, yPos)
+      yPos += 15
 
-    // Capture Chart as Image
-    if (chartRef.current) {
-      try {
-        const canvas = await html2canvas(chartRef.current, {
-          scale: 2,
-          backgroundColor: '#ffffff'
-        })
-        const imgData = canvas.toDataURL('image/png')
-        const imgWidth = pageWidth - 40
-        const imgHeight = (canvas.height * imgWidth) / canvas.width
+      // Capture Chart as Image
+      if (chartRef.current) {
+        try {
+          const canvas = await html2canvas(chartRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff'
+          })
+          const imgData = canvas.toDataURL('image/png')
+          const imgWidth = pageWidth - 40
+          const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-        doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight)
-        yPos += imgHeight + 15
-      } catch (err) {
-        console.error('Chart capture failed:', err)
+          doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight)
+          yPos += imgHeight + 15
+        } catch (err) {
+          console.error('Chart capture failed:', err)
+        }
       }
-    }
 
-    // Performance Table
-    const techPerformance = {}
-    currentMonthTickets.forEach(t => {
-      const tech = t.technician || 'Unknown'
-      if (!techPerformance[tech]) {
-        techPerformance[tech] = { total: 0 }
-        TICKET_TYPES.forEach(type => techPerformance[tech][type] = 0)
-      }
-      const type = t.ticketType || 'UNSPEC'
-      if (TICKET_TYPES.includes(type)) {
-        techPerformance[tech][type]++
-      }
-      techPerformance[tech].total++
-    })
-
-    const sortedTechs = Object.keys(techPerformance).sort((a, b) =>
-      techPerformance[b].total - techPerformance[a].total
-    )
-
-    // Check if we need a new page
-    if (yPos > 200) {
-      doc.addPage()
-      yPos = 20
-    }
-
-    doc.setFontSize(14)
-    doc.setTextColor(14, 165, 233)
-    doc.text('Technician Performance Details', 20, yPos)
-    yPos += 8
-
-    // Table data
-    const tableData = sortedTechs.map(tech => {
-      const row = [tech]
-      TICKET_TYPES.forEach(type => {
-        row.push(techPerformance[tech][type] || 0)
+      // Performance Table
+      const techPerformance = {}
+      currentMonthTickets.forEach(t => {
+        const tech = t.technician || 'Unknown'
+        if (!techPerformance[tech]) {
+          techPerformance[tech] = { total: 0 }
+          TICKET_TYPES.forEach(type => techPerformance[tech][type] = 0)
+        }
+        const type = t.ticketType || 'UNSPEC'
+        if (TICKET_TYPES.includes(type)) {
+          techPerformance[tech][type]++
+        }
+        techPerformance[tech].total++
       })
-      row.push(techPerformance[tech].total)
-      return row
-    })
 
-    doc.autoTable({
-      startY: yPos,
-      head: [['Technician', ...TICKET_TYPES, 'Total']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { fillColor: [14, 165, 233], textColor: 255 },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 50 }
+      const sortedTechs = Object.keys(techPerformance).sort((a, b) =>
+        techPerformance[b].total - techPerformance[a].total
+      )
+
+      // Check if we need a new page
+      if (yPos > 200) {
+        doc.addPage()
+        yPos = 20
       }
-    })
 
-    // Save PDF
-    doc.save(`Productivity_Report_${monthName}_${filterYear}.pdf`)
+      doc.setFontSize(14)
+      doc.setTextColor(14, 165, 233)
+      doc.text('Technician Performance Details', 20, yPos)
+      yPos += 8
+
+      // Table data
+      const tableData = sortedTechs.map(tech => {
+        const row = [tech]
+        TICKET_TYPES.forEach(type => {
+          row.push(techPerformance[tech][type] || 0)
+        })
+        row.push(techPerformance[tech].total)
+        return row
+      })
+
+      doc.autoTable({
+        startY: yPos,
+        head: [['Technician', ...TICKET_TYPES, 'Total']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [14, 165, 233], textColor: 255 },
+        styles: { fontSize: 8, cellPadding: 2 },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 50 }
+        }
+      })
+
+      // Save PDF
+      doc.save(`Productivity_Report_${monthName}_${filterYear}.pdf`)
+
+    } catch (error) {
+      console.error('PDF Export Error:', error)
+      alert(`Failed to generate PDF: ${error.message}. Please try again.`)
+    }
   }
 
   return (
