@@ -1054,40 +1054,22 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
           {mode === 'SINGLE' ? (isUpdateMode ? 'Update Ticket Status' : 'New Ticket Entry') : mode === 'BULK' ? 'Bulk Ticket Entry' : 'Notepad Input'}
         </h2>
-        <div className="toggle-container" style={{ display: 'flex', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '8px' }}>
+        <div className="toggle-container" style={{ display: 'flex', gap: '0.5rem' }}>
           <button
-            className={`toggle-btn ${mode === 'SINGLE' ? 'active' : ''}`}
+            className={mode === 'SINGLE' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setMode('SINGLE')}
-            style={{
-              padding: '6px 16px', borderRadius: '6px', border: 'none',
-              background: mode === 'SINGLE' ? 'var(--primary-color)' : 'transparent',
-              color: mode === 'SINGLE' ? 'white' : 'var(--text-secondary)',
-              cursor: 'pointer', fontWeight: mode === 'SINGLE' ? 'bold' : 'normal'
-            }}
           >
             Single
           </button>
           <button
-            className={`toggle-btn ${mode === 'BULK' ? 'active' : ''}`}
+            className={mode === 'BULK' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setMode('BULK')}
-            style={{
-              padding: '6px 16px', borderRadius: '6px', border: 'none',
-              background: mode === 'BULK' ? 'var(--primary-color)' : 'transparent',
-              color: mode === 'BULK' ? 'white' : 'var(--text-secondary)',
-              cursor: 'pointer', fontWeight: mode === 'BULK' ? 'bold' : 'normal'
-            }}
           >
             Bulk
           </button>
           <button
-            className={`toggle-btn ${mode === 'NOTEPAD' ? 'active' : ''}`}
+            className={mode === 'NOTEPAD' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setMode('NOTEPAD')}
-            style={{
-              padding: '6px 16px', borderRadius: '6px', border: 'none',
-              background: mode === 'NOTEPAD' ? 'var(--primary-color)' : 'transparent',
-              color: mode === 'NOTEPAD' ? 'white' : 'var(--text-secondary)',
-              cursor: 'pointer', fontWeight: mode === 'NOTEPAD' ? 'bold' : 'normal'
-            }}
           >
             Notepad
           </button>
@@ -1664,6 +1646,7 @@ function ProductivityDashboard({ tickets }) {
     return { day, count }
   })
 
+  // Ensure maxCount is at least 5 for scale
   const maxCount = Math.max(...monthlyData.map(d => d.count), 5)
 
   return (
@@ -1677,7 +1660,7 @@ function ProductivityDashboard({ tickets }) {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
             />
           </div>
         </div>
@@ -1765,7 +1748,7 @@ function ProductivityDashboard({ tickets }) {
                     style={{
                       width: '100%',
                       height: `${height}%`,
-                      background: isSelected ? '#f59e0b' : (data.count > 0 ? 'var(--grad-primary)' : 'rgba(203, 213, 225, 0.2)'),
+                      background: isSelected ? 'var(--warning)' : (data.count > 0 ? 'var(--grad-primary)' : 'rgba(148, 163, 184, 0.1)'),
                       borderRadius: '4px 4px 0 0',
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       minHeight: data.count > 0 ? '4px' : '0',
