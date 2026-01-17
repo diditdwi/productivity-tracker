@@ -103,81 +103,84 @@ async function saveToSheet(chatId, data) {
 const userState = new Map(); // Use Map for better performance
 
 export default async function handler(request, response) {
+    // Debugging: Check GET request to verify system status
     if (request.method !== 'POST') {
-        return response.status(200).send('Telegram Bot Webhook is Active!');
+        const status = TOKEN ? 'Token Configured ✅' : 'TOKEN MISSING ❌';
+        return response.status(200).send(`Telegram Bot Webhook is Active! Status: ${status}`);
     }
 
-    const { body } = request;
+    try {
+        const { body } = request;
 
-    // Process update
-    if (body.message) {
-        const msg = body.message;
-        const chatId = msg.chat.id;
-        const text = msg.text;
-        const location = msg.location;
+        // Process update
+        if (body.message) {
+            const msg = body.message;
+            const chatId = msg.chat.id;
+            const text = msg.text;
+            const location = msg.location;
 
-        // COMMAND: /start
-        if (text === '/start') {
-            userState.set(chatId, { step: 0, data: {} });
-            const step = STEPS[0];
-            await bot.sendMessage(chatId, 'Halo! Terimakasih telah menghubungi Laporan Langsung', { reply_markup: { remove_keyboard: true } });
-            await bot.sendMessage(chatId, step.question, getQuestionOptions(step));
-            return response.status(200).send('OK');
-        }
+            // COMMAND: /start
+            if (text === '/start') {
+                userState.set(chatId, { step: 0, data: {} });
+                const step = STEPS[0];
+                await bot.sendMessage(chatId, 'Halo! Terimakasih telah menghubungi Laporan Langsung', { reply_markup: { remove_keyboard: true } });
+                await bot.sendMessage(chatId, step.question, getQuestionOptions(step));
+                return response.status(200).send('OK');
+            }
 
-        // CHECK STATE
-        if (!userState.has(chatId)) {
-            // If user chats without /start, guide them
-            await bot.sendMessage(chatId, 'Silakan ketik /start untuk memulai laporan.');
-            return response.status(200).send('OK');
-        }
+            // CHECK STATE
+            if (!userState.has(chatId)) {
+                // If user chats without /start, guide them
+                await bot.sendMessage(chatId, 'Silakan ketik /start untuk memulai laporan.');
+                return response.status(200).send('OK');
+            }
 
-        const state = userState.get(chatId);
-        const currentStep = STEPS[state.step];
+            const state = userState.get(chatId);
+            const currentStep = STEPS[state.step];
 
-        // VALIDATE ANSWER
-        let answer = text;
-        let isValid = true;
-        let errorMessage = '';
+            // VALIDATE ANSWER
+            let answer = text;
+            let isValid = true;
+            let errorMessage = '';
 
-        if (currentStep.isLocation) {
-            if (location) {
-                answer = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-            } else if (text && text.trim() !== '') {
-                answer = text;
+            if (currentStep.isLocation) {
+                if (location) {
+                    answer = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                } else if (text && text.trim() !== '') {
+                    answer = text;
+                } else {
+                    isValid = false;
+                    errorMessage = '⚠️ Mohon kirim Lokasi (Share Location) atau ketik Alamat manual.';
+                }
             } else {
-                isValid = false;
-                errorMessage = '⚠️ Mohon kirim Lokasi (Share Location) atau ketik Alamat manual.';
+                if (!text || text.trim() === '') {
+                    isValid = false;
+                    errorMessage = '⚠️ Bagian ini wajib diisi.';
+                }
             }
-        } else {
-            if (!text || text.trim() === '') {
-                isValid = false;
-                errorMessage = '⚠️ Bagian ini wajib diisi.';
+
+            if (!isValid) {
+                await bot.sendMessage(chatId, errorMessage);
+                await bot.sendMessage(chatId, currentStep.question, getQuestionOptions(currentStep));
+                return response.status(200).send('OK');
             }
-        }
 
-        if (!isValid) {
-            await bot.sendMessage(chatId, errorMessage);
-            await bot.sendMessage(chatId, currentStep.question, getQuestionOptions(currentStep));
-            return response.status(200).send('OK');
-        }
+            // SAVE DATA
+            state.data[currentStep.key] = answer;
 
-        // SAVE DATA
-        state.data[currentStep.key] = answer;
+            // NEXT STEP
+            if (state.step < STEPS.length - 1) {
+                state.step++;
+                const nextStep = STEPS[state.step];
+                userState.set(chatId, state); // Update state
+                await bot.sendMessage(chatId, nextStep.question, getQuestionOptions(nextStep));
+            } else {
+                // FINISH
+                await bot.sendMessage(chatId, 'Sedang menyimpan data...', { reply_markup: { remove_keyboard: true } });
+                const result = await saveToSheet(chatId, state.data);
 
-        // NEXT STEP
-        if (state.step < STEPS.length - 1) {
-            state.step++;
-            const nextStep = STEPS[state.step];
-            userState.set(chatId, state); // Update state
-            await bot.sendMessage(chatId, nextStep.question, getQuestionOptions(nextStep));
-        } else {
-            // FINISH
-            await bot.sendMessage(chatId, 'Sedang menyimpan data...', { reply_markup: { remove_keyboard: true } });
-            const result = await saveToSheet(chatId, state.data);
-
-            if (result.success) {
-                const summary = `
+                if (result.success) {
+                    const summary = `
 ✅ *LAPORAN DITERIMA & DISIMPAN*
 
 *No. Tiket:* ${result.ticketId}
@@ -190,14 +193,18 @@ export default async function handler(request, response) {
 *PIC Contact:* ${state.data.pic}
 
 Data telah masuk ke Dashboard. Terima kasih!`.trim();
-                await bot.sendMessage(chatId, summary, { parse_mode: 'Markdown' });
-            } else {
-                await bot.sendMessage(chatId, `❌ Gagal menyimpan: ${result.error}`);
+                    await bot.sendMessage(chatId, summary, { parse_mode: 'Markdown' });
+                } else {
+                    await bot.sendMessage(chatId, `❌ Gagal menyimpan: ${result.error}`);
+                }
+
+                userState.delete(chatId); // Clear session
             }
-
-            userState.delete(chatId); // Clear session
         }
-    }
 
-    response.status(200).send('OK');
+        response.status(200).send('OK');
+    } catch (error) {
+        console.error('Webhook Error:', error);
+        response.status(500).send('Internal Server Error');
+    }
 }
