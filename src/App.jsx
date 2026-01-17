@@ -1125,7 +1125,7 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
             <div className="input-group" style={{ gridColumn: 'span 2' }}>
               <label>Technician <span style={{ color: 'red' }}>*</span></label>
               <input type="text" list="techs" name="technician" value={formData.technician} onChange={handleSingleChange} required placeholder="Select or type..." />
-              <datalist id="techs">{TEKNISI_LIST.map(t => <option key={t} value={t} />)}</datalist>
+
             </div>
             <div className="input-group" style={{ gridColumn: 'span 2' }}>
               <label>Workzone <span style={{ color: 'red' }}>*</span></label>
@@ -1153,7 +1153,7 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
             <div className="input-group">
               <label>HD Officer <span style={{ color: 'red' }}>*</span></label>
               <input type="text" list="hds" name="hdOfficer" value={formData.hdOfficer} onChange={handleSingleChange} required placeholder="Select..." />
-              <datalist id="hds">{HD_OFFICERS.map(h => <option key={h} value={h} />)}</datalist>
+
             </div>
 
             {/* ACTION ROW */}
@@ -1297,6 +1297,9 @@ function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
           </div>
         </div>
       )}
+      {/* Global Datalists (Available for ALL modes) */}
+      <datalist id="techs">{TEKNISI_LIST.map(t => <option key={t} value={t} />)}</datalist>
+      <datalist id="hds">{HD_OFFICERS.map(h => <option key={h} value={h} />)}</datalist>
     </div>
   )
 }
