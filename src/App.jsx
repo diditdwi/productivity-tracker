@@ -2002,7 +2002,7 @@ function DailyReportDashboard({ tickets }) {
           </tbody>
           {sortedTechs.length > 0 && (
             <tfoot>
-              <tr style={{ background: 'var(--bg-secondary)', fontWeight: 'bold' }}>
+              <tr style={{ background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 'bold' }}>
                 <td>Grand Total</td>
                 {TICKET_TYPES.map(type => (
                   <td key={type} style={{ textAlign: 'center' }}>
