@@ -1654,12 +1654,130 @@ function ProductivityDashboard({ tickets }) {
   // Ensure maxCount is at least 5 for scale
   const maxCount = Math.max(...monthlyData.map(d => d.count), 5)
 
+  const chartRef = useRef(null)
+
+  const handleExportPDF = async () => {
+    const { jsPDF } = await import('jspdf')
+    await import('jspdf-autotable')
+
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    // Title
+    doc.setFontSize(20)
+    doc.setTextColor(14, 165, 233) // Primary blue
+    doc.text('Productivity Report', pageWidth / 2, 20, { align: 'center' })
+
+    // Date
+    doc.setFontSize(10)
+    doc.setTextColor(100, 116, 139) // Secondary gray
+    doc.text(`Period: ${monthName} ${filterYear}`, pageWidth / 2, 28, { align: 'center' })
+    doc.text(`Generated: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 34, { align: 'center' })
+
+    // Summary Stats
+    doc.setFontSize(12)
+    doc.setTextColor(30, 41, 59) // Main text
+    let yPos = 45
+
+    const totalTickets = currentMonthTickets.length
+    const uniqueTechs = [...new Set(currentMonthTickets.map(t => t.technician))].length
+    const avgPerTech = uniqueTechs > 0 ? (totalTickets / uniqueTechs).toFixed(1) : 0
+
+    doc.text(`📊 Total Tickets: ${totalTickets}`, 20, yPos)
+    yPos += 8
+    doc.text(`👷 Active Technicians: ${uniqueTechs}`, 20, yPos)
+    yPos += 8
+    doc.text(`📈 Average per Tech: ${avgPerTech}`, 20, yPos)
+    yPos += 15
+
+    // Capture Chart as Image
+    if (chartRef.current) {
+      try {
+        const canvas = await html2canvas(chartRef.current, {
+          scale: 2,
+          backgroundColor: '#ffffff'
+        })
+        const imgData = canvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 40
+        const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+        doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight)
+        yPos += imgHeight + 15
+      } catch (err) {
+        console.error('Chart capture failed:', err)
+      }
+    }
+
+    // Performance Table
+    const techPerformance = {}
+    currentMonthTickets.forEach(t => {
+      const tech = t.technician || 'Unknown'
+      if (!techPerformance[tech]) {
+        techPerformance[tech] = { total: 0 }
+        TICKET_TYPES.forEach(type => techPerformance[tech][type] = 0)
+      }
+      const type = t.ticketType || 'UNSPEC'
+      if (TICKET_TYPES.includes(type)) {
+        techPerformance[tech][type]++
+      }
+      techPerformance[tech].total++
+    })
+
+    const sortedTechs = Object.keys(techPerformance).sort((a, b) =>
+      techPerformance[b].total - techPerformance[a].total
+    )
+
+    // Check if we need a new page
+    if (yPos > 200) {
+      doc.addPage()
+      yPos = 20
+    }
+
+    doc.setFontSize(14)
+    doc.setTextColor(14, 165, 233)
+    doc.text('Technician Performance Details', 20, yPos)
+    yPos += 8
+
+    // Table data
+    const tableData = sortedTechs.map(tech => {
+      const row = [tech]
+      TICKET_TYPES.forEach(type => {
+        row.push(techPerformance[tech][type] || 0)
+      })
+      row.push(techPerformance[tech].total)
+      return row
+    })
+
+    doc.autoTable({
+      startY: yPos,
+      head: [['Technician', ...TICKET_TYPES, 'Total']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [14, 165, 233], textColor: 255 },
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 50 }
+      }
+    })
+
+    // Save PDF
+    doc.save(`Productivity_Report_${monthName}_${filterYear}.pdf`)
+  }
+
   return (
     <div>
       <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 style={{ margin: 0 }}>Monthly Performance ({monthName} {filterYear})</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleExportPDF}
+              className="btn-primary"
+              style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              title="Export as PDF"
+            >
+              📄 Export PDF
+            </button>
             <label>Select Date:</label>
             <input
               type="date"
@@ -1670,7 +1788,7 @@ function ProductivityDashboard({ tickets }) {
           </div>
         </div>
 
-        <div style={{
+        <div ref={chartRef} style={{
           position: 'relative',
           height: '240px',
           padding: '20px 10px 30px 40px', /* Increased Left Padding */
