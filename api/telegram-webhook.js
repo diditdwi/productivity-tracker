@@ -23,7 +23,7 @@ const getAuth = () => {
 };
 
 // --- INIT ---
-const bot = new TelegramBot(TOKEN); // Webhook mode (no polling)
+const bot = new TelegramBot(TOKEN, { polling: false }); // Webhook mode (no polling)
 
 // --- QUESTIONS ---
 const STEPS = [
