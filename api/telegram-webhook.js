@@ -110,17 +110,20 @@ export default async function handler(request, response) {
     }
 
     try {
-        const { body } = request;
+        let { body } = request;
+        if (typeof body === 'string') {
+            try { body = JSON.parse(body); } catch (e) { console.error('JSON Parse Error', e); }
+        }
 
         // Process update
-        if (body.message) {
+        if (body && body.message) {
             const msg = body.message;
             const chatId = msg.chat.id;
-            const text = msg.text;
+            const text = msg.text || '';
             const location = msg.location;
 
             // COMMAND: /start
-            if (text === '/start') {
+            if (text.trim().toLowerCase().startsWith('/start')) {
                 userState.set(chatId, { step: 0, data: {} });
                 const step = STEPS[0];
                 await bot.sendMessage(chatId, 'Halo! Terimakasih telah menghubungi Laporan Langsung', { reply_markup: { remove_keyboard: true } });
