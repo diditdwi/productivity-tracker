@@ -284,6 +284,12 @@ nav {
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
 }
 
+/* Fix option visibility in dark mode */
+.input-group select option {
+  background-color: var(--surface);
+  color: var(--text-main);
+}
+
 /* --- Chart --- */
 .bar-container:hover .bar-tooltip {
   opacity: 1 !important;

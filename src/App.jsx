@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect, useRef } from 'react'
+import html2canvas from 'html2canvas'
 import './App.css'
 
 // Initial data for dropdowns
@@ -1863,9 +1864,10 @@ function ProductivityDashboard({ tickets }) {
 
 function DailyReportDashboard({ tickets }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [selectedRegion, setSelectedRegion] = useState('ALL')
+  const [selectedRegion, setSelectedRegion] = useState('ALL') // Default ALL, but user can change
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
+  const reportRef = useRef(null)
 
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1) }, [selectedDate, selectedRegion])
@@ -1873,9 +1875,27 @@ function DailyReportDashboard({ tickets }) {
   // Helper to determine Region from Workzone Code
   const getRegion = (wzCode) => {
     if (!wzCode) return 'UNKNOWN'
+
+    // Check defined workzones
     for (const [region, zones] of Object.entries(WORKZONES)) {
       if (zones.includes(wzCode)) return region
     }
+
+    // Explicit manual mappings if needed (based on previous context)
+    if (wzCode.includes('CIMAHI') || wzCode.includes('PADALARAN')) return 'CIMAHI'
+    if (wzCode.includes('SOREANG') || wzCode.includes('CIWIDEY') || wzCode.includes('BANJARAN')) return 'SOREANG'
+    if (wzCode.includes('BANDUNG BARAT') || wzCode.includes('LEMBANG')) return 'BANDUNG BARAT'
+    if (wzCode.includes('SUMEDANG') || wzCode.includes('TANJUNG SARI')) return 'SUMEDANG'
+    if (wzCode.includes('SUBANG') || wzCode.includes('PAMANUKAN')) return 'SUBANG'
+    if (wzCode.includes('PURWAKARTA') || wzCode.includes('CIKAMPEK')) return 'PURWAKARTA'
+    if (wzCode.includes('GARUT') || wzCode.includes('LIMBANGAN')) return 'GARUT'
+    if (wzCode.includes('TASIK')) return 'TASIKMALAYA'
+    if (wzCode.includes('CIAMIS')) return 'CIAMIS'
+    if (wzCode.includes('BANJAR')) return 'BANJAR'
+    if (wzCode.includes('PANGANDARAN')) return 'PANGANDARAN'
+    if (wzCode.includes('CIANJUR')) return 'CIANJUR'
+    if (wzCode.includes('SUKABUMI')) return 'SUKABUMI'
+
     return 'OTHERS'
   }
 
@@ -1891,7 +1911,7 @@ function DailyReportDashboard({ tickets }) {
     if (selectedRegion !== 'ALL') {
       const ticketRegion = getRegion(t.workzone)
       if (selectedRegion === 'OTHERS') {
-        // Should match if not in any known list, but usually 'OTHERS' means specifically outside defined ones
+        // Should match if not in any known list
         isRegionMatch = ticketRegion === 'OTHERS' || ticketRegion === 'UNKNOWN'
       } else {
         isRegionMatch = ticketRegion === selectedRegion
@@ -1923,7 +1943,7 @@ function DailyReportDashboard({ tickets }) {
     return acc
   }, {})
 
-  const sortedTechs = Object.keys(reportData).sort()
+  const sortedTechs = Object.keys(reportData).sort((a, b) => reportData[b].total - reportData[a].total)
   const REGIONS = ['ALL', ...Object.keys(WORKZONES), 'OTHERS']
 
   // Pagination Logic
@@ -1931,14 +1951,55 @@ function DailyReportDashboard({ tickets }) {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedTechs = itemsPerPage === 10000 ? sortedTechs : sortedTechs.slice(startIndex, startIndex + itemsPerPage)
 
+  const handleCapture = async () => {
+    if (!reportRef.current) return
+
+    // Temporarily show ALL items
+    const originalItemsPerPage = itemsPerPage
+    setItemsPerPage(10000)
+
+    // Wait for render
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg-body'),
+        useCORS: true,
+        ignoreElements: (el) => el.classList.contains('no-print')
+      })
+
+      const image = canvas.toDataURL("image/png")
+      const link = document.createElement('a')
+      link.href = image
+      link.download = `Report_${selectedRegion}_${selectedDate}.png`
+      link.click()
+    } catch (err) {
+      console.error("Screenshot failed:", err)
+      alert("Gagal membuat screenshot.")
+    } finally {
+      setItemsPerPage(originalItemsPerPage)
+    }
+  }
+
   return (
     <div className="glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2>Daily Report</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Daily Report</h2>
+
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleCapture}
+            className="btn-primary"
+            style={{ height: '38px', whiteSpace: 'nowrap' }}
+            title="Download Screenshot"
+          >
+            📷 Export Image
+          </button>
+
           <div className="input-group" style={{ marginBottom: 0, width: 'auto' }}>
             <label style={{ marginRight: '0.5rem', display: 'inline-block' }}>Rows:</label>
-            <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} style={{ padding: '0.4rem' }}>
+            <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} style={{ padding: '0.4rem', borderRadius: '8px' }}>
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
@@ -1950,7 +2011,7 @@ function DailyReportDashboard({ tickets }) {
             <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
-              style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
+              style={{ padding: '0.4rem', borderRadius: '8px' }}
             >
               {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -1961,13 +2022,19 @@ function DailyReportDashboard({ tickets }) {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ padding: '0.4rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.5)' }}
+              style={{ padding: '0.4rem', borderRadius: '8px' }}
             />
           </div>
         </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" ref={reportRef}>
+        {/* Header for Screenshot */}
+        <div style={{ display: itemsPerPage > 1000 ? 'block' : 'none', padding: '1rem', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+          <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Production Report: {selectedRegion}</h3>
+          <span style={{ fontSize: '0.8rem', color: 'var(--secondary)' }}>Date: {selectedDate}</span>
+        </div>
+
         <table className="data-table">
           <thead>
             <tr>
@@ -2018,7 +2085,7 @@ function DailyReportDashboard({ tickets }) {
       </div>
 
       {/* Pagination Controls */}
-      {sortedTechs.length > 0 && (
+      {sortedTechs.length > 0 && itemsPerPage < 1000 && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem', alignItems: 'center' }}>
           <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="btn-secondary btn-small">Previous</button>
           <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Page {currentPage} of {totalPages}</span>
