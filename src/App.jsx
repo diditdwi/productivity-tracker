@@ -1658,10 +1658,20 @@ function ProductivityDashboard({ tickets }) {
 
   const handleExportPDF = async () => {
     try {
+      // Dynamic imports to keep bundle size small
       const { jsPDF } = await import('jspdf')
+      // jspdf-autotable auto-registers itself to jsPDF when imported, 
+      // but sometimes needs explicit 'applyPlugin' or just import logic depending on bundler.
+      // We will try simple import first, which usually works if side-effects are allowed.
       await import('jspdf-autotable')
 
       const doc = new jsPDF()
+
+      // Safety check: ensure autoTable exists
+      if (typeof doc.autoTable !== 'function') {
+        throw new Error("Plugin PDF Table gagal dimuat. Coba refresh halaman.")
+      }
+
       const pageWidth = doc.internal.pageSize.getWidth()
 
       // Title
