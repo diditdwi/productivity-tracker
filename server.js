@@ -186,6 +186,80 @@ const getSheetsClient = () => {
     return google.sheets({ version: 'v4', auth });
 };
 
+async function saveReportToSheet(data) {
+    try {
+        const sheets = getSheetsClient();
+        // Columns: Timestamp, Nama, Alamat, No Internet, Keluhan, Layanan, SN ONT, PIC, Status, TicketId
+        const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+        const row = [
+            timestamp,
+            data.nama || '-',
+            data.alamat || '-',
+            data.noInternet || '-',
+            data.keluhan || '-',
+            data.layanan || '-',
+            data.snOnt || '-',
+            data.pic || '-',
+            'Open', // Status default
+            '-'     // Ticket ID (Empty initially)
+        ];
+
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: SHEET_ID_LAPORAN,
+            range: "'Laporan Langsung'!A:A", // Append to end
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [row] }
+        });
+        return true;
+    } catch (error) {
+        console.error('Error saving to sheet:', error);
+        return false;
+    }
+}
+
+// WhatsApp Message Handler
+waClient.on('message', async msg => {
+    const body = msg.body;
+    // Check keyword
+    if (body.trim().toUpperCase().startsWith('LAPOR') || body.trim().toUpperCase().startsWith('ORDER')) {
+        console.log('Received Report via WA:', body);
+
+        // Simple Parsing Logic
+        const lines = body.split('\n');
+        const data = {};
+
+        lines.forEach(line => {
+            const parts = line.split(':');
+            if (parts.length < 2) return;
+
+            const key = parts[0].trim().toLowerCase();
+            const value = parts.slice(1).join(':').trim(); // Rejoin in case value has ':'
+
+            if (key.includes('nama')) data.nama = value;
+            else if (key.includes('alamat')) data.alamat = value;
+            else if (key.includes('internet') || key.includes('inet')) data.noInternet = value;
+            else if (key.includes('keluhan') || key.includes('kendala')) data.keluhan = value;
+            else if (key.includes('layanan')) data.layanan = value;
+            else if (key.includes('sn')) data.snOnt = value;
+            else if (key.includes('pic') || key.includes('cp')) data.pic = value;
+        });
+
+        // Basic validation
+        if (!data.nama && !data.keluhan) {
+            msg.reply('Format laporan tidak dikenali. Mohon gunakan format:\n\nLAPOR\nNama: ...\nAlamat: ...\nNo Internet: ...\nKeluhan: ...\nLayanan: ...\nSN ONT: ...\nPIC: ...');
+            return;
+        }
+
+        // Save to Sheet
+        const success = await saveReportToSheet(data);
+        if (success) {
+            msg.reply(`✅ Laporan diterima dari Sdr/i *${data.nama || 'Pelanggan'}*.\nData telah tersimpan di sistem.`);
+        } else {
+            msg.reply('❌ Maaf, terjadi kesalahan saat menyimpan laporan. Silakan coba lagi.');
+        }
+    }
+});
+
 // WhatsApp: Get Groups
 app.get('/api/wa-groups', async (req, res) => {
     if (!isWaReady) return res.status(503).json({ error: 'WhatsApp not ready yet' });
