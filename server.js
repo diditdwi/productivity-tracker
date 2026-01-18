@@ -231,7 +231,9 @@ async function saveReportToSheet(data) {
 waClient.on('message_create', async msg => {
     const body = msg.body;
     // Check keyword
-    if (body.trim().toUpperCase().startsWith('LAPOR') || body.trim().toUpperCase().startsWith('ORDER')) {
+    const text = body.trim().toUpperCase();
+
+    if (text.startsWith('LAPOR') || text.startsWith('ORDER')) {
         console.log('Received Report via WA:', body);
 
         // Simple Parsing Logic
@@ -263,10 +265,15 @@ waClient.on('message_create', async msg => {
         // Save to Sheet
         const ticketId = await saveReportToSheet(data);
         if (ticketId) {
-            msg.reply(`✅ Laporan diterima!\n\nNo Tiket: *${ticketId}*\nAtas Nama: *${data.nama || 'Pelanggan'}*\n\nData telah tersimpan di sistem dan akan segera diproses.`);
+            msg.reply(`✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${data.nama || '-'}\nAlamat: ${data.alamat || '-'}\nNo Layanan: ${data.noInternet || '-'}\nKendala: ${data.keluhan || '-'}\nLayanan: ${data.layanan || '-'}\nSN ONT: ${data.snOnt || '-'}\nPIC Contact: ${data.pic || '-'}\n\nData telah masuk ke Dashboard. Terima kasih!`);
         } else {
             msg.reply('❌ Maaf, terjadi kesalahan saat menyimpan laporan. Silakan coba lagi.');
         }
+    }
+    // Handle General Commands / Greetings
+    else if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST') {
+        const welcomeMsg = `🤖 *Hellow, I am Ticket Bot!*\n\nSaya siap mencatat laporan gangguan.\n\nKetik format berikut untuk lapor:\n\n*LAPOR*\nNama: [Nama Pelanggan]\nAlamat: [Alamat Lengkap]\nNo Internet: [No Inet]\nKeluhan: [Detail Kendala]\nLayanan: [Internet/Voice/IPTV]\nSN ONT: [Serial Number]\nPIC: [No HP PIC]\n\nAtau balas pesan ini jika butuh bantuan!`;
+        msg.reply(welcomeMsg);
     }
 });
 
