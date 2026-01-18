@@ -209,6 +209,7 @@ function App() {
                 user={user}
                 technicians={TEKNISI_LIST}
                 hdOfficers={HD_OFFICERS}
+                tickets={tickets}
             />
           } />
           <Route path="/dashboard" element={
