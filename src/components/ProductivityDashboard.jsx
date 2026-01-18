@@ -65,7 +65,7 @@ export default function ProductivityDashboard({ tickets }) {
     return match || inputName
   }
 
-  const { reportData, sortedTechs, totalTicketsToday, topPerformer } = useMemo(() => {
+  const { reportData, hdData, sortedTechs, sortedHDs, totalTicketsToday, topPerformer } = useMemo(() => {
     const filtered = tickets.filter(t => {
       if (!t.date) return false
       const isSameDate = t.date === selectedDate
@@ -78,23 +78,35 @@ export default function ProductivityDashboard({ tickets }) {
       return isSameDate && isRegionMatch
     })
 
-    const data = filtered.reduce((acc, curr) => {
-      const rawTech = curr.technician || 'Unknown'
-      const tech = normalizeTechName(rawTech)
+    const stats = filtered.reduce((acc, curr) => {
       const type = curr.ticketType || 'UNSPECIFIED'
 
-      if (!acc[tech]) acc[tech] = { total: 0 }
-      acc[tech][type] = (acc[tech][type] || 0) + 1
-      acc[tech].total += 1
-      return acc
-    }, {})
+      // Technician Logic
+      const rawTech = curr.technician || 'Unknown'
+      const tech = normalizeTechName(rawTech)
+      if (!acc.tech[tech]) acc.tech[tech] = { total: 0 }
+      acc.tech[tech][type] = (acc.tech[tech][type] || 0) + 1
+      acc.tech[tech].total += 1
 
-    const sorted = Object.keys(data).sort((a, b) => data[b].total - data[a].total)
-    const top = sorted.length > 0 ? { name: sorted[0], count: data[sorted[0]].total } : null
+      // HD Officer Logic
+      const hd = curr.hdOfficer || 'Unknown'
+      if (!acc.hd[hd]) acc.hd[hd] = { total: 0 }
+      acc.hd[hd][type] = (acc.hd[hd][type] || 0) + 1
+      acc.hd[hd].total += 1
+
+      return acc
+    }, { tech: {}, hd: {} })
+
+    const sortedTechs = Object.keys(stats.tech).sort((a, b) => stats.tech[b].total - stats.tech[a].total)
+    const sortedHDs = Object.keys(stats.hd).sort((a, b) => stats.hd[b].total - stats.hd[a].total)
+    
+    const top = sortedTechs.length > 0 ? { name: sortedTechs[0], count: stats.tech[sortedTechs[0]].total } : null
 
     return { 
-      reportData: data, 
-      sortedTechs: sorted, 
+      reportData: stats.tech, 
+      hdData: stats.hd,
+      sortedTechs, 
+      sortedHDs,
       totalTicketsToday: filtered.length,
       topPerformer: top
     }
@@ -334,6 +346,70 @@ export default function ProductivityDashboard({ tickets }) {
                 </div>
              </div>
          )}
+      </div>
+
+      {/* 4. HD Officer Leaderboard */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-purple-500" /> HD Officer Performance
+            </h3>
+         </div>
+
+         <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+               <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                 <tr>
+                    <th className="px-6 py-4 w-16 text-center">Rank</th>
+                    <th className="px-6 py-4 min-w-[200px]">HD Officer</th>
+                    {TICKET_TYPES.map(type => (
+                       <th key={type} className="px-4 py-4 text-center hidden md:table-cell">{type}</th>
+                    ))}
+                    <th className="px-6 py-4 text-center font-bold w-32 bg-slate-50 dark:bg-slate-800/50">Total</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                 {sortedHDs.length === 0 ? (
+                    <tr>
+                       <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                          No HD performance data.
+                       </td>
+                    </tr>
+                 ) : (
+                    sortedHDs.map((hd, idx) => {
+                       const rank = idx + 1
+                       const total = hdData[hd].total
+                       return (
+                          <tr 
+                            key={hd} 
+                            className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                          >
+                             <td className="px-6 py-4 text-center">
+                                {rank === 1 && <div className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold mx-auto">1</div>}
+                                {rank === 2 && <div className="w-8 h-8 rounded-full bg-gray-200 text-slate-600 flex items-center justify-center font-bold mx-auto">2</div>}
+                                {rank === 3 && <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold mx-auto">3</div>}
+                                {rank > 3 && <span className="font-mono text-slate-400 font-bold">#{rank}</span>}
+                             </td>
+                             <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200">
+                                {hd}
+                             </td>
+                             {TICKET_TYPES.map(type => (
+                                <td key={type} className="px-4 py-4 text-center text-slate-500 dark:text-slate-400 hidden md:table-cell">
+                                   {hdData[hd][type] || '-'}
+                                </td>
+                             ))}
+                             <td className="px-6 py-4 text-center">
+                                <span className="inline-block px-3 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold rounded-full">
+                                   {total}
+                                </span>
+                             </td>
+                          </tr>
+                       )
+                    })
+                 )}
+               </tbody>
+            </table>
+         </div>
       </div>
     </div>
   )
