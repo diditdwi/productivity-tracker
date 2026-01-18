@@ -83,7 +83,7 @@ export default function TicketForm({ onSubmit, tickets, initialData, isNewFromRe
              <BulkForm onSubmit={onSubmit} user={user} />
           )}
           {mode === 'NOTEPAD' && (
-             <NotepadForm onSubmit={onSubmit} user={user} />
+             <NotepadForm onSubmit={onSubmit} user={user} technicians={technicians} />
           )}
         </motion.div>
       </AnimatePresence>
@@ -400,7 +400,7 @@ function BulkForm({ onSubmit, user }) {
 }
 
 // --- NOTEPAD FORM MODE (With Live Preview) ---
-function NotepadForm({ onSubmit }) {
+function NotepadForm({ onSubmit, technicians = [] }) {
   const [content, setContent] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   
@@ -413,7 +413,13 @@ function NotepadForm({ onSubmit }) {
         const parts = line.split('|').map(s => s.trim())
         // Minimal validation: check if parts exist
         const isValid = parts.length >= 5
-        const [hd, type, wz, tech, status, inc, cust, sid, stype, repair] = parts
+        let [hd, type, wz, tech, status, inc, cust, sid, stype, repair] = parts
+
+        // Auto-resolve Technician NIK -> Name
+        if (tech && /^\d+$/.test(tech) && technicians.length > 0) {
+          const found = technicians.find(t => t.startsWith(tech))
+          if (found) tech = found
+        }
         return {
           id: idx,
           original: line,
@@ -421,7 +427,7 @@ function NotepadForm({ onSubmit }) {
           data: { hd, type, wz, tech, status, inc, cust, sid, stype, repair }
         }
       })
-  }, [content])
+  }, [content, technicians])
 
   const validCount = parsedPreview.filter(p => p.isValid).length
 
