@@ -214,7 +214,8 @@ function App() {
           <Route path="/dashboard" element={
             <TicketTable 
                 tickets={tickets} 
-                onEdit={handleEditTicket} 
+                loading={loading}
+                onEditTicket={handleEditTicket} 
             />
           } />
           <Route path="/productivity" element={<ProductivityDashboard tickets={tickets} />} />
