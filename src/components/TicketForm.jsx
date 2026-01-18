@@ -111,7 +111,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
     status: 'Open',
     date: new Date().toISOString().split('T')[0],
     workzone: '',
-    hdOfficer: user?.username || ''
+    hdOfficer: ''
   })
   
   const isUpdateMode = useMemo(() => initialData && !isNewFromReport, [initialData, isNewFromReport])
@@ -225,7 +225,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
 // --- BULK FORM MODE ---
 function BulkForm({ onSubmit, user }) {
   const [globalDate, setGlobalDate] = useState(new Date().toISOString().split('T')[0])
-  const [globalHd, setGlobalHd] = useState(user?.username || '')
+  const [globalHd, setGlobalHd] = useState('')
   const [rows, setRows] = useState([createEmptyRow(), createEmptyRow(), createEmptyRow()])
 
   function createEmptyRow() {
