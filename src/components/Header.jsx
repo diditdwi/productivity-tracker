@@ -11,8 +11,7 @@ import {
   Moon, 
   LogOut, 
   KeyRound, 
-  User,
-  Package 
+  User 
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -26,7 +25,6 @@ export default function Header({ user, theme, toggleTheme, onLogout }) {
     ...(user.role === 'admin' ? [{ id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' }] : []),
     { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/report' },
     { id: 'laporan-langsung', label: 'Laporan Langsung', icon: Zap, path: '/laporan-langsung' },
-    { id: 'inventory', label: 'Kebutuhan Material', icon: Package, path: '/inventory' },
   ];
 
   return (
