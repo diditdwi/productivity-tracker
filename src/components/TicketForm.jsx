@@ -33,7 +33,7 @@ const WORKZONES = {
 const ALL_ZONES = Object.values(WORKZONES).flat()
 
 // --- MAIN COMPONENT ---
-export default function TicketForm({ onSubmit, tickets, initialData, isNewFromReport }) {
+export default function TicketForm({ onSubmit, tickets, initialData, isNewFromReport, user, technicians = [], hdOfficers = [] }) {
   const [mode, setMode] = useState('SINGLE') // SINGLE | BULK | NOTEPAD
 
   return (
@@ -77,22 +77,29 @@ export default function TicketForm({ onSubmit, tickets, initialData, isNewFromRe
            transition={{ duration: 0.2 }}
         >
           {mode === 'SINGLE' && (
-            <SingleForm onSubmit={onSubmit} initialData={initialData} isNewFromReport={isNewFromReport} />
+            <SingleForm onSubmit={onSubmit} initialData={initialData} isNewFromReport={isNewFromReport} user={user} />
           )}
           {mode === 'BULK' && (
-             <BulkForm onSubmit={onSubmit} />
+             <BulkForm onSubmit={onSubmit} user={user} />
           )}
           {mode === 'NOTEPAD' && (
-             <NotepadForm onSubmit={onSubmit} />
+             <NotepadForm onSubmit={onSubmit} user={user} />
           )}
         </motion.div>
       </AnimatePresence>
+
+      <datalist id="techs-list">
+        {technicians.map((tech, idx) => <option key={idx} value={tech} />)}
+      </datalist>
+      <datalist id="hd-list">
+        {hdOfficers.map(off => <option key={off} value={off} />)}
+      </datalist>
     </div>
   )
 }
 
 // --- SINGLE FORM MODE ---
-function SingleForm({ onSubmit, initialData, isNewFromReport }) {
+function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
   const [formData, setFormData] = useState({
     ticketType: 'REGULER',
     incident: '',
@@ -104,7 +111,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport }) {
     status: 'Open',
     date: new Date().toISOString().split('T')[0],
     workzone: '',
-    hdOfficer: ''
+    hdOfficer: user?.username || ''
   })
   
   const isUpdateMode = useMemo(() => initialData && !isNewFromReport, [initialData, isNewFromReport])
@@ -151,7 +158,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport }) {
 
            <div className="space-y-2">
               <Label>Customer Name</Label>
-              <Input name="customerName" value={formData.customerName} onChange={handleChange} placeholder="Automatic search..." />
+              <Input name="customerName" value={formData.customerName} onChange={handleChange} placeholder="" />
            </div>
         </div>
 
@@ -216,9 +223,9 @@ function SingleForm({ onSubmit, initialData, isNewFromReport }) {
 }
 
 // --- BULK FORM MODE ---
-function BulkForm({ onSubmit }) {
+function BulkForm({ onSubmit, user }) {
   const [globalDate, setGlobalDate] = useState(new Date().toISOString().split('T')[0])
-  const [globalHd, setGlobalHd] = useState('')
+  const [globalHd, setGlobalHd] = useState(user?.username || '')
   const [rows, setRows] = useState([createEmptyRow(), createEmptyRow(), createEmptyRow()])
 
   function createEmptyRow() {
