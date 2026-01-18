@@ -202,7 +202,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
 
            <div className="space-y-2">
              <Label>Workzone</Label>
-             <Select name="workzone" value={formData.workzone} onChange={handleChange} options={['Select...', ...WORKZONES.BANDUNG]} />
+             <Select name="workzone" value={formData.workzone} onChange={handleChange} options={['Select...', ...ALL_ZONES.sort()]} />
            </div>
 
            <div className="space-y-2">
