@@ -37,7 +37,8 @@ const TEKNISI_LIST = [
   "19920117 - ANGGA ANGGARA",
   "18880018 - RIKI SUBAGJA",
   "18900600 - ACENG",
-  "22222222 - SURYANA"
+  "22222222 - SURYANA",
+  "19900131 - AHMAD NURROHMAN"
 ] // Simplified list, in real app this might come from props
 
 export default function ProductivityDashboard({ tickets }) {
