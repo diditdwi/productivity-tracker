@@ -141,28 +141,44 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
     return regex.test(value)
   }
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target
+    if (name === 'incident') {
+      const upperVal = value.trim().toUpperCase()
+      if (upperVal && !validateIncident(upperVal)) {
+        setErrors(prev => ({ ...prev, incident: 'Format Invalid! Must start with "INC" or "LAPSUNG_"' }))
+      }
+    }
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target
     
     // Auto-search for existing Ticket by Incident ID
     if (name === 'incident') {
+       // Force Uppercase
+       const upperVal = value.toUpperCase()
+       
        // Clear error when typing
        if (errors.incident) setErrors(prev => ({ ...prev, incident: null }))
 
        if (tickets.length > 0) {
           // Search exact match case-insensitive
-          const found = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === value.trim().toLowerCase())
+          const found = tickets.find(t => t.incident && t.incident.trim().toUpperCase() === upperVal.trim())
           
           if (found) {
             setFormData({ ...found, isUpdate: true })
             return
           } else {
             if (formData.isUpdate) {
-                setFormData(prev => ({ ...prev, [name]: value, isUpdate: false, id: undefined }))
+                setFormData(prev => ({ ...prev, [name]: upperVal, isUpdate: false, id: undefined }))
                 return 
             }
           }
        }
+       
+       setFormData(prev => ({ ...prev, [name]: upperVal }))
+       return
     }
 
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -210,6 +226,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
                     name="incident" 
                     value={formData.incident} 
                     onChange={handleChange} 
+                    onBlur={handleBlur}
                     placeholder="INC... or LAPSUNG_..." 
                     className={cn(
                       "font-mono font-bold tracking-wide",
