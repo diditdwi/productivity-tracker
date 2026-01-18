@@ -9,6 +9,7 @@ import TicketForm from './components/TicketForm'
 import ProductivityDashboard from './components/ProductivityDashboard'
 import DailyReportDashboard from './components/DailyReportDashboard'
 import LaporanLangsungDashboard from './components/LaporanLangsungDashboard'
+import InventoryDashboard from './components/InventoryDashboard'
 import ChangePasswordForm from './components/ChangePasswordForm'
 import LoginForm from './components/LoginForm'
 
@@ -222,6 +223,7 @@ function App() {
           <Route path="/productivity" element={<ProductivityDashboard tickets={tickets} />} />
           <Route path="/report" element={<DailyReportDashboard tickets={tickets} />} />
           <Route path="/laporan-langsung" element={<LaporanLangsungDashboard />} />
+          <Route path="/inventory" element={<InventoryDashboard />} />
           <Route path="/change-password" element={
             <ChangePasswordForm 
                 user={user} 
