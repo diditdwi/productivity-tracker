@@ -77,7 +77,7 @@ export default function TicketForm({ onSubmit, tickets, initialData, isNewFromRe
            transition={{ duration: 0.2 }}
         >
           {mode === 'SINGLE' && (
-            <SingleForm onSubmit={onSubmit} initialData={initialData} isNewFromReport={isNewFromReport} user={user} />
+            <SingleForm onSubmit={onSubmit} initialData={initialData} isNewFromReport={isNewFromReport} user={user} tickets={tickets} />
           )}
           {mode === 'BULK' && (
              <BulkForm onSubmit={onSubmit} user={user} />
@@ -99,7 +99,7 @@ export default function TicketForm({ onSubmit, tickets, initialData, isNewFromRe
 }
 
 // --- SINGLE FORM MODE ---
-function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
+function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
   const [formData, setFormData] = useState({
     ticketType: 'REGULER',
     incident: '',
@@ -114,7 +114,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
     hdOfficer: ''
   })
   
-  const isUpdateMode = useMemo(() => initialData && !isNewFromReport, [initialData, isNewFromReport])
+  const isUpdateMode = useMemo(() => (initialData && !isNewFromReport) || formData.isUpdate, [initialData, isNewFromReport, formData.isUpdate])
 
   useEffect(() => {
     if (initialData) setFormData(prev => ({ ...prev, ...initialData }))
@@ -135,6 +135,25 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    
+    // Auto-search for existing Ticket by Incident ID
+    if (name === 'incident' && tickets.length > 0) {
+       // Search exact match case-insensitive
+       const found = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === value.trim().toLowerCase())
+       
+       if (found) {
+         // Load existing data
+         setFormData({ ...found, isUpdate: true })
+         return
+       } else {
+         // Reset update mode if it was active but now input changed to something new
+         if (formData.isUpdate) {
+            setFormData(prev => ({ ...prev, [name]: value, isUpdate: false, id: undefined }))
+            return 
+         }
+       }
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -248,7 +267,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
 }
 
 // --- BULK FORM MODE ---
-function BulkForm({ onSubmit, user }) {
+function BulkForm({ onSubmit }) {
   const [globalDate, setGlobalDate] = useState(new Date().toISOString().split('T')[0])
   const [globalHd, setGlobalHd] = useState('')
   const [rows, setRows] = useState([createEmptyRow(), createEmptyRow(), createEmptyRow()])
