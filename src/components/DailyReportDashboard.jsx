@@ -74,6 +74,9 @@ export default function DailyReportDashboard({ tickets }) {
     const tech = normalizeTechName(rawTech)
     
     let type = (curr.ticketType || 'UNSPEC').toUpperCase()
+    // Normalize Type
+    if (type === 'REGULER') type = 'REGULAR'
+
     if (!TICKET_TYPES.includes(type)) {
       type = 'OTHERS'
     }
