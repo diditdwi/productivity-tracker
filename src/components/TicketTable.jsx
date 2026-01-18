@@ -186,6 +186,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                   { key: 'serviceId', label: 'Service', width: 'w-36' },
                   { key: 'ticketType', label: 'Type', width: 'w-24' },
                   { key: 'technician', label: 'Technician', width: 'w-40' },
+                  { key: 'workzone', label: 'Workzone', width: 'w-24' },
                   { key: 'status', label: 'Status', width: 'w-28' },
                   { key: 'hdOfficer', label: 'HD Officer', width: 'w-32' },
                 ].map((col) => (
@@ -208,7 +209,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan="9" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center gap-2">
                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent"></div>
                        Loading data...
@@ -217,7 +218,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                 </tr>
               ) : filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan="9" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center gap-2">
                        <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
                          <Search className="h-6 w-6 opacity-30" />
@@ -270,6 +271,9 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">
                         {ticket.technician}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs font-medium">
+                        {ticket.workzone}
                       </td>
                       <td className="px-4 py-3">
                          <StatusBadge status={ticket.status} />
