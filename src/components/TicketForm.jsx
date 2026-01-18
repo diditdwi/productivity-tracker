@@ -133,24 +133,35 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
     }
   }, [formData.ticketType])
 
+  const [errors, setErrors] = useState({})
+
+  const validateIncident = (value) => {
+    if (!value) return true // Required check handled by browser or elsewhere
+    const regex = /^(INC[A-Za-z0-9]+|LAPSUNG_[A-Za-z0-9]+)$/
+    return regex.test(value)
+  }
+
   const handleChange = (e) => {
     const { name, value } = e.target
     
     // Auto-search for existing Ticket by Incident ID
-    if (name === 'incident' && tickets.length > 0) {
-       // Search exact match case-insensitive
-       const found = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === value.trim().toLowerCase())
-       
-       if (found) {
-         // Load existing data
-         setFormData({ ...found, isUpdate: true })
-         return
-       } else {
-         // Reset update mode if it was active but now input changed to something new
-         if (formData.isUpdate) {
-            setFormData(prev => ({ ...prev, [name]: value, isUpdate: false, id: undefined }))
-            return 
-         }
+    if (name === 'incident') {
+       // Clear error when typing
+       if (errors.incident) setErrors(prev => ({ ...prev, incident: null }))
+
+       if (tickets.length > 0) {
+          // Search exact match case-insensitive
+          const found = tickets.find(t => t.incident && t.incident.trim().toLowerCase() === value.trim().toLowerCase())
+          
+          if (found) {
+            setFormData({ ...found, isUpdate: true })
+            return
+          } else {
+            if (formData.isUpdate) {
+                setFormData(prev => ({ ...prev, [name]: value, isUpdate: false, id: undefined }))
+                return 
+            }
+          }
        }
     }
 
@@ -159,6 +170,17 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    // Validation
+    const incident = formData.incident.trim().toUpperCase()
+    if (!validateIncident(incident)) {
+      setErrors(prev => ({ ...prev, incident: 'Format must start with "INC" + alphanumeric OR "LAPSUNG_" + alphanumeric' }))
+      // toast.error('Invalid Incident Format') // Optional
+      return
+    }
+
+    // Ensure we submit the sanitized/uppercased incident if needed, or just standard state
+    // But since state drives the input, let's keep state as is but validate content.
     onSubmit(formData)
   }
 
@@ -181,15 +203,30 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
            {/* Service Type Selection Logic */}
            {/* Auto-update Service Type when Ticket Type changes is handled via Effect below */}
 
-           <div className="space-y-2">
-             <Label>Incident No.</Label>
-             <div className="relative">
-               <Input name="incident" value={formData.incident} onChange={handleChange} placeholder="INC... or LAPSUNG_..." className="font-mono font-bold tracking-wide" required />
-               <div className="absolute right-3 top-2.5">
-                  <Search className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+             <div className="space-y-2">
+               <Label>Incident No.</Label>
+               <div className="relative">
+                 <Input 
+                    name="incident" 
+                    value={formData.incident} 
+                    onChange={handleChange} 
+                    placeholder="INC... or LAPSUNG_..." 
+                    className={cn(
+                      "font-mono font-bold tracking-wide",
+                      errors.incident ? "border-red-500 focus-visible:ring-red-500" : ""
+                    )}
+                    required 
+                 />
+                 <div className="absolute right-3 top-2.5">
+                    <Search className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                 </div>
                </div>
+               {errors.incident && (
+                  <p className="text-xs text-red-500 font-bold animate-pulse">
+                    {errors.incident}
+                  </p>
+               )}
              </div>
-           </div>
 
            <div className="space-y-2">
               <Label>{formData.ticketType === 'INFRACARE' ? 'ODP Name' : 'Customer Name'}</Label>
