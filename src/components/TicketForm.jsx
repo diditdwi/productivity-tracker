@@ -83,7 +83,7 @@ export default function TicketForm({ onSubmit, tickets, initialData, isNewFromRe
              <BulkForm onSubmit={onSubmit} user={user} />
           )}
           {mode === 'NOTEPAD' && (
-             <NotepadForm onSubmit={onSubmit} user={user} technicians={technicians} />
+             <NotepadForm onSubmit={onSubmit} user={user} technicians={technicians} hdOfficers={hdOfficers} />
           )}
         </motion.div>
       </AnimatePresence>
@@ -400,13 +400,40 @@ function BulkForm({ onSubmit, user }) {
 }
 
 // --- NOTEPAD FORM MODE (With Live Preview) ---
-function NotepadForm({ onSubmit, technicians = [] }) {
+function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
   const [content, setContent] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   
   // Real-time Parsing Logic
   const parsedPreview = useMemo(() => {
     if (!content.trim()) return []
+    
+    // Helper: Resolve NIK <-> Name
+    const resolveEntity = (input, list) => {
+      if (!input || !list || list.length === 0) return input
+      const cleanInput = input.trim()
+      
+      // Try finding exact match first to avoid unnecessary change
+      if (list.includes(cleanInput)) return cleanInput
+
+      // 1. If NIK (digits) -> Find item starting with this NIK
+      if (/^\d+$/.test(cleanInput)) {
+        const found = list.find(item => item.startsWith(cleanInput))
+        return found || input
+      }
+      
+      // 2. If Name (text) -> Find item containing this name (case-insensitive)
+      // Check against the NAME part (after " - ")
+      const found = list.find(item => {
+        const parts = item.split(' - ')
+        if (parts.length < 2) return false
+        const namePart = parts[1].toLowerCase()
+        return namePart.includes(cleanInput.toLowerCase())
+      })
+      
+      return found || input
+    }
+    
     return content.trim().split('\n')
       .filter(line => line.trim().length > 0)
       .map((line, idx) => {
@@ -415,11 +442,10 @@ function NotepadForm({ onSubmit, technicians = [] }) {
         const isValid = parts.length >= 5
         let [hd, type, wz, tech, status, inc, cust, sid, stype, repair] = parts
 
-        // Auto-resolve Technician NIK -> Name
-        if (tech && /^\d+$/.test(tech) && technicians.length > 0) {
-          const found = technicians.find(t => t.startsWith(tech))
-          if (found) tech = found
-        }
+        // Auto-resolve Technician & HD
+        tech = resolveEntity(tech, technicians)
+        hd = resolveEntity(hd, hdOfficers)
+
         return {
           id: idx,
           original: line,
@@ -427,7 +453,7 @@ function NotepadForm({ onSubmit, technicians = [] }) {
           data: { hd, type, wz, tech, status, inc, cust, sid, stype, repair }
         }
       })
-  }, [content, technicians])
+  }, [content, technicians, hdOfficers])
 
   const validCount = parsedPreview.filter(p => p.isValid).length
 
