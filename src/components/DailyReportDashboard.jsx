@@ -72,7 +72,11 @@ export default function DailyReportDashboard({ tickets }) {
   const reportData = filteredTickets.reduce((acc, curr) => {
     const rawTech = curr.technician || 'Unknown'
     const tech = normalizeTechName(rawTech)
-    const type = curr.ticketType || 'UNSPECIFIED'
+    
+    let type = (curr.ticketType || 'UNSPEC').toUpperCase()
+    if (!TICKET_TYPES.includes(type)) {
+      type = 'OTHERS'
+    }
 
     if (!acc[tech]) {
       acc[tech] = { total: 0 }
@@ -182,13 +186,14 @@ export default function DailyReportDashboard({ tickets }) {
               {TICKET_TYPES.map(type => (
                 <th key={type} style={{ textAlign: 'center' }}>{type}</th>
               ))}
+              <th style={{ textAlign: 'center', background: '#f8fafc' }}>OTHERS</th>
               <th style={{ textAlign: 'center', fontWeight: 'bold' }}>Total</th>
             </tr>
           </thead>
           <tbody>
             {sortedTechs.length === 0 ? (
               <tr>
-                <td colSpan={TICKET_TYPES.length + 2} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                <td colSpan={TICKET_TYPES.length + 3} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                   No tickets found for {selectedDate}.
                 </td>
               </tr>
@@ -201,6 +206,9 @@ export default function DailyReportDashboard({ tickets }) {
                       {reportData[tech][type] || '-'}
                     </td>
                   ))}
+                  <td style={{ textAlign: 'center', background: '#f8fafc' }}>
+                    {reportData[tech]['OTHERS'] || '-'}
+                  </td>
                   <td style={{ textAlign: 'center', fontWeight: 'bold', background: 'rgba(var(--primary-rgb), 0.1)' }}>
                     {reportData[tech].total}
                   </td>
@@ -214,9 +222,15 @@ export default function DailyReportDashboard({ tickets }) {
                 <td>Grand Total</td>
                 {TICKET_TYPES.map(type => (
                   <td key={type} style={{ textAlign: 'center' }}>
-                    {filteredTickets.filter(t => t.ticketType === type).length}
+                    {filteredTickets.filter(t => (t.ticketType || 'UNSPEC').toUpperCase() === type).length}
                   </td>
                 ))}
+                <td style={{ textAlign: 'center' }}>
+                   {filteredTickets.filter(t => {
+                      const type = (t.ticketType || 'UNSPEC').toUpperCase()
+                      return !TICKET_TYPES.includes(type)
+                   }).length}
+                </td>
                 <td style={{ textAlign: 'center' }}>{filteredTickets.length}</td>
               </tr>
             </tfoot>
