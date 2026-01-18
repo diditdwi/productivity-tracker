@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   FilePlus, 
@@ -14,13 +15,16 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
-export default function Header({ user, view, setView, theme, toggleTheme, onLogout }) {
+export default function Header({ user, theme, toggleTheme, onLogout }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const navItems = [
-    { id: 'entry', label: 'Entry Data', icon: FilePlus },
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ...(user.role === 'admin' ? [{ id: 'productivity', label: 'Productivity', icon: BarChart3 }] : []),
-    { id: 'daily-report', label: 'Daily Report', icon: FileText },
-    { id: 'laporan-langsung', label: 'Laporan Langsung', icon: Zap },
+    { id: 'entry', label: 'Entry Data', icon: FilePlus, path: '/' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    ...(user.role === 'admin' ? [{ id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' }] : []),
+    { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/report' },
+    { id: 'laporan-langsung', label: 'Laporan Langsung', icon: Zap, path: '/laporan-langsung' },
   ];
 
   return (
@@ -44,13 +48,13 @@ export default function Header({ user, view, setView, theme, toggleTheme, onLogo
         {/* Navigation Pills */}
         <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar mask-gradient">
           {navItems.map((item) => {
-            const isActive = view === item.id;
+            const isActive = location.pathname === item.path;
             const Icon = item.icon;
             
             return (
               <button
                 key={item.id}
-                onClick={() => setView(item.id)}
+                onClick={() => navigate(item.path)}
                 className={cn(
                   "relative flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all rounded-full whitespace-nowrap",
                   isActive 
@@ -91,7 +95,7 @@ export default function Header({ user, view, setView, theme, toggleTheme, onLogo
             </div>
             
             <button
-              onClick={() => setView('change-password')}
+              onClick={() => navigate('/change-password')}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/80 hover:bg-secondary text-secondary-foreground transition-colors"
               title="Change Password"
             >

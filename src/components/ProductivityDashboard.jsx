@@ -14,32 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 
-// Constants mapped from App.jsx context
-const WORKZONES = {
-  'BANDUNG': ['BDK', 'CCD', 'CJA', 'DGO', 'GGK', 'HGM', 'LBG', 'SMD', 'TAS', 'TLE', 'TRG', 'UBR'],
-  'BANDUNG BARAT': ['RJW', 'CMI', 'NJG', 'BTJ', 'CKW', 'CLL', 'CPT', 'CSA', 'GNH', 'LEM', 'PDL', 'BJA', 'CWD', 'PNL', 'SOR', 'MJY', 'RCK'],
-  'CIANJUR': ['CBE', 'CJG', 'CJR', 'CKK', 'SDL', 'SGA', 'SKM', 'TGE', 'CCL']
-}
-const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
-const TEKNISI_LIST = [
-  "20920958 - SAEPUDIN",
-  "20931059 - AAN PERMANA",
-  "18960565 - AGUNG APRIANSYAH",
-  "17900513 - INDRA MARDIANSYAH",
-  "20950983 - DWI AGUS MULYANTO",
-  "20880008 - TIA SUTIANA",
-  "19940024 - DEDE SUHENDAR",
-  "18940003 - DADANG KURNIAWAN",
-  "15910008 - RAHMAT HIDAYAT",
-  "19960032 - CANDRA APRILIANA NUR ADHADI",
-  "16950155 - RUDI IRAWAN",
-  "22960143 - RIZAL MAULANA",
-  "19920117 - ANGGA ANGGARA",
-  "18880018 - RIKI SUBAGJA",
-  "18900600 - ACENG",
-  "22222222 - SURYANA",
-  "19900131 - AHMAD NURROHMAN"
-] // Simplified list, in real app this might come from props
+import { TEKNISI_LIST, WORKZONES, TICKET_TYPES } from '../constants'
 
 export default function ProductivityDashboard({ tickets }) {
   const [itemsPerPage, setItemsPerPage] = useState(20)
