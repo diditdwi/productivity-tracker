@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../lib/utils'
+import { TEKNISI_LIST, HD_OFFICERS } from '../constants'
 
 const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
 
@@ -123,6 +124,20 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
     return sortConfig.direction === 'ascending' 
       ? <ArrowUp className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" /> 
       : <ArrowDown className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" />
+  }
+
+  // Helper to resolve NIK -> Name for display
+  const resolveDisplay = (value, list) => {
+    if (!value) return '-'
+    // If it's already a full string (contains " - "), return it
+    if (value.includes(' - ')) return value
+    
+    // If it is just digits, try to find it in the list
+    if (/^\d+$/.test(value)) {
+      const found = list.find(item => item.startsWith(value))
+      if (found) return found
+    }
+    return value
   }
 
   return (
@@ -270,7 +285,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">
-                        {ticket.technician}
+                        {resolveDisplay(ticket.technician, TEKNISI_LIST)}
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs font-medium">
                         {ticket.workzone}
@@ -279,7 +294,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                          <StatusBadge status={ticket.status} />
                       </td>
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-500 text-xs text-right">
-                        {ticket.hdOfficer}
+                        {resolveDisplay(ticket.hdOfficer, HD_OFFICERS)}
                       </td>
                     </motion.tr>
                   )
