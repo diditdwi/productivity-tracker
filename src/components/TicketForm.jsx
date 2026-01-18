@@ -122,13 +122,14 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
 
   // Auto-switch Service Type options
   useEffect(() => {
-    const currentOptions = 
-      formData.ticketType === 'INFRACARE' ? SERVICE_TYPES['INFRACARE'] : 
-      formData.ticketType === 'SQM' ? SERVICE_TYPES['DATIN'] : 
-      SERVICE_TYPES['General']
+    // Logic: Infracare gets specific list. Everyone else gets grouped list (General + DATIN).
+    const isInfracare = formData.ticketType === 'INFRACARE'
+    const validOptions = isInfracare 
+      ? SERVICE_TYPES['INFRACARE'] 
+      : [...SERVICE_TYPES['General'], ...SERVICE_TYPES['DATIN']]
     
-    if (!currentOptions.includes(formData.serviceType)) {
-      setFormData(prev => ({ ...prev, serviceType: currentOptions[0] }))
+    if (!validOptions.includes(formData.serviceType)) {
+      setFormData(prev => ({ ...prev, serviceType: validOptions[0] }))
     }
   }, [formData.ticketType])
 
@@ -191,9 +192,9 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
                   value={formData.serviceType} 
                   onChange={handleChange} 
                   options={
-                    formData.ticketType === 'INFRACARE' ? SERVICE_TYPES['INFRACARE'] : 
-                    formData.ticketType === 'SQM' ? SERVICE_TYPES['DATIN'] : 
-                    SERVICE_TYPES['General']
+                    formData.ticketType === 'INFRACARE' 
+                      ? SERVICE_TYPES['INFRACARE'] 
+                      : { 'General': SERVICE_TYPES['General'], 'DATIN': SERVICE_TYPES['DATIN'] }
                   } 
                 /> 
               </div>
@@ -581,19 +582,33 @@ const Input = ({ className, ...props }) => (
     {...props} 
   />
 )
-const Select = ({ options, className, ...props }) => (
-  <div className="relative">
-      <select 
-        className={cn(
-          "flex h-11 w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:border-slate-400 dark:hover:border-slate-500 cursor-pointer",
-          className
-        )} 
-        {...props}
-      >
-        {options.map(opt => (
-          <option key={opt} value={opt} className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">{opt}</option>
-        ))}
-      </select>
-  </div>
-)
+const Select = ({ options, className, ...props }) => {
+  const isGrouped = !Array.isArray(options) && typeof options === 'object'
+
+  return (
+    <div className="relative">
+        <select 
+          className={cn(
+            "flex h-11 w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:border-slate-400 dark:hover:border-slate-500 cursor-pointer",
+            className
+          )} 
+          {...props}
+        >
+          {isGrouped ? (
+             Object.entries(options).map(([group, items]) => (
+               <optgroup key={group} label={group} className="font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800">
+                 {items.map(opt => (
+                   <option key={opt} value={opt} className="font-normal bg-white dark:bg-slate-900">{opt}</option>
+                 ))}
+               </optgroup>
+             ))
+          ) : (
+            options.map(opt => (
+              <option key={opt} value={opt} className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">{opt}</option>
+            ))
+          )}
+        </select>
+    </div>
+  )
+}
 
