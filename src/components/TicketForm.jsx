@@ -157,7 +157,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
            </div>
 
            <div className="space-y-2">
-              <Label>Customer Name</Label>
+              <Label>{formData.ticketType === 'INFRACARE' ? 'ODP Name' : 'Customer Name'}</Label>
               <Input name="customerName" value={formData.customerName} onChange={handleChange} placeholder="" />
            </div>
         </div>
@@ -171,7 +171,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
               </div>
               <div className="space-y-2">
                 <Label>Service Type</Label>
-                <Select name="serviceType" value={formData.serviceType} onChange={handleChange} options={SERVICE_TYPES['General']} /> 
+                <Select name="serviceType" value={formData.serviceType} onChange={handleChange} options={formData.ticketType === 'INFRACARE' ? SERVICE_TYPES['INFRACARE'] : SERVICE_TYPES['General']} /> 
               </div>
            </div>
 
