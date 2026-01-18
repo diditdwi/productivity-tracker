@@ -120,6 +120,18 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
     if (initialData) setFormData(prev => ({ ...prev, ...initialData }))
   }, [initialData])
 
+  // Auto-switch Service Type options
+  useEffect(() => {
+    const currentOptions = 
+      formData.ticketType === 'INFRACARE' ? SERVICE_TYPES['INFRACARE'] : 
+      formData.ticketType === 'SQM' ? SERVICE_TYPES['DATIN'] : 
+      SERVICE_TYPES['General']
+    
+    if (!currentOptions.includes(formData.serviceType)) {
+      setFormData(prev => ({ ...prev, serviceType: currentOptions[0] }))
+    }
+  }, [formData.ticketType])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -146,6 +158,9 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
              </div>
            </div>
 
+           {/* Service Type Selection Logic */}
+           {/* Auto-update Service Type when Ticket Type changes is handled via Effect below */}
+
            <div className="space-y-2">
              <Label>Incident No.</Label>
              <div className="relative">
@@ -171,7 +186,16 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, user }) {
               </div>
               <div className="space-y-2">
                 <Label>Service Type</Label>
-                <Select name="serviceType" value={formData.serviceType} onChange={handleChange} options={formData.ticketType === 'INFRACARE' ? SERVICE_TYPES['INFRACARE'] : SERVICE_TYPES['General']} /> 
+                <Select 
+                  name="serviceType" 
+                  value={formData.serviceType} 
+                  onChange={handleChange} 
+                  options={
+                    formData.ticketType === 'INFRACARE' ? SERVICE_TYPES['INFRACARE'] : 
+                    formData.ticketType === 'SQM' ? SERVICE_TYPES['DATIN'] : 
+                    SERVICE_TYPES['General']
+                  } 
+                /> 
               </div>
            </div>
 
