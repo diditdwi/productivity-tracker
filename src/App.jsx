@@ -320,9 +320,26 @@ function App() {
     }
   }
 
-  const addTicket = (ticketOrTickets) => {
+  const addTicket = async (ticketOrTickets) => {
     const newItems = Array.isArray(ticketOrTickets) ? ticketOrTickets : [ticketOrTickets]
 
+    // 1. Persist to Google Sheets via API
+    for (const ticket of newItems) {
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ticket)
+        })
+        if (!res.ok) {
+           console.error('Failed to save to sheet:', ticket.incident, await res.text())
+        }
+      } catch (e) {
+        console.error('Network Error saving ticket:', e)
+      }
+    }
+
+    // 2. Update Local State
     setTickets(prev => {
       let current = [...prev]
       // Process updates/inserts
