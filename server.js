@@ -766,6 +766,140 @@ app.get('/api/scrape', async (req, res) => {
     }
 });
 
+// --- TICKET DASHBOARD ENDPOINTS ---
+
+app.get('/api/tickets', async (req, res) => {
+    try {
+        const SPREADSHEET_ID = process.env.SPREADSHEET_ID || SHEET_ID_LAPORAN;
+        const SHEET_NAME = 'All tiket';
+        
+        // Ensure Cache is warm
+        updateGaransiCache().catch(err => console.error("Bg Cache Update Error:", err));
+
+        const sheets = getSheetsClient();
+        console.log('Fetching tickets from sheet:', SPREADSHEET_ID);
+        
+        const getRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `'${SHEET_NAME}'!A:M`,
+        });
+
+        const rows = getRes.data.values || [];
+        // console.log('Rows found:', rows.length);
+
+        const tickets = rows.slice(1).map((row, index) => {
+            const serviceId = row[4];
+            const cleanServiceId = String(serviceId || '').trim();
+            let isFFG = false;
+            let umurGaransi = null;
+
+            if (garansiCache.has(cleanServiceId)) {
+                umurGaransi = garansiCache.get(cleanServiceId);
+                if (umurGaransi <= 60) {
+                    isFFG = true;
+                }
+            }
+
+            return {
+                id: index + '-' + row[2],
+                date: row[0],
+                ticketType: row[1],
+                incident: row[2],
+                customerName: row[3],
+                serviceId: row[4],
+                serviceType: row[5],
+                technician: row[6],
+                labcode: row[7],
+                repair: row[8],
+                status: row[9],
+                workzone: row[10],
+                hdOfficer: row[11],
+                timestamp: row[12],
+                isFFG,
+                umurGaransi
+            };
+        }).reverse();
+
+        res.json(tickets);
+    } catch (err) {
+        console.error('Error in GET /api/tickets:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/tickets', async (req, res) => {
+    try {
+        const SPREADSHEET_ID = process.env.SPREADSHEET_ID || SHEET_ID_LAPORAN;
+        const SHEET_NAME = 'All tiket';
+        const ticket = req.body;
+        const {
+            date, ticketType, incident, customerName, serviceId,
+            serviceType, technician, labcode, repair, status,
+            workzone, hdOfficer
+        } = ticket;
+
+        const sheets = getSheetsClient();
+
+        // Check existing by Incident (Col C)
+        const getRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `'${SHEET_NAME}'!C:C`,
+        });
+
+        const rows = getRes.data.values || [];
+        let rowIndex = -1;
+        const targetIncident = String(incident).trim().toUpperCase();
+
+        for (let i = 0; i < rows.length; i++) {
+            const sheetIncident = String(rows[i][0] || '').trim().toUpperCase();
+            if (sheetIncident === targetIncident && targetIncident.length > 0) {
+                rowIndex = i + 1; // 1-based
+                break;
+            }
+        }
+
+        const rowData = [
+            date,
+            ticketType,
+            incident,
+            customerName,
+            serviceId,
+            serviceType,
+            technician,
+            labcode || '',
+            repair,
+            status,
+            workzone,
+            hdOfficer,
+            new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', hour12: false })
+        ];
+
+        if (rowIndex !== -1) {
+            // Update
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `'${SHEET_NAME}'!A${rowIndex}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [rowData] }
+            });
+            res.json({ message: 'Updated', type: 'UPDATE' });
+        } else {
+            // Append
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `'${SHEET_NAME}'!A:A`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [rowData] }
+            });
+            res.json({ message: 'Created', type: 'CREATE' });
+        }
+
+    } catch (err) {
+        console.error('Error in POST /api/tickets:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Persistent Server running on http://localhost:${PORT}`);
     // Warm up cache heavily on start
