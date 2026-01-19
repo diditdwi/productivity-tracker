@@ -155,7 +155,16 @@ Mohon segera dicek.${mentionText}`;
                   <td className="truncate-cell" style={{ maxWidth: '140px' }} title={r.timestamp}>{r.timestamp}</td>
                   <td style={{ fontWeight: 'bold', maxWidth: '120px' }} className="truncate-cell">{r.nama}</td>
                   <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.alamat}>{r.alamat}</td>
-                  <td className="truncate-cell">{r.noInternet}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span className="truncate-cell">{r.noInternet}</span>
+                      {r.isFFG && (
+                        <span className="status-badge" style={{ backgroundColor: '#D97706', color: 'white', fontSize: '0.7em', padding: '2px 6px' }}>
+                          FFG {r.umurGaransi ? `(${r.umurGaransi}h)` : ''}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.keluhan}>{r.keluhan}</td>
                   <td>{r.layanan}</td>
                   <td className="truncate-cell" style={{ maxWidth: '100px' }}>{r.snOnt}</td>

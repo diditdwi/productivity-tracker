@@ -419,8 +419,70 @@ app.post('/api/send-whatsapp', async (req, res) => {
     }
 });
 
+// --- CACHE STATE ---
+let garansiCache = new Map(); // Map<SpeedyNumber, UmurVal>
+let lastGaransiParams = { sheetId: null, lastFetch: 0 };
+
+async function updateGaransiCache() {
+    const GARANSI_SHEET_ID = process.env.SHEET_ID_GARANSI;
+    // Refresh if empty or older than 1 hour
+    const now = Date.now();
+    if (garansiCache.size > 0 && (now - lastGaransiParams.lastFetch) < 3600000) {
+        return; 
+    }
+
+    if (!GARANSI_SHEET_ID) {
+        console.log("⚠️ SHEET_ID_GARANSI not set in .env");
+        return;
+    }
+
+    try {
+        console.log("🔄 Updating Garansi Cache...");
+        const sheets = getSheetsClient();
+        // Fetch Columns O (Speedy) and BD (Umur) from 'Bandung Barat dan Cianjur'
+        // Assumes data starts from row 2 to ~Last Row. Let's fetch a safe large range or detect last row.
+        // Fetching O2:BD might be huge. Let's just fetch O and BD separately in batches or one clean batch if possible.
+        // O is Index 14, BD is Index 55.
+        
+        // We will fetch columns O and BD.
+        const res = await sheets.spreadsheets.values.get({
+            spreadsheetId: GARANSI_SHEET_ID,
+            range: "'Bandung Barat dan Cianjur'!O2:BD10000", // Adjust range estimate
+        });
+
+        const rows = res.data.values || [];
+        const newCache = new Map();
+        
+        rows.forEach(row => {
+            // O is index 0 in this range? NO. The range is O to BD.
+            // So O is index 0. BD is index (55 - 14) = 41.
+            const speedy = row[0]; // Accessing relative index 0 for Column O
+            const umur = row[41];  // Accessing relative index 41 for Column BD
+            
+            if (speedy) {
+                // Normalize speedy number (string)
+                const cleanSpeedy = String(speedy).trim();
+                const umurVal = parseInt(umur);
+                if (!isNaN(umurVal)) {
+                    newCache.set(cleanSpeedy, umurVal);
+                }
+            }
+        });
+
+        garansiCache = newCache;
+        lastGaransiParams.lastFetch = now;
+        console.log(`✅ Garansi Cache Updated. Total records: ${garansiCache.size}`);
+        
+    } catch (e) {
+        console.error("❌ Failed to update Garansi cache:", e.message);
+    }
+}
+
 app.get('/api/laporan-langsung', async (req, res) => {
     try {
+        // Ensure Cache is warm (non-blocking if already warm)
+        updateGaransiCache().catch(err => console.error("Bg Cache Update Error:", err));
+
         const sheets = getSheetsClient();
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID_LAPORAN,
@@ -430,7 +492,7 @@ app.get('/api/laporan-langsung', async (req, res) => {
         const rows = response.data.values || [];
         console.log('Fetched Laporan Rows:', rows.length);
 
-        // Header Check: If row[0] contains "Timestamp" or "Nama", assume it's a header and slice it.
+        // Header Check
         let dataRows = rows;
         if (rows.length > 0) {
             const firstRow = rows[0];
@@ -440,19 +502,36 @@ app.get('/api/laporan-langsung', async (req, res) => {
             }
         }
 
-        const data = dataRows.map((row, idx) => ({
-            id: idx,
-            timestamp: row[0] || '-',
-            nama: row[1] || '-',
-            alamat: row[2] || '-',
-            noInternet: row[3] || '-',
-            keluhan: row[4] || '-',
-            layanan: row[5] || '-',
-            snOnt: row[6] || '-',
-            pic: row[7] || '-',
-            status: row[8] || 'Open',
-            ticketId: row[9] || '-'
-        })).reverse();
+        const data = dataRows.map((row, idx) => {
+            const noInternet = String(row[3] || '').trim();
+            let isFFG = false;
+            let umurGaransi = null;
+
+            // FFG Logic Check
+            if (garansiCache.has(noInternet)) {
+                umurGaransi = garansiCache.get(noInternet);
+                if (umurGaransi <= 60) {
+                    isFFG = true;
+                }
+            }
+
+            return {
+                id: idx,
+                timestamp: row[0] || '-',
+                nama: row[1] || '-',
+                alamat: row[2] || '-',
+                noInternet: row[3] || '-',
+                keluhan: row[4] || '-',
+                layanan: row[5] || '-',
+                snOnt: row[6] || '-',
+                pic: row[7] || '-',
+                status: row[8] || 'Open',
+                ticketId: row[9] || '-',
+                // New Fields
+                isFFG,
+                umurGaransi
+            };
+        }).reverse();
 
         res.json(data);
     } catch (error) {
@@ -617,5 +696,7 @@ app.get('/api/scrape', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Persistent Server running on http://localhost:${PORT}`);
+    // Warm up cache heavily on start
+    updateGaransiCache();
     // initBrowserAndLogin(); // Disabled by user request
 });
