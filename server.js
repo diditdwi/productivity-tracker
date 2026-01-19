@@ -257,9 +257,9 @@ waClient.on('message_create', async msg => {
     if (text === 'BATAL' || text === 'RESET' || text === 'CANCEL') {
         if (userChats.has(chatId)) {
             userChats.delete(chatId);
-            msg.reply('🚫 Laporan dibatalkan. Ketik *LAPOR* untuk mulai dari awal.');
+            await waClient.sendMessage(chatId, '🚫 Laporan dibatalkan. Ketik *LAPOR* untuk mulai dari awal.');
         } else {
-            msg.reply('Tidak ada sesi laporan yang aktif.');
+            await waClient.sendMessage(chatId, 'Tidak ada sesi laporan yang aktif.');
         }
         return;
     }
@@ -273,37 +273,37 @@ waClient.on('message_create', async msg => {
             case 'WAIT_NAME':
                 state.data.nama = body;
                 state.step = 'WAIT_ADDRESS';
-                msg.reply('2. Masukkan *ALAMAT LENGKAP*:');
+                await waClient.sendMessage(chatId, '2. Masukkan *ALAMAT LENGKAP*:');
                 break;
 
             case 'WAIT_ADDRESS':
                 state.data.alamat = body;
                 state.step = 'WAIT_NO_INET';
-                msg.reply('3. Masukkan *NO LAYANAN / INTERNET*:');
+                await waClient.sendMessage(chatId, '3. Masukkan *NO LAYANAN / INTERNET*:');
                 break;
 
             case 'WAIT_NO_INET':
                 state.data.noInternet = body;
                 state.step = 'WAIT_COMPLAINT';
-                msg.reply('4. Masukkan *KELUHAN / KENDALA*:');
+                await waClient.sendMessage(chatId, '4. Masukkan *KELUHAN / KENDALA*:');
                 break;
 
             case 'WAIT_COMPLAINT':
                 state.data.keluhan = body;
                 state.step = 'WAIT_SERVICE';
-                msg.reply('5. Jenis Layanan (Contoh: Internet/Voice/IPTV/Datin):');
+                await waClient.sendMessage(chatId, '5. Jenis Layanan (Contoh: Internet/Voice/IPTV/Datin):');
                 break;
 
             case 'WAIT_SERVICE':
                 state.data.layanan = body;
                 state.step = 'WAIT_SN';
-                msg.reply('6. Masukkan *SN ONT* (Jika ada, atau ketik -):');
+                await waClient.sendMessage(chatId, '6. Masukkan *SN ONT* (Jika ada, atau ketik -):');
                 break;
 
             case 'WAIT_SN':
                 state.data.snOnt = body;
                 state.step = 'WAIT_PIC';
-                msg.reply('7. Masukkan *NO HP / CP PIC* yang bisa dihubungi:');
+                await waClient.sendMessage(chatId, '7. Masukkan *NO HP / CP PIC* yang bisa dihubungi:');
                 break;
 
             case 'WAIT_PIC':
@@ -311,12 +311,12 @@ waClient.on('message_create', async msg => {
                 // Conversation Finished
                 userChats.delete(chatId);
 
-                msg.reply('⏳ Sedang menyimpan data...');
+                await waClient.sendMessage(chatId, '⏳ Sedang menyimpan data...');
                 const ticketId = await saveReportToSheet(state.data);
                 if (ticketId) {
-                    msg.reply(`✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${state.data.nama}\nAlamat: ${state.data.alamat}\nNo Layanan: ${state.data.noInternet}\nKendala: ${state.data.keluhan}\nLayanan: ${state.data.layanan}\nSN ONT: ${state.data.snOnt}\nPIC Contact: ${state.data.pic}\n\nData telah masuk ke Dashboard. Terima kasih!`);
+                    await waClient.sendMessage(chatId, `✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${state.data.nama}\nAlamat: ${state.data.alamat}\nNo Layanan: ${state.data.noInternet}\nKendala: ${state.data.keluhan}\nLayanan: ${state.data.layanan}\nSN ONT: ${state.data.snOnt}\nPIC Contact: ${state.data.pic}\n\nData telah masuk ke Dashboard. Terima kasih!`);
                 } else {
-                    msg.reply('❌ Maaf, terjadi kesalahan saat menyimpan laporan.');
+                    await waClient.sendMessage(chatId, '❌ Maaf, terjadi kesalahan saat menyimpan laporan.');
                 }
                 break;
         }
@@ -349,16 +349,16 @@ waClient.on('message_create', async msg => {
 
         // Basic validation
         if (!data.nama && !data.keluhan) {
-            msg.reply('Format tidak terbaca. Gunakan fitur *LAPOR* interaktif (tanpa enter) atau perbaiki format.');
+            await waClient.sendMessage(chatId, 'Format tidak terbaca. Gunakan fitur *LAPOR* interaktif (tanpa enter) atau perbaiki format.');
             return;
         }
 
         // Save to Sheet
         const ticketId = await saveReportToSheet(data);
         if (ticketId) {
-            msg.reply(`✅ *LAPORAN DITERIMA*\nTicket: ${ticketId}\nTerima kasih!`);
+            await waClient.sendMessage(chatId, `✅ *LAPORAN DITERIMA*\nTicket: ${ticketId}\nTerima kasih!`);
         } else {
-            msg.reply('❌ Gagal menyimpan laporan.');
+            await waClient.sendMessage(chatId, '❌ Gagal menyimpan laporan.');
         }
         return;
     }
@@ -367,14 +367,14 @@ waClient.on('message_create', async msg => {
     // Exact match "LAPOR" or "ORDER" ignoring case/whitespace
     if (text === 'LAPOR' || text === 'ORDER') {
         userChats.set(chatId, { step: 'WAIT_NAME', data: {} });
-        msg.reply('🤖 *MODE LAPORAN INTERAKTIF*\n\nSiap membantu mencatat laporan.\nSilakan jawab pertanyaan berikut satu per satu.\n(Ketik *BATAL* untuk berhenti kapan saja)\n\n1. Masukkan *NAMA PELANGGAN*:');
+        await waClient.sendMessage(chatId, '🤖 *MODE LAPORAN INTERAKTIF*\n\nSiap membantu mencatat laporan.\nSilakan jawab pertanyaan berikut satu per satu.\n(Ketik *BATAL* untuk berhenti kapan saja)\n\n1. Masukkan *NAMA PELANGGAN*:');
         return;
     }
 
     // Handle General Commands / Greetings
     if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST') {
         const welcomeMsg = `🤖 *Hellow, I am Ticket Bot!*\n\nKetik *LAPOR* untuk memulai pelaporan gangguan secara bertahap.\n\nAtau gunakan format langsung:\n*LAPOR*\nNama: ...\nAlamat: ...\n(dst)`;
-        msg.reply(welcomeMsg);
+        await waClient.sendMessage(chatId, welcomeMsg);
     }
 });
 
