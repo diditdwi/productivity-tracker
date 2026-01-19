@@ -41,6 +41,9 @@ const DEFAULT_USERS = [
   { username: 'HSA_CJR', password: 'Inibaru11!', role: 'viewer' },
   { username: 'KORLAP_B2B1', password: 'Inibaru2!', role: 'viewer' },
   { username: 'KORLAP_B2B2', password: 'Inibaru2!', role: 'viewer' },
+  { username: '20970967', password: 'Balonkuada3!', role: 'staff' },
+  { username: '21960004', password: 'Balonkuada3!', role: 'staff' },
+  { username: '20961440', password: 'Balonkuada3!', role: 'staff' },
 ]
 
 function App() {
