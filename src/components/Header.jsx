@@ -1,17 +1,17 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  FilePlus, 
-  BarChart3, 
-  FileText, 
-  Zap, 
-  Sun, 
-  Moon, 
-  LogOut, 
-  KeyRound, 
-  User 
+import {
+  LayoutDashboard,
+  FilePlus,
+  BarChart3,
+  FileText,
+  Zap,
+  Sun,
+  Moon,
+  LogOut,
+  KeyRound,
+  User
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -19,22 +19,27 @@ export default function Header({ user, theme, toggleTheme, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = [
-    { id: 'entry', label: 'Entry Data', icon: FilePlus, path: '/' },
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    ...(user.role === 'admin' ? [{ id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' }] : []),
-    { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/report' },
-    { id: 'laporan-langsung', label: 'Laporan Langsung', icon: Zap, path: '/laporan-langsung' },
-  ];
+  const navItems = user.role === 'viewer'
+    ? [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' }
+    ]
+    : [
+      { id: 'entry', label: 'Entry Data', icon: FilePlus, path: '/' },
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      ...(user.role === 'admin' ? [{ id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' }] : []),
+      { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/report' },
+      { id: 'laporan-langsung', label: 'Laporan Langsung', icon: Zap, path: '/laporan-langsung' },
+    ];
 
   return (
-    <motion.header 
+    <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm"
     >
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4">
-        
+
         {/* Logo Area */}
         <div className="flex items-center gap-2 mr-8">
           <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-lg">
@@ -50,15 +55,15 @@ export default function Header({ user, theme, toggleTheme, onLogout }) {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            
+
             return (
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={cn(
                   "relative flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all rounded-full whitespace-nowrap",
-                  isActive 
-                    ? "bg-blue-600 text-white shadow-md outline outline-2 outline-blue-600 dark:outline-blue-500 dark:bg-blue-500" 
+                  isActive
+                    ? "bg-blue-600 text-white shadow-md outline outline-2 outline-blue-600 dark:outline-blue-500 dark:bg-blue-500"
                     : "bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-black dark:hover:text-white"
                 )}
               >
@@ -93,7 +98,7 @@ export default function Header({ user, theme, toggleTheme, onLogout }) {
                 {user.role}
               </span>
             </div>
-            
+
             <button
               onClick={() => navigate('/change-password')}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/80 hover:bg-secondary text-secondary-foreground transition-colors"
@@ -101,7 +106,7 @@ export default function Header({ user, theme, toggleTheme, onLogout }) {
             >
               <KeyRound className="h-4 w-4" />
             </button>
-            
+
             <button
               onClick={onLogout}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 hover:bg-destructive text-destructive transition-colors"

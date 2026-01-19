@@ -28,6 +28,17 @@ const DEFAULT_USERS = [
   { username: '19950311', password: 'TA19950311', role: 'staff' },
   { username: '19900131', password: 'TA19900131', role: 'staff' },
   { username: '19890089', password: 'TA19890089', role: 'staff' },
+  { username: 'HSA_RJW', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_CMI', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_PDL', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_MJY', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_BJA', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_LBG', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_GGK', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_CJA', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_SMD', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_BDK', password: 'Inibaru11!', role: 'viewer' },
+  { username: 'HSA_CJR', password: 'Inibaru11!', role: 'viewer' },
 ]
 
 function App() {
@@ -37,7 +48,17 @@ function App() {
   const [usersDB, setUsersDB] = useState(() => {
     try {
       const saved = localStorage.getItem('ticketTracker_users_db')
-      if (saved) return JSON.parse(saved)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Merge DEFAULT_USERS into parsed (adding only missing users)
+        const combined = [...parsed]
+        DEFAULT_USERS.forEach(defUser => {
+          if (!combined.find(u => u.username === defUser.username)) {
+            combined.push(defUser)
+          }
+        })
+        return combined
+      }
     } catch (e) { console.error(e) }
     return DEFAULT_USERS
   })
@@ -56,14 +77,14 @@ function App() {
     try {
       const saved = localStorage.getItem('ticketTrackerUser')
       if (saved && saved !== 'undefined') return JSON.parse(saved)
-    } catch (e) {}
+    } catch (e) { }
     return null
   })
 
   // Ticket Data
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
-  
+
   // Edit State
   const [editingTicket, setEditingTicket] = useState(null)
   const [isNewTicketFromReport, setIsNewTicketFromReport] = useState(false)
@@ -123,7 +144,7 @@ function App() {
   // Ticket Submission
   const addTicket = async (ticketOrTickets) => {
     const newItems = Array.isArray(ticketOrTickets) ? ticketOrTickets : [ticketOrTickets]
-    
+
     const toastId = toast.loading('Saving to Google Sheet...')
     let successCount = 0
     let failCount = 0
@@ -137,10 +158,10 @@ function App() {
           body: JSON.stringify(ticket)
         })
         if (!res.ok) {
-           console.error('Failed to save:', ticket.incident, await res.text())
-           failCount++
+          console.error('Failed to save:', ticket.incident, await res.text())
+          failCount++
         } else {
-           successCount++
+          successCount++
         }
       } catch (e) {
         console.error('Network Error:', e)
@@ -149,11 +170,11 @@ function App() {
     }
 
     if (failCount === 0) {
-        toast.success(`Saved ${successCount} ticket(s)!`, { id: toastId })
+      toast.success(`Saved ${successCount} ticket(s)!`, { id: toastId })
     } else if (successCount > 0) {
-        toast.success(`Saved ${successCount}, failed ${failCount}.`, { id: toastId })
+      toast.success(`Saved ${successCount}, failed ${failCount}.`, { id: toastId })
     } else {
-        toast.error('Failed to save tickets.', { id: toastId })
+      toast.error('Failed to save tickets.', { id: toastId })
     }
 
     // Update Local State
@@ -167,7 +188,7 @@ function App() {
       })
       return current
     })
-    
+
     // Navigate to Dashboard
     navigate('/dashboard')
   }
@@ -202,31 +223,33 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={
-            <TicketForm 
-                onSubmit={handleTicketSubmit} 
-                initialData={editingTicket} 
+            user.role === 'viewer' ? <Navigate to="/dashboard" replace /> : (
+              <TicketForm
+                onSubmit={handleTicketSubmit}
+                initialData={editingTicket}
                 isNewFromReport={isNewTicketFromReport}
                 user={user}
                 technicians={TEKNISI_LIST}
                 hdOfficers={HD_OFFICERS}
                 tickets={tickets}
-            />
+              />
+            )
           } />
           <Route path="/dashboard" element={
-            <TicketTable 
-                tickets={tickets} 
-                loading={loading}
-                onEditTicket={handleEditTicket} 
+            <TicketTable
+              tickets={tickets}
+              loading={loading}
+              onEditTicket={handleEditTicket}
             />
           } />
           <Route path="/productivity" element={<ProductivityDashboard tickets={tickets} />} />
           <Route path="/report" element={<DailyReportDashboard tickets={tickets} />} />
           <Route path="/laporan-langsung" element={<LaporanLangsungDashboard />} />
           <Route path="/change-password" element={
-            <ChangePasswordForm 
-                user={user} 
-                onChangePassword={changePassword} 
-                onCancel={() => navigate('/')} 
+            <ChangePasswordForm
+              user={user}
+              onChangePassword={changePassword}
+              onCancel={() => navigate('/')}
             />
           } />
           <Route path="/login" element={<Navigate to="/" />} />
