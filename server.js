@@ -231,13 +231,91 @@ async function saveReportToSheet(data) {
 }
 
 // WhatsApp Message Handler
-waClient.on('message_create', async msg => {
-    const body = msg.body;
-    // Check keyword
-    const text = body.trim().toUpperCase();
+// Conversation State Management
+const userChats = new Map();
 
-    if (text.startsWith('LAPOR') || text.startsWith('ORDER')) {
-        console.log('Received Report via WA:', body);
+// WhatsApp Message Handler
+waClient.on('message_create', async msg => {
+    // Ignore messages sent by the bot itself
+    if (msg.fromMe) return;
+
+    const chatId = msg.from;
+    const body = msg.body.trim();
+    const text = body.toUpperCase();
+
+    // 0. RESET/CANCEL COMMAND
+    if (text === 'BATAL' || text === 'RESET' || text === 'CANCEL') {
+        if (userChats.has(chatId)) {
+            userChats.delete(chatId);
+            msg.reply('🚫 Laporan dibatalkan. Ketik *LAPOR* untuk mulai dari awal.');
+        } else {
+            msg.reply('Tidak ada sesi laporan yang aktif.');
+        }
+        return;
+    }
+
+    // 1. HANDLE ACTIVE CONVERSATION STATE
+    if (userChats.has(chatId)) {
+        const state = userChats.get(chatId);
+
+        // Update data based on current step
+        switch (state.step) {
+            case 'WAIT_NAME':
+                state.data.nama = body;
+                state.step = 'WAIT_ADDRESS';
+                msg.reply('2. Masukkan *ALAMAT LENGKAP*:');
+                break;
+
+            case 'WAIT_ADDRESS':
+                state.data.alamat = body;
+                state.step = 'WAIT_NO_INET';
+                msg.reply('3. Masukkan *NO LAYANAN / INTERNET*:');
+                break;
+
+            case 'WAIT_NO_INET':
+                state.data.noInternet = body;
+                state.step = 'WAIT_COMPLAINT';
+                msg.reply('4. Masukkan *KELUHAN / KENDALA*:');
+                break;
+
+            case 'WAIT_COMPLAINT':
+                state.data.keluhan = body;
+                state.step = 'WAIT_SERVICE';
+                msg.reply('5. Jenis Layanan (Contoh: Internet/Voice/IPTV/Datin):');
+                break;
+
+            case 'WAIT_SERVICE':
+                state.data.layanan = body;
+                state.step = 'WAIT_SN';
+                msg.reply('6. Masukkan *SN ONT* (Jika ada, atau ketik -):');
+                break;
+
+            case 'WAIT_SN':
+                state.data.snOnt = body;
+                state.step = 'WAIT_PIC';
+                msg.reply('7. Masukkan *NO HP / CP PIC* yang bisa dihubungi:');
+                break;
+
+            case 'WAIT_PIC':
+                state.data.pic = body;
+                // Conversation Finished
+                userChats.delete(chatId);
+
+                msg.reply('⏳ Sedang menyimpan data...');
+                const ticketId = await saveReportToSheet(state.data);
+                if (ticketId) {
+                    msg.reply(`✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${state.data.nama}\nAlamat: ${state.data.alamat}\nNo Layanan: ${state.data.noInternet}\nKendala: ${state.data.keluhan}\nLayanan: ${state.data.layanan}\nSN ONT: ${state.data.snOnt}\nPIC Contact: ${state.data.pic}\n\nData telah masuk ke Dashboard. Terima kasih!`);
+                } else {
+                    msg.reply('❌ Maaf, terjadi kesalahan saat menyimpan laporan.');
+                }
+                break;
+        }
+        return;
+    }
+
+    // 2. ONE-SHOT COMMAND (Legacy Support: "LAPOR\nNama: ...")
+    if ((text.startsWith('LAPOR') || text.startsWith('ORDER')) && body.includes('\n')) {
+        console.log('Received One-Shot Report via WA:', body);
 
         // Simple Parsing Logic
         const lines = body.split('\n');
@@ -248,7 +326,7 @@ waClient.on('message_create', async msg => {
             if (parts.length < 2) return;
 
             const key = parts[0].trim().toLowerCase();
-            const value = parts.slice(1).join(':').trim(); // Rejoin in case value has ':'
+            const value = parts.slice(1).join(':').trim();
 
             if (key.includes('nama')) data.nama = value;
             else if (key.includes('alamat')) data.alamat = value;
@@ -261,21 +339,31 @@ waClient.on('message_create', async msg => {
 
         // Basic validation
         if (!data.nama && !data.keluhan) {
-            msg.reply('Format laporan tidak dikenali. Mohon gunakan format:\n\nLAPOR\nNama: ...\nAlamat: ...\nNo Internet: ...\nKeluhan: ...\nLayanan: ...\nSN ONT: ...\nPIC: ...');
+            msg.reply('Format tidak terbaca. Gunakan fitur *LAPOR* interaktif (tanpa enter) atau perbaiki format.');
             return;
         }
 
         // Save to Sheet
         const ticketId = await saveReportToSheet(data);
         if (ticketId) {
-            msg.reply(`✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${data.nama || '-'}\nAlamat: ${data.alamat || '-'}\nNo Layanan: ${data.noInternet || '-'}\nKendala: ${data.keluhan || '-'}\nLayanan: ${data.layanan || '-'}\nSN ONT: ${data.snOnt || '-'}\nPIC Contact: ${data.pic || '-'}\n\nData telah masuk ke Dashboard. Terima kasih!`);
+            msg.reply(`✅ *LAPORAN DITERIMA*\nTicket: ${ticketId}\nTerima kasih!`);
         } else {
-            msg.reply('❌ Maaf, terjadi kesalahan saat menyimpan laporan. Silakan coba lagi.');
+            msg.reply('❌ Gagal menyimpan laporan.');
         }
+        return;
     }
+
+    // 3. START INTERACTIVE MODE
+    // Exact match "LAPOR" or "ORDER" ignoring case/whitespace
+    if (text === 'LAPOR' || text === 'ORDER') {
+        userChats.set(chatId, { step: 'WAIT_NAME', data: {} });
+        msg.reply('🤖 *MODE LAPORAN INTERAKTIF*\n\nSiap membantu mencatat laporan.\nSilakan jawab pertanyaan berikut satu per satu.\n(Ketik *BATAL* untuk berhenti kapan saja)\n\n1. Masukkan *NAMA PELANGGAN*:');
+        return;
+    }
+
     // Handle General Commands / Greetings
-    else if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST') {
-        const welcomeMsg = `🤖 *Hellow, I am Ticket Bot!*\n\nSaya siap mencatat laporan gangguan.\n\nKetik format berikut untuk lapor:\n\n*LAPOR*\nNama: [Nama Pelanggan]\nAlamat: [Alamat Lengkap]\nNo Internet: [No Inet]\nKeluhan: [Detail Kendala]\nLayanan: [Internet/Voice/IPTV]\nSN ONT: [Serial Number]\nPIC: [No HP PIC]\n\nAtau balas pesan ini jika butuh bantuan!`;
+    if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST') {
+        const welcomeMsg = `🤖 *Hellow, I am Ticket Bot!*\n\nKetik *LAPOR* untuk memulai pelaporan gangguan secara bertahap.\n\nAtau gunakan format langsung:\n*LAPOR*\nNama: ...\nAlamat: ...\n(dst)`;
         msg.reply(welcomeMsg);
     }
 });
