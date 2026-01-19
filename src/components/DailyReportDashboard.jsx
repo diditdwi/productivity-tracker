@@ -68,14 +68,20 @@ export default function DailyReportDashboard({ tickets }) {
     return match || inputName
   }
 
+  const normalizeTicketType = (type) => {
+    if (!type) return 'UNSPEC'
+    const upperType = type.toUpperCase().trim()
+    // Normalize common typos
+    if (upperType === 'REGULAR') return 'REGULER'
+    return upperType
+  }
+
   // Group by Technician and then Count by Type
   const reportData = filteredTickets.reduce((acc, curr) => {
     const rawTech = curr.technician || 'Unknown'
     const tech = normalizeTechName(rawTech)
-    
-    let type = (curr.ticketType || 'UNSPEC').toUpperCase()
-    // Normalize Type
-    if (type === 'REGULER') type = 'REGULAR'
+
+    let type = normalizeTicketType(curr.ticketType)
 
     if (!TICKET_TYPES.includes(type)) {
       type = 'OTHERS'
@@ -221,11 +227,7 @@ export default function DailyReportDashboard({ tickets }) {
                 <td>Grand Total</td>
                 {TICKET_TYPES.map(type => (
                   <td key={type} style={{ textAlign: 'center' }}>
-                    {filteredTickets.filter(t => {
-                       let tType = (t.ticketType || 'UNSPEC').toUpperCase()
-                       if (tType === 'REGULER') tType = 'REGULAR'
-                       return tType === type
-                    }).length}
+                    {filteredTickets.filter(t => normalizeTicketType(t.ticketType) === type).length}
                   </td>
                 ))}
                 <td style={{ textAlign: 'center' }}>{filteredTickets.length}</td>
