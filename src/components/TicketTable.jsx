@@ -1,5 +1,7 @@
+import toast from 'react-hot-toast'
 import React, { useState, useMemo } from 'react'
 import {
+  Download,
   Search,
   Calendar,
   Filter,
@@ -92,6 +94,50 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
       direction = 'descending'
     }
     setSortConfig({ key, direction })
+  }
+
+  // CSV Download Logic
+  const handleDownload = () => {
+    if (filteredTickets.length === 0) {
+      toast.error("No data to download")
+      return
+    }
+
+    // Define CSV headers
+    const headers = [
+      'Date', 'Incident', 'Customer Name', 'Service ID',
+      'Service Type', 'Ticket Type', 'Technician', 'Workzone',
+      'Status', 'HD Officer'
+    ]
+
+    // Convert data to CSV rows
+    const csvContent = [
+      headers.join(','),
+      ...filteredTickets.map(t => [
+        `"${t.date || ''}"`,
+        `"${t.incident || ''}"`,
+        `"${t.customerName || ''}"`,
+        `"${t.serviceId || ''}"`,
+        `"${t.serviceType || ''}"`,
+        `"${t.ticketType || ''}"`,
+        `"${t.technician || ''}"`,
+        `"${t.workzone || ''}"`,
+        `"${t.status || ''}"`,
+        `"${t.hdOfficer || ''}"`
+      ].join(','))
+    ].join('\n')
+
+    // Trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `tickets_export_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success("Downloaded successfully")
   }
 
   // Pagination Logic
@@ -200,6 +246,15 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
               />
             </div>
           </div>
+
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-2 h-9 px-3 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600"
+            title="Export CSV"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden md:inline">Export</span>
+          </button>
         </div>
       </div>
 
