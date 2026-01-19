@@ -41,6 +41,9 @@ let isWaReady = false;
 waClient.on('qr', (qr) => {
     console.log('WHATSAPP QR CODE RECEIVED:');
     qrcode.generate(qr, { small: true });
+    console.log('\n--- RAW QR CODE STRING (Copy below if scan fails) ---');
+    console.log(qr);
+    console.log('-----------------------------------------------------\n');
     console.log('Please scan the QR code with WhatsApp to log in.');
 });
 
