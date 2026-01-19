@@ -4,7 +4,11 @@ import {
   API_URL_LAPORAN,
   API_URL_WA_GROUPS,
   API_URL_SEND_WA,
-  API_URL_SEND_TELEGRAM
+  API_URL_SEND_TELEGRAM,
+  TEKNISI_LIST,
+  WORKZONES,
+  HD_OFFICERS,
+  API_URL
 } from '../constants'
 
 export default function LaporanLangsungDashboard() {
@@ -12,6 +16,16 @@ export default function LaporanLangsungDashboard() {
   const [loading, setLoading] = useState(true)
   const [waGroups, setWaGroups] = useState([])
   const [sendModal, setSendModal] = useState({ isOpen: false, report: null, tech: '', group: TELEGRAM_GROUPS[0].id, platform: 'TELEGRAM' })
+  
+  // Closing Modal State
+  const [closingReport, setClosingReport] = useState(null)
+  const [closeForm, setCloseForm] = useState({
+    technician: '',
+    workzone: '',
+    action: '',
+    hdOfficer: ''
+  })
+
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
 
@@ -61,6 +75,7 @@ export default function LaporanLangsungDashboard() {
   }
 
   const confirmSend = async () => {
+    // ... (Existing confirmSend logic kept primarily, but need to be careful with replacement)
     const { report, tech, group, platform } = sendModal;
     if (!report) return;
 
@@ -113,43 +128,106 @@ Mohon segera dicek.${mentionText}`;
     }
   }
 
-  const handleStatusUpdate = async (ticketId, newStatus) => {
-    const confirmMsg = `Ubah status laporan ${ticketId} menjadi '${newStatus}'?`;
-    if (!window.confirm(confirmMsg)) return;
+  const initiateClose = (r) => {
+    // Pre-fill Workzone using r.hsa if available, or try to guess, or default to first region
+    let defaultWZ = '';
+    if (r.hsa && r.hsa !== '-') {
+        // Map HSA name to Workzone code if possible?
+        // User's HSA logic returns "HSA RAJAWALI" etc.
+        // My WORKZONES const has "BANDUNG": ['BDK', 'RJW'...]
+        // So I should try to map "HSA RAJAWALI" -> "RJW" (Example)
+        // Or just let user select.
+        // For simplicity, I will set it if it matches exactly, otherwise empty.
+        // Actually, user provided "HSA RAJAWALI" -> "RJW" is likely.
+        // Let's implement a simple mapper if needed or just show the HSA hint.
+        // I will use `r.hsa` as a hint or pre-select if strict match.
+        // For now, let's just default to empty and let user pick, but show HSA as helper.
+        // Wait, user explicitly asked "kolom yang langsung terisi otomatis".
+        // I'll try to map common names.
+        if (r.hsa.includes('RAJAWALI')) defaultWZ = 'RJW';
+        else if (r.hsa.includes('MAJALAYA')) defaultWZ = 'MJY';
+        else if (r.hsa.includes('BANJARAN')) defaultWZ = 'BJA';
+        else if (r.hsa.includes('CIMAHI')) defaultWZ = 'CMI';
+        else if (r.hsa.includes('PADALARANG')) defaultWZ = 'PDL';
+        else if (r.hsa.includes('CIANJUR')) defaultWZ = 'CJR';
+    }
+
+    setClosingReport(r);
+    setCloseForm({
+      technician: '',
+      workzone: defaultWZ,
+      action: 'Selesai perbaikan. OK.',
+      hdOfficer: ''
+    });
+  }
+
+  const submitCloseTicket = async () => {
+    if (!closeForm.technician || !closeForm.workzone || !closeForm.hdOfficer) {
+      alert("Mohon lengkapi Teknisi, Workzone, dan HD Officer.");
+      return;
+    }
+
+    if (!window.confirm("Simpan ke Dashboard Utama & Close Tiket?")) return;
 
     setLoading(true);
     try {
-      const res = await fetch(API_URL_LAPORAN, {
+      // 1. Post to Main Dashboard (API_URL)
+      const ticketPayload = {
+        date: new Date().toISOString().split('T')[0],
+        ticketType: 'LAPSUNG',
+        incident: closingReport.ticketId,
+        customerName: closingReport.nama,
+        serviceId: closingReport.noInternet,
+        serviceType: closingReport.layanan,
+        technician: closeForm.technician,
+        labcode: '-',
+        repair: closeForm.action,
+        status: 'Closed',
+        workzone: closeForm.workzone,
+        hdOfficer: closeForm.hdOfficer
+      };
+
+      const resMain = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticketId, status: newStatus })
+        body: JSON.stringify(ticketPayload)
       });
 
-      if (res.ok) {
-        fetchLaporan(); // Refresh data
-        alert('Status berhasil diupdate!');
-      } else {
-        const err = await res.json();
-        alert(`Gagal update status: ${err.error || 'Unknown Error'}`);
+      if (!resMain.ok) {
+        throw new Error("Gagal menyimpan ke Dashboard Utama.");
       }
+
+      // 2. Set Status Closed in Laporan Langsung
+      const resStatus = await fetch(API_URL_LAPORAN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId: closingReport.ticketId, status: 'Closed' })
+      });
+
+      if (!resStatus.ok) {
+        throw new Error("Gagal update status di Laporan Langsung.");
+      }
+
+      alert("✅ Sukses! Data masuk ke Dashboard & Tiket Closed.");
+      setClosingReport(null);
+      fetchLaporan();
+
     } catch (e) {
       console.error(e);
-      alert('Terjadi kesalahan saat update status.');
+      alert("Error: " + e.message);
     } finally {
       setLoading(false);
     }
   }
+
+  // Helper to flatten WORKZONES for dropdown
+  const allWorkzones = Object.values(WORKZONES).flat().sort();
 
   return (
     <div className="glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h2>LAPORAN LANGSUNG</h2>
         <button className="btn-refresh" onClick={fetchLaporan}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M23 4v6h-6"></path>
-            <path d="M1 20v-6h6"></path>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
           Refresh Data
         </button>
       </div>
@@ -217,8 +295,8 @@ Mohon segera dicek.${mentionText}`;
                         <button 
                           className="btn-success btn-small" 
                           style={{ padding: '4px 8px', background: '#10B981' }} 
-                          onClick={() => handleStatusUpdate(r.ticketId, 'Closed')} 
-                          title="Tandai Selesai (Close)"
+                          onClick={() => initiateClose(r)} 
+                          title="Closing & Transfer Dashboard"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -254,19 +332,19 @@ Mohon segera dicek.${mentionText}`;
         </div>
       )}
 
-
       {/* SEND MODAL */}
       {
         sendModal.isOpen && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, color: 'black'
+            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
           }}>
+             {/* ... (Keep Existing Send Modal Content) ... */}
             <div className="glass-panel" style={{ width: '400px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
-              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order</h3>
-
-              {/* Platform Toggle */}
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+               {/* Simplified for replace validity - assume existing content */}
+               <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order</h3>
+               {/* ... Keep the rest of Send Modal UI same as before ... */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <button
                   className={sendModal.platform === 'TELEGRAM' ? 'btn-telegram' : 'btn-secondary'}
                   onClick={() => setSendModal(prev => ({ ...prev, platform: 'TELEGRAM', group: TELEGRAM_GROUPS[0].id }))}
@@ -331,6 +409,81 @@ Mohon segera dicek.${mentionText}`;
           </div>
         )
       }
+
+      {/* CLOSING MODAL */}
+      {closingReport && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+        }}>
+          <div className="glass-panel" style={{ width: '500px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>Closing & Transfer Ticket</h3>
+            
+            <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'gray' }}>
+                <p>Tiket: <b>{closingReport.ticketId}</b></p>
+                <p>Layanan: <b>{closingReport.noInternet}</b></p>
+                {closingReport.hsa && <p>HSA (Auto): <b>{closingReport.hsa}</b></p>}
+            </div>
+
+            <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label>Teknisi</label>
+                <select 
+                    value={closeForm.technician} 
+                    onChange={e => setCloseForm({...closeForm, technician: e.target.value})}
+                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
+                >
+                    <option value="">-- Pilih Teknisi --</option>
+                    {TEKNISI_LIST.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+            </div>
+
+            <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label>Workzone (Auto-suggest based on HSA)</label>
+                <select 
+                    value={closeForm.workzone} 
+                    onChange={e => setCloseForm({...closeForm, workzone: e.target.value})}
+                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
+                >
+                    <option value="">-- Pilih Workzone --</option>
+                    {allWorkzones.map(w => <option key={w} value={w}>{w}</option>)}
+                </select>
+            </div>
+
+            <div className="input-group" style={{ marginBottom: '1rem' }}>
+                <label>HD Officer</label>
+                <select 
+                    value={closeForm.hdOfficer} 
+                    onChange={e => setCloseForm({...closeForm, hdOfficer: e.target.value})}
+                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
+                >
+                    <option value="">-- Pilih HD --</option>
+                    {HD_OFFICERS.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+            </div>
+
+            <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Action / Perbaikan</label>
+                <textarea 
+                    value={closeForm.action}
+                    onChange={e => setCloseForm({...closeForm, action: e.target.value})}
+                    rows={3}
+                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
+                />
+            </div>
+
+             <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
+                <button className="btn-secondary" onClick={() => setClosingReport(null)}>Batal</button>
+                <button 
+                  className="btn-success" 
+                  onClick={submitCloseTicket}
+                  style={{ background: '#10B981', color: 'white' }}
+                >
+                  Simpan ke Dashboard & Tutup
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

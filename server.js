@@ -478,6 +478,33 @@ async function updateGaransiCache() {
     }
 }
 
+function determineHSA(noInternet) {
+    if (!noInternet) return '-';
+    const s = String(noInternet).trim();
+    
+    // HSA RAJAWALI
+    if (s.startsWith('1311771') || s.startsWith('1311772')) return 'HSA RAJAWALI';
+    
+    // HSA MAJALAYA
+    if (s.startsWith('1311641') || s.startsWith('1311751') || s.startsWith('1311571')) return 'HSA MAJALAYA';
+    
+    // HSA BANJARAN
+    if (s.startsWith('1311561') || s.startsWith('1311741') || s.startsWith('1311761') || s.startsWith('1311781')) return 'HSA BANJARAN';
+    
+    // HSA CIMAHI
+    if (s.startsWith('1311591') || s.startsWith('1311621')) return 'HSA CIMAHI';
+    
+    // HSA PADALARANG
+    if (s.startsWith('1311631') || s.startsWith('1311701') || s.startsWith('1311711') || s.startsWith('1311791') || 
+        s.startsWith('1311581') || s.startsWith('1311801') || s.startsWith('1311601') || s.startsWith('1311811')) return 'HSA PADALARANG';
+        
+    // HSA CIANJUR (Prefix 6 digits: 131312 - 131319)
+    const p6 = s.substring(0, 6);
+    if (['131312','131313','131314','131315','131316','131317','131318','131319'].includes(p6)) return 'HSA CIANJUR';
+    
+    return '-'; // Or UNKNOWN
+}
+
 app.get('/api/laporan-langsung', async (req, res) => {
     try {
         // Ensure Cache is warm (non-blocking if already warm)
