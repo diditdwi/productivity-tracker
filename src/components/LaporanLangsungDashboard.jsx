@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  TELEGRAM_GROUPS, 
-  API_URL_LAPORAN, 
-  API_URL_WA_GROUPS, 
-  API_URL_SEND_WA, 
-  API_URL_SEND_TELEGRAM 
+import {
+  TELEGRAM_GROUPS,
+  API_URL_LAPORAN,
+  API_URL_WA_GROUPS,
+  API_URL_SEND_WA,
+  API_URL_SEND_TELEGRAM
 } from '../constants'
 
 export default function LaporanLangsungDashboard() {
@@ -152,7 +152,7 @@ Mohon segera dicek.${mentionText}`;
             ) : (
               paginatedReports.map(r => (
                 <tr key={r.id}>
-                  <td className="truncate-cell" style={{ maxWidth: '100px' }} title={r.timestamp}>{r.timestamp.split('T')[0]}</td>
+                  <td className="truncate-cell" style={{ maxWidth: '140px' }} title={r.timestamp}>{r.timestamp}</td>
                   <td style={{ fontWeight: 'bold', maxWidth: '120px' }} className="truncate-cell">{r.nama}</td>
                   <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.alamat}>{r.alamat}</td>
                   <td className="truncate-cell">{r.noInternet}</td>
