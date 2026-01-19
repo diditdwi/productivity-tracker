@@ -70,6 +70,16 @@ body {
   padding: 0 0.5rem;
 }
 
+/* --- Login Container --- */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-body);
+  padding: 1rem;
+}
+
 /* --- Header --- */
 header {
   background: var(--surface);
