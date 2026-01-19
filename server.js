@@ -15,9 +15,9 @@ const PORT = 3001;
 
 // --- CONFIGURATION ---
 const LOGIN_URL = 'https://oss-incident.telkom.co.id/jw/web/userview/ticketIncidentService/ticketIncidentService/_/welcome';
-const USERNAME = '93158327';
-const PASSWORD = 'Intandw01@';
-const SECRET_STRING = 'R7GJGPZRNP5RXREUGUCIKIDWIPOGSJXQ&issuer=insera-sso.telkom.co.id';
+const USERNAME = ''; // Removed for security
+const PASSWORD = ''; // Removed for security
+const SECRET_STRING = ''; // Removed for security
 const SECRET = SECRET_STRING.split('&')[0];
 
 // --- GLOBAL STATE ---

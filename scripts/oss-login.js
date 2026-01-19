@@ -4,12 +4,12 @@ import https from 'https';
 
 // Configuration
 const LOGIN_URL = 'https://oss-incident.telkom.co.id/jw/web/userview/ticketIncidentService/ticketIncidentService/_/welcome';
-const USERNAME = '93158327';
-const PASSWORD = 'Intandw01@';
-const SECRET_STRING = 'R7GJGPZRNP5RXREUGUCIKIDWIPOGSJXQ&issuer=insera-sso.telkom.co.id';
+const USERNAME = '';
+const PASSWORD = '';
+const SECRET_STRING = '';
 
 // Parse Secret
-const SECRET = SECRET_STRING.split('&')[0];
+const SECRET = SECRET_STRING ? SECRET_STRING.split('&')[0] : '';
 
 // Helper: Fetch Server Time from Insera/OSS directly (Avoids external blocks)
 function getNetworkTime() {

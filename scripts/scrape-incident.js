@@ -5,10 +5,10 @@ import fs from 'fs';
 
 // --- CONFIGURATION ---
 const LOGIN_URL = 'https://oss-incident.telkom.co.id/jw/web/userview/ticketIncidentService/ticketIncidentService/_/welcome';
-const USERNAME = '93158327';
-const PASSWORD = 'Intandw01@';
-const SECRET_STRING = 'R7GJGPZRNP5RXREUGUCIKIDWIPOGSJXQ&issuer=insera-sso.telkom.co.id';
-const SECRET = SECRET_STRING.split('&')[0];
+const USERNAME = '';
+const PASSWORD = '';
+const SECRET_STRING = '';
+const SECRET = SECRET_STRING ? SECRET_STRING.split('&')[0] : '';
 
 const INC_TO_FIND = process.argv[2];
 
