@@ -4,7 +4,7 @@ export const API_URL_WA_GROUPS = '/api/wa-groups'
 export const API_URL_SEND_WA = '/api/send-whatsapp'
 export const API_URL_SEND_TELEGRAM = '/api/send-telegram-group'
 
-export const TICKET_TYPES = ['SQM', 'REGULAR', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
+export const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
 
 export const SERVICE_TYPES = {
   'General': ['INTERNET', 'VOICE', 'IPTV'],
