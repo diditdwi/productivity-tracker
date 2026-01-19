@@ -113,6 +113,33 @@ Mohon segera dicek.${mentionText}`;
     }
   }
 
+  const handleStatusUpdate = async (ticketId, newStatus) => {
+    const confirmMsg = `Ubah status laporan ${ticketId} menjadi '${newStatus}'?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(API_URL_LAPORAN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId, status: newStatus })
+      });
+
+      if (res.ok) {
+        fetchLaporan(); // Refresh data
+        alert('Status berhasil diupdate!');
+      } else {
+        const err = await res.json();
+        alert(`Gagal update status: ${err.error || 'Unknown Error'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Terjadi kesalahan saat update status.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="glass-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -178,13 +205,27 @@ Mohon segera dicek.${mentionText}`;
                     {r.ticketId}
                   </td>
                   <td>
-                    <button className="btn-telegram btn-small" onClick={() => handleProcessAndSend(r)} title="Kirim ke Grup & Mention">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                      </svg>
-                      Kirim
-                    </button>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <button className="btn-telegram btn-small" onClick={() => handleProcessAndSend(r)} title="Kirim ke Grup & Mention">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="22" y1="2" x2="11" y2="13"></line>
+                          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Kirim
+                      </button>
+                      {r.status !== 'Closed' && (
+                        <button 
+                          className="btn-success btn-small" 
+                          style={{ padding: '4px 8px', background: '#10B981' }} 
+                          onClick={() => handleStatusUpdate(r.ticketId, 'Closed')} 
+                          title="Tandai Selesai (Close)"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

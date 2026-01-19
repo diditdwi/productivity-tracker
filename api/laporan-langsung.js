@@ -72,6 +72,44 @@ export default async function handler(req, res) {
         const auth = getAuth();
         const sheets = google.sheets({ version: 'v4', auth });
 
+        // Handle Status Update
+        if (req.method === 'POST') {
+            const { ticketId, status } = req.body;
+            if (!ticketId || !status) {
+                return res.status(400).json({ error: 'Missing ticketId or status' });
+            }
+
+            // Find Row Index based on Ticket ID (Column J)
+            const idRes = await sheets.spreadsheets.values.get({
+                spreadsheetId: SPREADSHEET_ID,
+                range: "'Laporan Langsung'!J:J",
+            });
+            
+            const rows = idRes.data.values || [];
+            let rowIndex = -1;
+
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i][0] && rows[i][0].trim() === ticketId.trim()) {
+                    rowIndex = i + 1; // 1-based index
+                    break;
+                }
+            }
+
+            if (rowIndex === -1) {
+                return res.status(404).json({ error: 'Ticket ID not found' });
+            }
+
+            // Update Status (Column I)
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `'Laporan Langsung'!I${rowIndex}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [[status]] }
+            });
+
+            return res.status(200).json({ success: true, message: 'Status updated' });
+        }
+
         // Update Cache (Non-blocking usually, but here we await to ensure first load works)
         await updateGaransiCache(sheets);
 
