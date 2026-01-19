@@ -345,6 +345,19 @@ function BulkForm({ onSubmit }) {
     setRows(prev => {
       const newRows = [...prev]
       newRows[idx] = { ...newRows[idx], [field]: value }
+
+      // Auto-update Service Type when Ticket Type changes
+      if (field === 'ticketType') {
+        const isInfracare = value === 'INFRACARE'
+        const validOptions = isInfracare
+          ? SERVICE_TYPES['INFRACARE']
+          : [...SERVICE_TYPES['General'], ...SERVICE_TYPES['DATIN']]
+
+        if (!validOptions.includes(newRows[idx].serviceType)) {
+          newRows[idx].serviceType = validOptions[0]
+        }
+      }
+
       return newRows
     })
   }
@@ -437,13 +450,22 @@ function BulkForm({ onSubmit }) {
                     <Input className="h-9" placeholder="Name/ID..." value={row.customerName} onChange={e => updateRow(idx, 'customerName', e.target.value)} />
                   </td>
                   <td className="px-2 py-2">
-                    <Select className="h-9" value={row.serviceType} onChange={e => updateRow(idx, 'serviceType', e.target.value)} options={{ 'General': SERVICE_TYPES['General'], 'DATIN': SERVICE_TYPES['DATIN'], 'INFRACARE': SERVICE_TYPES['INFRACARE'] }} />
+                    <Select
+                      className="h-9"
+                      value={row.serviceType}
+                      onChange={e => updateRow(idx, 'serviceType', e.target.value)}
+                      options={
+                        row.ticketType === 'INFRACARE'
+                          ? SERVICE_TYPES['INFRACARE']
+                          : { 'General': SERVICE_TYPES['General'], 'DATIN': SERVICE_TYPES['DATIN'] }
+                      }
+                    />
                   </td>
                   <td className="px-2 py-2">
                     <Input className="h-9" list="techs-list" placeholder="Tech..." value={row.technician} onChange={e => updateRow(idx, 'technician', e.target.value)} />
                   </td>
                   <td className="px-2 py-2">
-                    <Select className="h-9" value={row.workzone} onChange={e => updateRow(idx, 'workzone', e.target.value)} options={['Select...', ...ALL_ZONES.sort()]} />
+                    <Select className="h-9" value={row.workzone} onChange={e => updateRow(idx, 'workzone', e.target.value)} options={{ 'Select...': ['Select...'], 'BANDUNG': WORKZONES.BANDUNG, 'BANDUNG BARAT': WORKZONES['BANDUNG BARAT'], 'CIANJUR': WORKZONES.CIANJUR }} />
                   </td>
                   <td className="px-2 py-2">
                     <Input className="h-9" placeholder="Fix..." value={row.repair} onChange={e => updateRow(idx, 'repair', e.target.value)} />
