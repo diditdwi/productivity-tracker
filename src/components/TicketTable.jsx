@@ -19,7 +19,8 @@ const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
 
 export default function TicketTable({ tickets, loading, onEditTicket }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterDate, setFilterDate] = useState('')
+  // Date Range Filter States
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [filterType, setFilterType] = useState('ALL')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
@@ -28,7 +29,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
   // Reset page when filtering
   React.useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, filterDate, filterType])
+  }, [searchTerm, dateRange, filterType])
 
   const filteredTickets = useMemo(() => {
     return tickets.filter(ticket => {
@@ -40,16 +41,24 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
       )
 
       let matchesDate = true
-      if (filterDate) {
-        // Filter by Month (YYYY-MM)
-        matchesDate = ticket.date && ticket.date.startsWith(filterDate)
+      if (dateRange.start || dateRange.end) {
+        if (!ticket.date) {
+          matchesDate = false
+        } else {
+          const ticketDate = new Date(ticket.date)
+          const start = dateRange.start ? new Date(dateRange.start) : new Date('1970-01-01')
+          const end = dateRange.end ? new Date(dateRange.end) : new Date('2100-01-01')
+
+          // Normalize comparison to ignore time if needed, but simple comparison works for YYYY-MM-DD
+          matchesDate = ticketDate >= start && ticketDate <= end
+        }
       }
 
       const matchesType = filterType === 'ALL' || ticket.ticketType === filterType
 
       return matchesSearch && matchesDate && matchesType
     })
-  }, [tickets, searchTerm, filterDate, filterType])
+  }, [tickets, searchTerm, dateRange, filterType])
 
   // Sorting Logic
   const sortedTickets = useMemo(() => {
@@ -169,14 +178,27 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
             <ChevronDownIcon className="absolute right-3 top-3 h-3 w-3 text-slate-400 pointer-events-none" />
           </div>
 
-          {/* Filter Date */}
-          <div className="relative">
-            <input
-              type="month"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            />
+          {/* Filter Date Range */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <span className="absolute left-2 top-2 text-[10px] uppercase font-bold text-slate-400 pointer-events-none">From</span>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="pl-10 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pr-2 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              />
+            </div>
+            <span className="text-slate-400 text-xs">to</span>
+            <div className="relative">
+              <span className="absolute left-2 top-2 text-[10px] uppercase font-bold text-slate-400 pointer-events-none">To</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="pl-7 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pr-2 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              />
+            </div>
           </div>
         </div>
       </div>
