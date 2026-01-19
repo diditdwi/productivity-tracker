@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react'
-import { 
-  Search, 
-  Calendar, 
-  Filter, 
-  ChevronLeft, 
-  ChevronRight, 
-  ArrowUpDown, 
-  ArrowUp, 
-  ArrowDown, 
+import {
+  Search,
+  Calendar,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Edit,
   AlertCircle
 } from 'lucide-react'
@@ -41,15 +41,8 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
 
       let matchesDate = true
       if (filterDate) {
-        try {
-          const ticketDate = new Date(ticket.date)
-          const filter = new Date(filterDate)
-          matchesDate = ticketDate.getFullYear() === filter.getFullYear() &&
-            ticketDate.getMonth() === filter.getMonth() &&
-            ticketDate.getDate() === filter.getDate()
-        } catch (e) {
-          matchesDate = false
-        }
+        // Filter by Month (YYYY-MM)
+        matchesDate = ticket.date && ticket.date.startsWith(filterDate)
       }
 
       const matchesType = filterType === 'ALL' || ticket.ticketType === filterType
@@ -121,8 +114,8 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
 
   const SortIcon = ({ columnKey }) => {
     if (sortConfig.key !== columnKey) return <ArrowUpDown className="h-3 w-3 text-slate-300 dark:text-slate-600 ml-1" />
-    return sortConfig.direction === 'ascending' 
-      ? <ArrowUp className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" /> 
+    return sortConfig.direction === 'ascending'
+      ? <ArrowUp className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" />
       : <ArrowDown className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" />
   }
 
@@ -131,7 +124,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
     if (!value) return '-'
     // If it's already a full string (contains " - "), return it
     if (value.includes(' - ')) return value
-    
+
     // If it is just digits, try to find it in the list
     if (/^\d+$/.test(value)) {
       const found = list.find(item => item.startsWith(value))
@@ -148,7 +141,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Recent Tickets</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Syncing real-time from Google Sheets</p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Search */}
           <div className="relative flex-1 md:w-64">
@@ -179,7 +172,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
           {/* Filter Date */}
           <div className="relative">
             <input
-              type="date"
+              type="month"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
               className="h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
@@ -205,9 +198,9 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                   { key: 'status', label: 'Status', width: 'w-28' },
                   { key: 'hdOfficer', label: 'HD Officer', width: 'w-32' },
                 ].map((col) => (
-                  <th 
-                    key={col.key} 
-                    onClick={() => requestSort(col.key)} 
+                  <th
+                    key={col.key}
+                    onClick={() => requestSort(col.key)}
                     className={cn(
                       "px-4 py-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none whitespace-nowrap",
                       col.width
@@ -226,8 +219,8 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                 <tr>
                   <td colSpan="9" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center gap-2">
-                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent"></div>
-                       Loading data...
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent"></div>
+                      Loading data...
                     </div>
                   </td>
                 </tr>
@@ -235,10 +228,10 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                 <tr>
                   <td colSpan="9" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center gap-2">
-                       <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
-                         <Search className="h-6 w-6 opacity-30" />
-                       </div>
-                       <p>No tickets found matching your search.</p>
+                      <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <Search className="h-6 w-6 opacity-30" />
+                      </div>
+                      <p>No tickets found matching your search.</p>
                     </div>
                   </td>
                 </tr>
@@ -246,7 +239,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                 paginatedTickets.map((ticket, idx) => {
                   const isGaul = checkGaul(ticket)
                   return (
-                    <motion.tr 
+                    <motion.tr
                       key={ticket.id || idx}
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -255,13 +248,13 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                     >
                       <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{ticket.date}</td>
                       <td className="px-4 py-3">
-                         <button 
-                           onClick={() => onEditTicket(ticket)}
-                           className="flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-all"
-                         >
-                           {ticket.incident || "NO INC"}
-                           <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                         </button>
+                        <button
+                          onClick={() => onEditTicket(ticket)}
+                          className="flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-all"
+                        >
+                          {ticket.incident || "NO INC"}
+                          <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
                       </td>
                       <td className="px-4 py-3">
                         <div className="line-clamp-1 max-w-[200px] text-slate-800 dark:text-slate-200 font-medium" title={ticket.customerName}>
@@ -291,7 +284,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                         {ticket.workzone}
                       </td>
                       <td className="px-4 py-3">
-                         <StatusBadge status={ticket.status} />
+                        <StatusBadge status={ticket.status} />
                       </td>
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-500 text-xs text-right">
                         {resolveDisplay(ticket.hdOfficer, HD_OFFICERS)}
@@ -303,13 +296,13 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination Footer */}
         {!loading && filteredTickets.length > 0 && (
           <div className="flex items-center justify-between px-4 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 border-b-2 rounded-b-xl">
             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <span>Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTickets.length)} of {filteredTickets.length}</span>
-              <select 
+              <select
                 value={itemsPerPage}
                 onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
                 className="h-7 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 text-xs focus-visible:outline-none cursor-pointer"
@@ -323,23 +316,23 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
             </div>
 
             <div className="flex items-center gap-2">
-               <button
-                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                 disabled={currentPage === 1}
-                 className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-               >
-                 <ChevronLeft className="h-4 w-4" />
-               </button>
-               <span className="text-sm font-medium min-w-[3rem] text-center text-slate-700 dark:text-slate-300">
-                 {currentPage} / {totalPages}
-               </span>
-               <button
-                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                 disabled={currentPage === totalPages}
-                 className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-               >
-                 <ChevronRight className="h-4 w-4" />
-               </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-medium min-w-[3rem] text-center text-slate-700 dark:text-slate-300">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}
@@ -356,7 +349,7 @@ function StatusBadge({ status }) {
     'Resolved': 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-400 border-slate-200 dark:border-slate-600',
     'Closed': 'bg-slate-800 text-white dark:bg-slate-900 dark:text-slate-500 border-slate-700 dark:border-slate-800',
   }
-  
+
   const defaultStyle = 'bg-gray-100 text-gray-700 border-gray-200'
   const activeStyle = styles[status] || defaultStyle
 
@@ -370,7 +363,7 @@ function StatusBadge({ status }) {
 function ChevronDownIcon(props) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="m6 9 6 6 6-6"/>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   )
 }
