@@ -1,5 +1,55 @@
 import { google } from 'googleapis';
 
+// Global Cache for Vercel (Persists in Warm Lambdas)
+let garansiCache = new Map();
+let lastGaransiFetch = 0;
+
+async function updateGaransiCache(sheets) {
+    const GARANSI_SHEET_ID = process.env.SHEET_ID_GARANSI;
+    const now = Date.now();
+    
+    // Cache valid for 1 hour
+    if (garansiCache.size > 0 && (now - lastGaransiFetch) < 3600000) {
+        return; 
+    }
+
+    if (!GARANSI_SHEET_ID) {
+        // console.warn("⚠️ SHEET_ID_GARANSI not set in Vercel Environment Variables");
+        return;
+    }
+
+    try {
+        console.log("🔄 Updating Garansi Cache (Tickets)...");
+        const res = await sheets.spreadsheets.values.get({
+            spreadsheetId: GARANSI_SHEET_ID,
+            range: "'Bandung Barat dan Cianjur'!O2:BD10000",
+        });
+
+        const rows = res.data.values || [];
+        const newCache = new Map();
+        
+        rows.forEach(row => {
+            const speedy = row[0]; // Col O
+            const umur = row[41];  // Col BD
+            
+            if (speedy) {
+                const cleanSpeedy = String(speedy).trim();
+                const umurVal = parseInt(umur);
+                if (!isNaN(umurVal)) {
+                    newCache.set(cleanSpeedy, umurVal);
+                }
+            }
+        });
+
+        garansiCache = newCache;
+        lastGaransiFetch = now;
+        console.log(`✅ Garansi Cache Updated (Tickets). Size: ${garansiCache.size}`);
+        
+    } catch (e) {
+        console.error("❌ Failed to update Garansi cache:", e.message);
+    }
+}
+
 export default async function handler(req, res) {
     // CORS configuration
     res.setHeader('Access-Control-Allow-Credentials', true);
@@ -44,6 +94,9 @@ export default async function handler(req, res) {
 
         const sheets = google.sheets({ version: 'v4', auth });
 
+        // Update Garansi Cache
+        await updateGaransiCache(sheets);
+
         if (req.method === 'GET') {
             try {
                 console.log('Fetching tickets from sheet:', SPREADSHEET_ID);
@@ -55,22 +108,38 @@ export default async function handler(req, res) {
                 const rows = getRes.data.values || [];
                 console.log('Rows found:', rows.length);
 
-                const tickets = rows.slice(1).map((row, index) => ({
-                    id: index + '-' + row[2],
-                    date: row[0],
-                    ticketType: row[1],
-                    incident: row[2],
-                    customerName: row[3],
-                    serviceId: row[4],
-                    serviceType: row[5],
-                    technician: row[6],
-                    labcode: row[7],
-                    repair: row[8],
-                    status: row[9],
-                    workzone: row[10],
-                    hdOfficer: row[11],
-                    timestamp: row[12]
-                })).reverse();
+                const tickets = rows.slice(1).map((row, index) => {
+                    const serviceId = row[4];
+                    const cleanServiceId = String(serviceId || '').trim();
+                    let isFFG = false;
+                    let umurGaransi = null;
+
+                    if (garansiCache.has(cleanServiceId)) {
+                        umurGaransi = garansiCache.get(cleanServiceId);
+                        if (umurGaransi <= 60) {
+                            isFFG = true;
+                        }
+                    }
+
+                    return {
+                        id: index + '-' + row[2],
+                        date: row[0],
+                        ticketType: row[1],
+                        incident: row[2],
+                        customerName: row[3],
+                        serviceId: row[4],
+                        serviceType: row[5],
+                        technician: row[6],
+                        labcode: row[7],
+                        repair: row[8],
+                        status: row[9],
+                        workzone: row[10],
+                        hdOfficer: row[11],
+                        timestamp: row[12],
+                        isFFG,
+                        umurGaransi
+                    };
+                }).reverse();
 
                 return res.status(200).json(tickets);
             } catch (err) {

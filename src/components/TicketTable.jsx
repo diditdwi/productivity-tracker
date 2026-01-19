@@ -347,6 +347,11 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                               <AlertCircle className="h-3 w-3" /> GAUL CHECK
                             </span>
                           )}
+                          {ticket.isFFG && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 px-1 rounded">
+                              FFG {ticket.umurGaransi ? `(${ticket.umurGaransi}h)` : ''}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
