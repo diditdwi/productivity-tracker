@@ -224,7 +224,48 @@ Mohon segera dicek.${mentionText}`;
         throw new Error("Gagal update status di Laporan Langsung.");
       }
 
-      alert("✅ Sukses! Data masuk ke Dashboard & Tiket Closed.");
+      // 3. Send WhatsApp Notification to Customer
+      try {
+        // Format phone number: remove leading 0 and add 62
+        let phoneNumber = closingReport.pic.replace(/\D/g, ''); // Remove non-digits
+        if (phoneNumber.startsWith('0')) {
+          phoneNumber = '62' + phoneNumber.substring(1);
+        } else if (!phoneNumber.startsWith('62')) {
+          phoneNumber = '62' + phoneNumber;
+        }
+
+        const waMessage = `*NOTIFIKASI TIKET SELESAI*
+
+Halo, ${closingReport.nama}
+
+Tiket Anda telah selesai ditangani:
+📋 No. Tiket: ${closingReport.ticketId}
+📍 Alamat: ${closingReport.alamat}
+📞 No Layanan: ${closingReport.noInternet}
+✅ Status: CLOSED
+🔧 Teknisi: ${closeForm.technician}
+📝 Perbaikan: ${closeForm.action}
+
+Terima kasih telah melaporkan. Jika masih ada kendala, silakan hubungi kami kembali.`;
+
+        const waPayload = {
+          message: waMessage,
+          groupId: phoneNumber + '@c.us' // WhatsApp format for individual chat
+        };
+
+        await fetch(API_URL_SEND_WA, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(waPayload)
+        });
+
+        console.log('WhatsApp notification sent to:', phoneNumber);
+      } catch (waError) {
+        console.error('Failed to send WhatsApp notification:', waError);
+        // Don't throw error, just log it - ticket is already closed
+      }
+
+      alert("✅ Sukses! Data masuk ke Dashboard & Tiket Closed.\n📱 Notifikasi WhatsApp telah dikirim ke pelapor.");
       setClosingReport(null);
       fetchLaporan();
 
