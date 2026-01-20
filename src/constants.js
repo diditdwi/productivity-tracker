@@ -23,7 +23,8 @@ export const WORKZONES = {
 export const TELEGRAM_GROUPS = [
   { name: 'RJW', id: '-1001374270728' },
   { name: 'SOR', id: '-1001230361821' },
-  { name: 'CMI', id: '-1001328230875' }
+  { name: 'CMI', id: '-1001328230875' },
+  { name: 'LBG', id: '-1001118279472' }
 ]
 
 export const HD_OFFICERS = [
