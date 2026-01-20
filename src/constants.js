@@ -4,10 +4,10 @@ export const API_URL_WA_GROUPS = '/api/wa-groups'
 export const API_URL_SEND_WA = '/api/send-whatsapp'
 export const API_URL_SEND_TELEGRAM = '/api/send-telegram-group'
 
-// WhatsApp Service URL - Update this with your VPS IP after deployment
+// WhatsApp Service URL - VPS IP: 76.13.20.234
 // Development: 'http://localhost:3001'
-// Production: 'http://YOUR_VPS_IP:3001' or 'https://wa.yourdomain.com'
-export const WA_SERVICE_URL = import.meta.env.VITE_WA_SERVICE_URL || '/api'
+// Production: 'http://76.13.20.234:3001'
+export const WA_SERVICE_URL = import.meta.env.VITE_WA_SERVICE_URL || 'http://76.13.20.234:3001/api'
 
 export const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
 
