@@ -301,6 +301,44 @@ app.get('/api/wa-status', (req, res) => {
     res.json({ ready: isWaReady });
 });
 
+// Send WhatsApp Message API (for frontend notifications)
+app.post('/api/send-whatsapp', async (req, res) => {
+    console.log('📨 WhatsApp send request received. WA Ready:', isWaReady);
+
+    if (!isWaReady) {
+        console.log('❌ WhatsApp client not ready');
+        return res.status(503).json({ error: 'WhatsApp not ready yet' });
+    }
+
+    const { message, groupId } = req.body;
+    console.log('📱 Attempting to send to:', groupId);
+
+    if (!message || !groupId) {
+        return res.status(400).json({ error: 'Missing message or groupId' });
+    }
+
+    try {
+        console.log('📤 Sending WhatsApp message...');
+        await sock.sendMessage(groupId, { text: message });
+        console.log('✅ WhatsApp message sent successfully to:', groupId);
+        res.json({ success: true, message: 'Message sent successfully' });
+    } catch (e) {
+        console.error('❌ Send WA Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Health Check
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'WhatsApp Service (Baileys)',
+        whatsappReady: isWaReady,
+        features: ['send-notification', 'receive-lapor'],
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
