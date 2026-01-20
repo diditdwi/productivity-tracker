@@ -8,7 +8,8 @@ import {
   TEKNISI_LIST,
   WORKZONES,
   HD_OFFICERS,
-  API_URL
+  API_URL,
+  WA_SERVICE_URL
 } from '../constants'
 
 export default function LaporanLangsungDashboard() {
@@ -116,7 +117,7 @@ Mohon segera dicek.${mentionText}`;
     try {
       let res;
       if (platform === 'WHATSAPP') {
-        res = await fetch(API_URL_SEND_WA, {
+        res = await fetch(`${WA_SERVICE_URL}/send-whatsapp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message, groupId: group })
@@ -256,7 +257,7 @@ Terima kasih telah melaporkan. Jika masih ada kendala, silakan hubungi kami kemb
           groupId: phoneNumber + '@c.us' // WhatsApp format for individual chat
         };
 
-        const waResponse = await fetch(API_URL_SEND_WA, {
+        const waResponse = await fetch(`${WA_SERVICE_URL}/send-whatsapp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(waPayload)
