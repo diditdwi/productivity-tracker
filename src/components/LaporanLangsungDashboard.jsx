@@ -89,11 +89,21 @@ export default function LaporanLangsungDashboard() {
     // FFG Flag Info
     let ffgInfo = "";
     if (report.isFFG) {
-      ffgInfo = `\n⚠️ *FLAG: FFG* (Umur Garansi: ${report.umurGaransi || 'N/A'} hari)`;
+      ffgInfo = `\n⚠️ <b>FLAG: FFG</b> (Umur Garansi: ${report.umurGaransi || 'N/A'} hari)`;
     }
 
-    // Common Message Format
-    const message = `*ORDER TEKNISI*
+    // Common Message Format - Use HTML for Telegram, Markdown for WhatsApp
+    const message = platform === 'TELEGRAM'
+      ? `<b>ORDER TEKNISI</b>
+No Tiket: ${report.ticketId}
+Nama: ${report.nama}
+Alamat: ${report.alamat}
+No Layanan: ${report.noInternet}
+Kendala: ${report.keluhan}
+SN ONT: ${report.snOnt}
+CP: ${report.pic}${ffgInfo}
+Mohon segera dicek.${mentionText}`
+      : `*ORDER TEKNISI*
 No Tiket: ${report.ticketId}
 Nama: ${report.nama}
 Alamat: ${report.alamat}
