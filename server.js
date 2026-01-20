@@ -403,15 +403,32 @@ app.get('/api/wa-groups', async (req, res) => {
     }
 });
 
+// WhatsApp: Check Status
+app.get('/api/wa-status', (req, res) => {
+    res.json({
+        ready: isWaReady,
+        message: isWaReady ? 'WhatsApp client is ready' : 'WhatsApp client not ready'
+    });
+});
+
 // WhatsApp: Send Message
 app.post('/api/send-whatsapp', async (req, res) => {
-    if (!isWaReady) return res.status(503).json({ error: 'WhatsApp not ready yet' });
+    console.log('WhatsApp send request received. WA Ready:', isWaReady);
+
+    if (!isWaReady) {
+        console.log('WhatsApp client not ready, returning 503');
+        return res.status(503).json({ error: 'WhatsApp not ready yet' });
+    }
 
     const { message, groupId } = req.body;
+    console.log('Attempting to send to:', groupId);
+
     if (!message || !groupId) return res.status(400).json({ error: 'Missing message or groupId' });
 
     try {
+        console.log('Sending WhatsApp message...');
         await waClient.sendMessage(groupId, message);
+        console.log('WhatsApp message sent successfully to:', groupId);
         res.json({ success: true });
     } catch (e) {
         console.error('Send WA Error:', e);
@@ -428,7 +445,7 @@ async function updateGaransiCache() {
     // Refresh if empty or older than 1 hour
     const now = Date.now();
     if (garansiCache.size > 0 && (now - lastGaransiParams.lastFetch) < 3600000) {
-        return; 
+        return;
     }
 
     if (!GARANSI_SHEET_ID) {
@@ -443,7 +460,7 @@ async function updateGaransiCache() {
         // Assumes data starts from row 2 to ~Last Row. Let's fetch a safe large range or detect last row.
         // Fetching O2:BD might be huge. Let's just fetch O and BD separately in batches or one clean batch if possible.
         // O is Index 14, BD is Index 55.
-        
+
         // We will fetch columns O and BD.
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId: GARANSI_SHEET_ID,
@@ -452,13 +469,13 @@ async function updateGaransiCache() {
 
         const rows = res.data.values || [];
         const newCache = new Map();
-        
+
         rows.forEach(row => {
             // O is index 0 in this range? NO. The range is O to BD.
             // So O is index 0. BD is index (55 - 14) = 41.
             const speedy = row[0]; // Accessing relative index 0 for Column O
             const umur = row[41];  // Accessing relative index 41 for Column BD
-            
+
             if (speedy) {
                 // Normalize speedy number (string)
                 const cleanSpeedy = String(speedy).trim();
@@ -472,7 +489,7 @@ async function updateGaransiCache() {
         garansiCache = newCache;
         lastGaransiParams.lastFetch = now;
         console.log(`✅ Garansi Cache Updated. Total records: ${garansiCache.size}`);
-        
+
     } catch (e) {
         console.error("❌ Failed to update Garansi cache:", e.message);
     }
@@ -481,27 +498,27 @@ async function updateGaransiCache() {
 function determineHSA(noInternet) {
     if (!noInternet) return '-';
     const s = String(noInternet).trim();
-    
+
     // HSA RAJAWALI
     if (s.startsWith('1311771') || s.startsWith('1311772')) return 'HSA RAJAWALI';
-    
+
     // HSA MAJALAYA
     if (s.startsWith('1311641') || s.startsWith('1311751') || s.startsWith('1311571')) return 'HSA MAJALAYA';
-    
+
     // HSA BANJARAN
     if (s.startsWith('1311561') || s.startsWith('1311741') || s.startsWith('1311761') || s.startsWith('1311781')) return 'HSA BANJARAN';
-    
+
     // HSA CIMAHI
     if (s.startsWith('1311591') || s.startsWith('1311621')) return 'HSA CIMAHI';
-    
+
     // HSA PADALARANG
-    if (s.startsWith('1311631') || s.startsWith('1311701') || s.startsWith('1311711') || s.startsWith('1311791') || 
+    if (s.startsWith('1311631') || s.startsWith('1311701') || s.startsWith('1311711') || s.startsWith('1311791') ||
         s.startsWith('1311581') || s.startsWith('1311801') || s.startsWith('1311601') || s.startsWith('1311811')) return 'HSA PADALARANG';
-        
+
     // HSA CIANJUR (Prefix 6 digits: 131312 - 131319)
     const p6 = s.substring(0, 6);
-    if (['131312','131313','131314','131315','131316','131317','131318','131319'].includes(p6)) return 'HSA CIANJUR';
-    
+    if (['131312', '131313', '131314', '131315', '131316', '131317', '131318', '131319'].includes(p6)) return 'HSA CIANJUR';
+
     return '-'; // Or UNKNOWN
 }
 
@@ -575,13 +592,13 @@ app.post('/api/laporan-langsung', async (req, res) => {
         }
 
         const sheets = getSheetsClient();
-        
+
         // Find Row Index based on Ticket ID (Column J)
         const idRes = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID_LAPORAN,
             range: "'Laporan Langsung'!J:J",
         });
-        
+
         const rows = idRes.data.values || [];
         let rowIndex = -1;
 
@@ -772,13 +789,13 @@ app.get('/api/tickets', async (req, res) => {
     try {
         const SPREADSHEET_ID = process.env.SPREADSHEET_ID || SHEET_ID_LAPORAN;
         const SHEET_NAME = 'All tiket';
-        
+
         // Ensure Cache is warm
         updateGaransiCache().catch(err => console.error("Bg Cache Update Error:", err));
 
         const sheets = getSheetsClient();
         console.log('Fetching tickets from sheet:', SPREADSHEET_ID);
-        
+
         const getRes = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
             range: `'${SHEET_NAME}'!A:M`,

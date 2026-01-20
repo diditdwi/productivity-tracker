@@ -225,6 +225,7 @@ Mohon segera dicek.${mentionText}`;
       }
 
       // 3. Send WhatsApp Notification to Customer
+      let notificationSent = false;
       try {
         // Format phone number: remove leading 0 and add 62
         let phoneNumber = closingReport.pic.replace(/\D/g, ''); // Remove non-digits
@@ -233,6 +234,8 @@ Mohon segera dicek.${mentionText}`;
         } else if (!phoneNumber.startsWith('62')) {
           phoneNumber = '62' + phoneNumber;
         }
+
+        console.log('Attempting to send WhatsApp to:', phoneNumber);
 
         const waMessage = `*NOTIFIKASI TIKET SELESAI*
 
@@ -253,19 +256,31 @@ Terima kasih telah melaporkan. Jika masih ada kendala, silakan hubungi kami kemb
           groupId: phoneNumber + '@c.us' // WhatsApp format for individual chat
         };
 
-        await fetch(API_URL_SEND_WA, {
+        const waResponse = await fetch(API_URL_SEND_WA, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(waPayload)
         });
 
-        console.log('WhatsApp notification sent to:', phoneNumber);
+        if (waResponse.ok) {
+          const waResult = await waResponse.json();
+          console.log('WhatsApp notification sent successfully:', waResult);
+          notificationSent = true;
+        } else {
+          const errorData = await waResponse.json();
+          console.error('WhatsApp API returned error:', errorData);
+          throw new Error(errorData.error || 'Unknown WhatsApp error');
+        }
       } catch (waError) {
         console.error('Failed to send WhatsApp notification:', waError);
         // Don't throw error, just log it - ticket is already closed
       }
 
-      alert("✅ Sukses! Data masuk ke Dashboard & Tiket Closed.\n📱 Notifikasi WhatsApp telah dikirim ke pelapor.");
+      const successMessage = notificationSent
+        ? "✅ Sukses! Data masuk ke Dashboard & Tiket Closed.\n📱 Notifikasi WhatsApp telah dikirim ke pelapor."
+        : "✅ Sukses! Data masuk ke Dashboard & Tiket Closed.\n⚠️ Notifikasi WhatsApp gagal dikirim (WhatsApp mungkin belum ready).";
+
+      alert(successMessage);
       setClosingReport(null);
       fetchLaporan();
 
