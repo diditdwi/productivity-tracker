@@ -27,10 +27,11 @@ export default async function handler(req, res) {
 
     try {
         // 76.13.20.234:3002 is the VPS running wa-bot-interactive
-        // We proxy the request from Vercel (HTTPS) to VPS (HTTP)
+        // We force HTTP protocol to allow communication from Vercel Serverless Function
         const vpsUrl = 'http://76.13.20.234:3002/api/send-whatsapp';
 
-        console.log(`Proxying WhatsApp request to: ${vpsUrl}`);
+        console.log(`[Proxy] Forwarding request to: ${vpsUrl}`);
+        console.log(`[Proxy] Payload:`, JSON.stringify({ message, groupId }));
 
         const backendRes = await fetch(vpsUrl, {
             method: 'POST',
@@ -42,15 +43,22 @@ export default async function handler(req, res) {
 
         if (!backendRes.ok) {
             const errorText = await backendRes.text();
-            console.error('VPS WhatsApp Error:', errorText);
-            return res.status(backendRes.status).json({ error: `VPS Error: ${errorText}` });
+            console.error('[Proxy] VPS Error Response:', backendRes.status, errorText);
+            return res.status(backendRes.status).json({
+                error: `VPS Error (${backendRes.status}): ${errorText}`,
+                details: 'Connection to VPS established but returned error.'
+            });
         }
 
         const data = await backendRes.json();
+        console.log('[Proxy] Success:', data);
         return res.status(200).json(data);
 
     } catch (error) {
-        console.error('Proxy Error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('[Proxy] Connection Network Error:', error);
+        return res.status(500).json({
+            error: `Connection Failed: ${error.message}`,
+            details: 'Check if VPS is online, port 3002 is open, and firewall allows traffic.'
+        });
     }
 }

@@ -303,24 +303,40 @@ app.get('/api/wa-status', (req, res) => {
 
 // Send WhatsApp Message API (for frontend notifications)
 app.post('/api/send-whatsapp', async (req, res) => {
-    console.log('📨 WhatsApp send request received. WA Ready:', isWaReady);
+    console.log('📨 NEW REQUEST /api/send-whatsapp');
+    console.log('📥 Headers:', JSON.stringify(req.headers));
+    console.log('📥 Body:', JSON.stringify(req.body));
+
+    console.log('Status: WA Ready =', isWaReady);
 
     if (!isWaReady) {
         console.log('❌ WhatsApp client not ready');
         return res.status(503).json({ error: 'WhatsApp not ready yet' });
     }
 
-    const { message, groupId } = req.body;
-    console.log('📱 Attempting to send to:', groupId);
+    // Extract message and groupId safely
+    const message = req.body.message || req.body.text; // Support 'text' key too
+    const groupId = req.body.groupId || req.body.to;   // Support 'to' key too
+
+    console.log('📱 Parsed Message:', message ? `"${message.substring(0, 20)}..."` : 'UNDEFINED/NULL');
+    console.log('📱 Parsed GroupID:', groupId);
 
     if (!message || !groupId) {
-        return res.status(400).json({ error: 'Missing message or groupId' });
+        console.error('❌ Error: Missing message or groupId in request body');
+        return res.status(400).json({
+            error: 'Missing message or groupId',
+            receivedBody: req.body
+        });
     }
 
     try {
-        console.log('📤 Sending WhatsApp message...');
-        await sock.sendMessage(groupId, { text: message });
-        console.log('✅ WhatsApp message sent successfully to:', groupId);
+        console.log(`📤 Sending WhatsApp message to ${groupId}...`);
+
+        // Ensure message is a string
+        const textMessage = String(message);
+
+        await sock.sendMessage(groupId, { text: textMessage });
+        console.log('✅ WhatsApp message sent successfully!');
         res.json({ success: true, message: 'Message sent successfully' });
     } catch (e) {
         console.error('❌ Send WA Error:', e);
