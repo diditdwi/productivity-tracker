@@ -1,5 +1,14 @@
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
+
+// MONKEY PATCH: Disable sendSeen to prevent crash on new WA Web versions
+// The 'markedUnread' error happens because WA removed an internal model property.
+// By disabling sendSeen (blue tick), we bypass the code that checks this property.
+Client.prototype.sendSeen = async function (chatId) {
+    // console.log('🛑 Read receipt (sendSeen) disabled to prevent crash.');
+    return true;
+};
+
 const qrcode = require('qrcode-terminal');
 const cors = require('cors');
 const { google } = require('googleapis');
