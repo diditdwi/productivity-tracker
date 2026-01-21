@@ -130,7 +130,7 @@ async function connectToWhatsApp() {
 
             try {
                 // 0. RESET/CANCEL COMMAND
-                if (text === 'BATAL' || text === 'RESET' || text === 'CANCEL') {
+                if (['BATAL', 'RESET', 'CANCEL', 'STOP', 'QUIT', 'EXIT'].includes(text)) {
                     if (userChats.has(chatId)) {
                         userChats.delete(chatId);
                         await sock.sendMessage(chatId, { text: '🚫 Laporan dibatalkan. Ketik *LAPOR* untuk mulai dari awal.' });
