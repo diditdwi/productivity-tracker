@@ -391,8 +391,20 @@ app.post('/api/send-whatsapp', async (req, res) => {
 
     try {
         console.log('📤 Sending WhatsApp message...');
-        await waClient.sendMessage(groupId, message);
-        console.log('✅ WhatsApp message sent successfully to:', groupId);
+        // Ensure groupId is string
+        const targetId = String(groupId);
+        await waClient.sendMessage(targetId, message);
+        console.log('✅ WhatsApp message sent successfully to:', targetId);
+
+        // CLEAR ANTI-SPAM CACHE ON CLOSE NOTIFICATION
+        // When we send a "Ticket Closed" notification, we must unblock the user immediately.
+        if (typeof message === 'string' && (message.includes('NOTIFIKASI TIKET SELESAI') || message.includes('CLOSED'))) {
+            if (ticketCache.has(targetId)) {
+                console.log(`🔓 Clearing Anti-Spam Cache for ${targetId} (Ticket Closed).`);
+                ticketCache.delete(targetId);
+            }
+        }
+
         res.json({ success: true, message: 'Message sent successfully' });
     } catch (e) {
         console.error('❌ Send WA Error:', e);
