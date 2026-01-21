@@ -233,3 +233,5 @@ export const TEKNISI_LIST = [
   '18810030 - WENDA HERYANA',
   '18980067 - AHMAD RIZAL'
 ]
+
+export * from './sppg_data'
