@@ -26,6 +26,9 @@ export default function LaporanLangsungDashboard() {
     action: '',
     hdOfficer: ''
   })
+  const [showTechDropdown, setShowTechDropdown] = useState(false)
+  const [showWZDropdown, setShowWZDropdown] = useState(false)
+  const [showHDDropdown, setShowHDDropdown] = useState(false)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
@@ -256,6 +259,8 @@ Terima kasih telah melaporkan. Jika masih ada kendala, silakan hubungi kami kemb
           message: waMessage,
           groupId: phoneNumber + '@c.us' // WhatsApp format for individual chat
         };
+
+        console.log('🚀 Sending WhatsApp Payload:', JSON.stringify(waPayload, null, 2));
 
         const waResponse = await fetch(`${WA_SERVICE_URL}/send-whatsapp`, {
           method: 'POST',
@@ -498,40 +503,194 @@ Terima kasih telah melaporkan. Jika masih ada kendala, silakan hubungi kami kemb
               {closingReport.hsa && <p>HSA (Auto): <b>{closingReport.hsa}</b></p>}
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem' }}>
+            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
               <label>Teknisi</label>
-              <select
+              <input
+                type="text"
+                placeholder="Ketik nama teknisi..."
                 value={closeForm.technician}
-                onChange={e => setCloseForm({ ...closeForm, technician: e.target.value })}
-                style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-              >
-                <option value="">-- Pilih Teknisi --</option>
-                {TEKNISI_LIST.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+                onChange={e => {
+                  setCloseForm({ ...closeForm, technician: e.target.value });
+                  setShowTechDropdown(true);
+                }}
+                onFocus={() => setShowTechDropdown(true)}
+                // Delay hiding to allow click event on dropdown items
+                onBlur={() => setTimeout(() => setShowTechDropdown(false), 200)}
+                style={{
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border)',
+                  width: '100%',
+                  padding: '0.5rem'
+                }}
+              />
+
+              {showTechDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {TEKNISI_LIST
+                    .filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase()))
+                    .map(t => (
+                      <div
+                        key={t}
+                        onClick={() => {
+                          setCloseForm({ ...closeForm, technician: t });
+                          setShowTechDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-light)',
+                          color: 'var(--text-main)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
+                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      >
+                        {t}
+                      </div>
+                    ))
+                  }
+                  {TEKNISI_LIST.filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase())).length === 0 && (
+                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada teknisi ditemukan</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem' }}>
+            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
               <label>Workzone (Auto-suggest based on HSA)</label>
-              <select
+              <input
+                type="text"
+                placeholder="Pilih Workzone..."
                 value={closeForm.workzone}
-                onChange={e => setCloseForm({ ...closeForm, workzone: e.target.value })}
-                style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-              >
-                <option value="">-- Pilih Workzone --</option>
-                {allWorkzones.map(w => <option key={w} value={w}>{w}</option>)}
-              </select>
+                onChange={e => {
+                  setCloseForm({ ...closeForm, workzone: e.target.value });
+                  setShowWZDropdown(true);
+                }}
+                onFocus={() => setShowWZDropdown(true)}
+                onBlur={() => setTimeout(() => setShowWZDropdown(false), 200)}
+                style={{
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border)',
+                  width: '100%',
+                  padding: '0.5rem'
+                }}
+              />
+
+              {showWZDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {allWorkzones
+                    .filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase()))
+                    .map(w => (
+                      <div
+                        key={w}
+                        onClick={() => {
+                          setCloseForm({ ...closeForm, workzone: w });
+                          setShowWZDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-light)',
+                          color: 'var(--text-main)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
+                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      >
+                        {w}
+                      </div>
+                    ))
+                  }
+                  {allWorkzones.filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase())).length === 0 && (
+                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada workzone ditemukan</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem' }}>
+            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
               <label>HD Officer</label>
-              <select
+              <input
+                type="text"
+                placeholder="Pilih HD Officer..."
                 value={closeForm.hdOfficer}
-                onChange={e => setCloseForm({ ...closeForm, hdOfficer: e.target.value })}
-                style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-              >
-                <option value="">-- Pilih HD --</option>
-                {HD_OFFICERS.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
+                onChange={e => {
+                  setCloseForm({ ...closeForm, hdOfficer: e.target.value });
+                  setShowHDDropdown(true);
+                }}
+                onFocus={() => setShowHDDropdown(true)}
+                onBlur={() => setTimeout(() => setShowHDDropdown(false), 200)}
+                style={{
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border)',
+                  width: '100%',
+                  padding: '0.5rem'
+                }}
+              />
+
+              {showHDDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {HD_OFFICERS
+                    .filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase()))
+                    .map(h => (
+                      <div
+                        key={h}
+                        onClick={() => {
+                          setCloseForm({ ...closeForm, hdOfficer: h });
+                          setShowHDDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-light)',
+                          color: 'var(--text-main)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
+                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      >
+                        {h}
+                      </div>
+                    ))
+                  }
+                  {HD_OFFICERS.filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase())).length === 0 && (
+                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada HD ditemukan</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="input-group" style={{ marginBottom: '1.5rem' }}>

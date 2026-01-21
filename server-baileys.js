@@ -9,7 +9,7 @@ import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;
 
 app.use(cors());
 app.use(express.json());
@@ -315,11 +315,17 @@ app.post('/api/send-whatsapp', async (req, res) => {
     }
 
     // Extract message and groupId safely
-    const message = req.body.message || req.body.text; // Support 'text' key too
-    const groupId = req.body.groupId || req.body.to;   // Support 'to' key too
+    const message = req.body.message || req.body.text;
+    let groupId = req.body.groupId || req.body.to;
+
+    // FIX: Baileys uses @s.whatsapp.net for users, while whatsapp-web.js uses @c.us
+    if (groupId && groupId.endsWith('@c.us')) {
+        console.log('🔄 Converting @c.us to @s.whatsapp.net for Baileys compatibility');
+        groupId = groupId.replace('@c.us', '@s.whatsapp.net');
+    }
 
     console.log('📱 Parsed Message:', message ? `"${message.substring(0, 20)}..."` : 'UNDEFINED/NULL');
-    console.log('📱 Parsed GroupID:', groupId);
+    console.log('📱 Final Target ID:', groupId);
 
     if (!message || !groupId) {
         console.error('❌ Error: Missing message or groupId in request body');
@@ -330,12 +336,16 @@ app.post('/api/send-whatsapp', async (req, res) => {
     }
 
     try {
+        // Ensure message is a string and trimmed
+        const textMessage = String(message).trim();
+
         console.log(`📤 Sending WhatsApp message to ${groupId}...`);
+        console.log('MSG LENGTH:', textMessage.length);
+        console.log('MSG CONTENT:', JSON.stringify(textMessage));
 
-        // Ensure message is a string
-        const textMessage = String(message);
-
+        // Send the actual message
         await sock.sendMessage(groupId, { text: textMessage });
+
         console.log('✅ WhatsApp message sent successfully!');
         res.json({ success: true, message: 'Message sent successfully' });
     } catch (e) {
