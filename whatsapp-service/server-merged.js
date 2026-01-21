@@ -216,7 +216,7 @@ waClient.on('message_create', async msg => {
     }
 
     // START INTERACTIVE MODE (GANGGUAN)
-    if (text === '1' || text === 'LAPOR' || text === 'GANGGUAN') {
+    if (text === '1' || text === 'GANGGUAN') {
         userChats.set(chatId, { step: 'WAIT_NAME', type: 'GANGGUAN', data: { kategori: 'GANGGUAN' } });
         await waClient.sendMessage(chatId, '🛠️ *PELAPORAN GANGGUAN*\n\nSiap membantu mencatat laporan.\n(Ketik *STOP* untuk batal)\n\n1. Masukkan *NAMA PELANGGAN*:');
         return;
@@ -230,7 +230,7 @@ waClient.on('message_create', async msg => {
     }
 
     // Handle General Commands / Greetings (SHOW MENU)
-    if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST' || text === 'SELAMAT PAGI' || text === 'SELAMAT SIANG' || text === 'SELAMAT SORE' || text === 'SELAMAT MALAM' || text === 'ASSALAMUALAIKUM') {
+    if (text === '/START' || text === 'MENU' || text === 'LAPOR' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST' || text === 'SELAMAT PAGI' || text === 'SELAMAT SIANG' || text === 'SELAMAT SORE' || text === 'SELAMAT MALAM' || text === 'ASSALAMUALAIKUM') {
         const welcomeMsg = `🤖 *Halo, Selamat Datang di Layanan Tiket!*\n\nSaya asisten virtual yang siap membantu Anda.\nSilakan pilih menu layanan di bawah ini (Ketik Angka):\n\n1️⃣ *Lapor Gangguan*\n2️⃣ *Pasang Baru (PSB)*\n\n_Ketik 1 atau 2 untuk memilih layanan._`;
         await waClient.sendMessage(chatId, welcomeMsg);
     }
