@@ -88,7 +88,8 @@ export default async function handler(req, res) {
             const rows = idRes.data.values || [];
             let rowIndex = -1;
 
-            for (let i = 0; i < rows.length; i++) {
+            // Search from bottom up to find the LATEST ticket (in case of duplicates)
+            for (let i = rows.length - 1; i >= 0; i--) {
                 if (rows[i][0] && rows[i][0].trim() === ticketId.trim()) {
                     rowIndex = i + 1; // 1-based index
                     break;
