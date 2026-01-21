@@ -234,4 +234,3 @@ export const TEKNISI_LIST = [
   '18980067 - AHMAD RIZAL'
 ]
 
-export * from './sppg_data'

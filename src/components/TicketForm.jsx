@@ -15,7 +15,6 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { cn } from '../lib/utils'
-import SPPGSelector from './SPPGSelector'
 
 // --- CONSTANTS ---
 const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
@@ -274,27 +273,6 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <SPPGSelector
-              selectedValue={formData.incident && formData.incident.startsWith('SPPG') ? formData.incident : ''}
-              onSelect={(item) => {
-                if (item) {
-                  setFormData(prev => ({
-                    ...prev,
-                    // Auto-fill Incident with SPPG ID if empty or replace? Maybe store in separate field?
-                    // User asked to "Add based on SPPG".
-                    // For now, let's put it in workzone if possible map, or just logic.
-                    workzone: item.areaConfirmed || prev.workzone,
-                    // Maybe put the SPPG Name in Customer Name?
-                    // Or append to description?
-                    repair: prev.repair ? prev.repair + ` [${item.id} - ${item.name}]` : `[${item.id} - ${item.name}]`,
-                    // Also maybe set incident to the ID if it fits format? The format check demands INC...
-                    // But maybe we should allow SPPG IDs?
-                  }))
-                }
-              }}
-            />
-          </div>
 
           <div className="space-y-2">
             <Label>Workzone</Label>
