@@ -104,12 +104,12 @@ waClient.on('message_create', async msg => {
     const text = body.toUpperCase();
 
     // RESET/CANCEL COMMAND
-    if (text === 'BATAL' || text === 'RESET' || text === 'CANCEL') {
+    if (text === 'BATAL' || text === 'RESET' || text === 'CANCEL' || text === 'STOP') {
         if (userChats.has(chatId)) {
             userChats.delete(chatId);
-            await waClient.sendMessage(chatId, '🚫 Laporan dibatalkan. Ketik *LAPOR* untuk mulai dari awal.');
+            await waClient.sendMessage(chatId, '🚫 Laporan dibatalkan. Ketik *MENU* untuk kembali ke menu utama.');
         } else {
-            await waClient.sendMessage(chatId, 'Tidak ada sesi laporan yang aktif.');
+            await waClient.sendMessage(chatId, 'Tidak ada sesi laporan yang aktif. Ketik *MENU* untuk kembali.');
         }
         return;
     }
@@ -218,14 +218,14 @@ waClient.on('message_create', async msg => {
     // START INTERACTIVE MODE (GANGGUAN)
     if (text === '1' || text === 'LAPOR' || text === 'GANGGUAN') {
         userChats.set(chatId, { step: 'WAIT_NAME', type: 'GANGGUAN', data: { kategori: 'GANGGUAN' } });
-        await waClient.sendMessage(chatId, '🛠️ *PElAPORAN GANGGUAN*\n\nSiap membantu mencatat laporan.\nSilakan jawab pertanyaan berikut:\n\n1. Masukkan *NAMA PELANGGAN*:');
+        await waClient.sendMessage(chatId, '🛠️ *PELAPORAN GANGGUAN*\n\nSiap membantu mencatat laporan.\n(Ketik *STOP* untuk batal)\n\n1. Masukkan *NAMA PELANGGAN*:');
         return;
     }
 
     // START INTERACTIVE MODE (PSB)
     if (text === '2' || text === 'PSB' || text === 'PASANG BARU') {
         userChats.set(chatId, { step: 'WAIT_NAME', type: 'PSB', data: { kategori: 'PSB', noInternet: 'N/A (PSB)' } });
-        await waClient.sendMessage(chatId, '📝 *REGISTRASI PASANG BARU (PSB)*\n\nSiap membantu pendaftaran.\nSilakan jawab pertanyaan berikut:\n\n1. Masukkan *NAMA LENGKAP*:');
+        await waClient.sendMessage(chatId, '📝 *REGISTRASI PASANG BARU (PSB)*\n\nSiap membantu pendaftaran.\n(Ketik *STOP* untuk batal)\n\n1. Masukkan *NAMA LENGKAP*:');
         return;
     }
 
