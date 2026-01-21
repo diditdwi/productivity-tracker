@@ -77,7 +77,8 @@ async function saveReportToSheet(data) {
             data.snOnt || '-',
             data.pic || '-',
             'Open',
-            ticketId
+            ticketId,
+            data.senderId || '-'
         ];
 
         await sheets.spreadsheets.values.append({
@@ -93,6 +94,38 @@ async function saveReportToSheet(data) {
     }
 }
 
+// ==================== TICKET QUEUE / ANTI-SPAM ====================
+const ticketCache = new Map();
+
+async function checkActiveTicket(chatId) {
+    const cached = ticketCache.get(chatId);
+    if (cached && cached.expires > Date.now()) return cached.ticketId;
+
+    try {
+        const sheets = getSheetsClient();
+        const res = await sheets.spreadsheets.values.get({
+            spreadsheetId: SHEET_ID_LAPORAN,
+            range: "'Laporan Langsung'!I:K",
+        });
+        const rows = res.data.values;
+        if (!rows) return null;
+
+        for (let i = rows.length - 1; i >= 0; i--) {
+            const r = rows[i];
+            if (r[2] === chatId && r[0] && r[0].toLowerCase() === 'open') {
+                const tid = r[1];
+                ticketCache.set(chatId, { ticketId: tid, expires: Date.now() + 300000 }); // 5 min cache
+                return tid;
+            }
+        }
+        ticketCache.set(chatId, { ticketId: null, expires: Date.now() + 300000 });
+        return null;
+    } catch (e) {
+        console.error('Ticket Check Error:', e);
+        return null;
+    }
+}
+
 // ==================== WHATSAPP BOT INTERAKTIF ====================
 const userChats = new Map();
 
@@ -101,6 +134,14 @@ waClient.on('message_create', async msg => {
 
     const chatId = msg.from;
     const body = msg.body.trim();
+
+    // CHECK ACTIVE TICKET (ANTI-SPAM)
+    const activeTicket = await checkActiveTicket(chatId);
+    if (activeTicket) {
+        await waClient.sendMessage(chatId, `✋ *ORDER MASIH DALAM PENANGANAN*\n\nTiket Anda *${activeTicket}* masih status *OPEN*.\nTeam kami sedang memprosesnya, mohon ditunggu.`);
+        return;
+    }
+
     const text = body.toUpperCase();
 
     // RESET/CANCEL COMMAND
@@ -164,6 +205,7 @@ waClient.on('message_create', async msg => {
 
             case 'WAIT_PIC':
                 state.data.pic = body;
+                state.data.senderId = chatId; // Save Sender ID for Anti-spam
                 userChats.delete(chatId);
 
                 await waClient.sendMessage(chatId, '⏳ Sedang menyimpan data...');
