@@ -233,9 +233,23 @@ waClient.on('qr', (qr) => {
     console.log('========================================\n');
 });
 
-waClient.on('ready', () => {
+waClient.on('ready', async () => {
     console.log('✅ WhatsApp Client is READY!');
     isWaReady = true;
+
+    // INJECT BROWSER-SIDE FIX (Vaksin Anti-Crash)
+    // Ini mematikan fungsi 'sendSeen' (Centang Biru) di sisi Browser/WhatsApp Web
+    try {
+        await waClient.pupPage.evaluate(() => {
+            if (window.WWebJS) {
+                window.WWebJS.sendSeen = async () => { return true; };
+                console.log('✅ WWebJS.sendSeen patched!');
+            }
+        });
+        console.log('💉 Browser-side patch applied successfully.');
+    } catch (e) {
+        console.error('⚠️ Failed to apply browser patch:', e);
+    }
 });
 
 waClient.on('authenticated', () => {
