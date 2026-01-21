@@ -207,7 +207,7 @@ waClient.on('message_create', async msg => {
     }
 
     // Handle General Commands / Greetings
-    if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST') {
+    if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST' || text === 'SELAMAT PAGI' || text === 'SELAMAT SIANG' || text === 'SELAMAT SORE' || text === 'SELAMAT MALAM') {
         const welcomeMsg = `🤖 *Hellow, I am Ticket Bot!*\n\nKetik *LAPOR* untuk memulai pelaporan gangguan secara bertahap.\n\nAtau gunakan format langsung:\n*LAPOR*\nNama: ...\nAlamat: ...\n(dst)`;
         await waClient.sendMessage(chatId, welcomeMsg);
     }
