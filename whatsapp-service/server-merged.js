@@ -127,8 +127,15 @@ waClient.on('message_create', async msg => {
 
             case 'WAIT_ADDRESS':
                 state.data.alamat = body;
-                state.step = 'WAIT_NO_INET';
-                await waClient.sendMessage(chatId, '3. Masukkan *NO LAYANAN / INTERNET*:');
+
+                if (state.type === 'PSB') {
+                    // Skip No Internet for PSB
+                    state.step = 'WAIT_COMPLAINT';
+                    await waClient.sendMessage(chatId, '3. Masukkan *PAKET YANG DIMINTA / KEBUTUHAN*:');
+                } else {
+                    state.step = 'WAIT_NO_INET';
+                    await waClient.sendMessage(chatId, '3. Masukkan *NO LAYANAN / INTERNET*:');
+                }
                 break;
 
             case 'WAIT_NO_INET':
@@ -208,16 +215,23 @@ waClient.on('message_create', async msg => {
         return;
     }
 
-    // START INTERACTIVE MODE
-    if (text === 'LAPOR' || text === 'ORDER') {
-        userChats.set(chatId, { step: 'WAIT_NAME', data: {} });
-        await waClient.sendMessage(chatId, '🤖 *MODE LAPORAN INTERAKTIF*\n\nSiap membantu mencatat laporan.\nSilakan jawab pertanyaan berikut satu per satu.\n(Ketik *BATAL* untuk berhenti kapan saja)\n\n1. Masukkan *NAMA PELANGGAN*:');
+    // START INTERACTIVE MODE (GANGGUAN)
+    if (text === '1' || text === 'LAPOR' || text === 'GANGGUAN') {
+        userChats.set(chatId, { step: 'WAIT_NAME', type: 'GANGGUAN', data: { kategori: 'GANGGUAN' } });
+        await waClient.sendMessage(chatId, '🛠️ *PElAPORAN GANGGUAN*\n\nSiap membantu mencatat laporan.\nSilakan jawab pertanyaan berikut:\n\n1. Masukkan *NAMA PELANGGAN*:');
         return;
     }
 
-    // Handle General Commands / Greetings
-    if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST' || text === 'SELAMAT PAGI' || text === 'SELAMAT SIANG' || text === 'SELAMAT SORE' || text === 'SELAMAT MALAM') {
-        const welcomeMsg = `🤖 *Hellow, I am Ticket Bot!*\n\nKetik *LAPOR* untuk memulai pelaporan gangguan secara bertahap.\n\nAtau gunakan format langsung:\n*LAPOR*\nNama: ...\nAlamat: ...\n(dst)`;
+    // START INTERACTIVE MODE (PSB)
+    if (text === '2' || text === 'PSB' || text === 'PASANG BARU') {
+        userChats.set(chatId, { step: 'WAIT_NAME', type: 'PSB', data: { kategori: 'PSB', noInternet: 'N/A (PSB)' } });
+        await waClient.sendMessage(chatId, '📝 *REGISTRASI PASANG BARU (PSB)*\n\nSiap membantu pendaftaran.\nSilakan jawab pertanyaan berikut:\n\n1. Masukkan *NAMA LENGKAP*:');
+        return;
+    }
+
+    // Handle General Commands / Greetings (SHOW MENU)
+    if (text === '/START' || text === 'MENU' || text === 'HELP' || text === 'HALO' || text === 'PING' || text === 'TEST' || text === 'SELAMAT PAGI' || text === 'SELAMAT SIANG' || text === 'SELAMAT SORE' || text === 'SELAMAT MALAM' || text === 'ASSALAMUALAIKUM') {
+        const welcomeMsg = `🤖 *Halo, Selamat Datang di Layanan Tiket!*\n\nSaya asisten virtual yang siap membantu Anda.\nSilakan pilih menu layanan di bawah ini (Ketik Angka):\n\n1️⃣ *Lapor Gangguan*\n2️⃣ *Pasang Baru (PSB)*\n\n_Ketik 1 atau 2 untuk memilih layanan._`;
         await waClient.sendMessage(chatId, welcomeMsg);
     }
 });
