@@ -168,8 +168,12 @@ waClient.on('message_create', async msg => {
 
                 await waClient.sendMessage(chatId, '⏳ Sedang menyimpan data...');
                 const ticketId = await saveReportToSheet(state.data);
+
+                // Tentukan Label (Kendala vs Permintaan Paket)
+                const labelKeluhan = (state.type === 'PSB') ? 'Permintaan Paket' : 'Kendala';
+
                 if (ticketId) {
-                    await waClient.sendMessage(chatId, `✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${state.data.nama}\nAlamat: ${state.data.alamat}\nNo Layanan: ${state.data.noInternet}\nKendala: ${state.data.keluhan}\nLayanan: ${state.data.layanan}\nSN ONT: ${state.data.snOnt}\nPIC Contact: ${state.data.pic}\n\nData telah masuk ke Dashboard. Terima kasih!`);
+                    await waClient.sendMessage(chatId, `✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${state.data.nama}\nAlamat: ${state.data.alamat}\nNo Layanan: ${state.data.noInternet}\n${labelKeluhan}: ${state.data.keluhan}\nLayanan: ${state.data.layanan}\nSN ONT: ${state.data.snOnt}\nPIC Contact: ${state.data.pic}\n\nData telah masuk ke Dashboard. Terima kasih!`);
                 } else {
                     await waClient.sendMessage(chatId, '❌ Maaf, terjadi kesalahan saat menyimpan laporan.');
                 }
