@@ -215,6 +215,8 @@ waClient.on('message_create', async msg => {
                 const labelKeluhan = (state.type === 'PSB') ? 'Permintaan Paket' : 'Kendala';
 
                 if (ticketId) {
+                    // Update Cache Anti-Spam (Block User Immediately)
+                    ticketCache.set(chatId, { ticketId: ticketId, expires: Date.now() + 300000 });
                     await waClient.sendMessage(chatId, `✅ *LAPORAN DITERIMA & DISIMPAN*\n\nNo. Tiket: ${ticketId}\nNama: ${state.data.nama}\nAlamat: ${state.data.alamat}\nNo Layanan: ${state.data.noInternet}\n${labelKeluhan}: ${state.data.keluhan}\nLayanan: ${state.data.layanan}\nSN ONT: ${state.data.snOnt}\nPIC Contact: ${state.data.pic}\n\nData telah masuk ke Dashboard. Terima kasih!`);
                 } else {
                     await waClient.sendMessage(chatId, '❌ Maaf, terjadi kesalahan saat menyimpan laporan.');
@@ -252,8 +254,10 @@ waClient.on('message_create', async msg => {
             return;
         }
 
+        data.senderId = chatId; // SenderId for Anti-spam
         const ticketId = await saveReportToSheet(data);
         if (ticketId) {
+            ticketCache.set(chatId, { ticketId: ticketId, expires: Date.now() + 300000 });
             await waClient.sendMessage(chatId, `✅ *LAPORAN DITERIMA*\nTicket: ${ticketId}\nTerima kasih!`);
         } else {
             await waClient.sendMessage(chatId, '❌ Gagal menyimpan laporan.');

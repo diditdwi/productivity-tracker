@@ -23,10 +23,10 @@ let lastGaransiFetch = 0;
 async function updateGaransiCache(sheets) {
     const GARANSI_SHEET_ID = process.env.SHEET_ID_GARANSI;
     const now = Date.now();
-    
+
     // Cache valid for 1 hour
     if (garansiCache.size > 0 && (now - lastGaransiFetch) < 3600000) {
-        return; 
+        return;
     }
 
     if (!GARANSI_SHEET_ID) {
@@ -43,11 +43,11 @@ async function updateGaransiCache(sheets) {
 
         const rows = res.data.values || [];
         const newCache = new Map();
-        
+
         rows.forEach(row => {
             const speedy = row[0]; // Col O
             const umur = row[41];  // Col BD (Index 55 - 14 = 41)
-            
+
             if (speedy) {
                 const cleanSpeedy = String(speedy).trim();
                 const umurVal = parseInt(umur);
@@ -60,7 +60,7 @@ async function updateGaransiCache(sheets) {
         garansiCache = newCache;
         lastGaransiFetch = now;
         console.log(`✅ Garansi Cache Updated. Size: ${garansiCache.size}`);
-        
+
     } catch (e) {
         console.error("❌ Failed to update Garansi cache:", e.message);
     }
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
                 spreadsheetId: SPREADSHEET_ID,
                 range: "'Laporan Langsung'!J:J",
             });
-            
+
             const rows = idRes.data.values || [];
             let rowIndex = -1;
 
@@ -107,7 +107,27 @@ export default async function handler(req, res) {
                 requestBody: { values: [[status]] }
             });
 
-            return res.status(200).json({ success: true, message: 'Status updated' });
+            // FORWARD NOTIFICATION TO VPS BOT (Server-to-Server to avoid Mixed Content)
+            if (req.body.notification) {
+                try {
+                    console.log('🔄 Forwarding WA Notification to VPS...');
+                    const waRes = await fetch('http://76.13.20.234:3001/api/send-whatsapp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(req.body.notification)
+                    });
+
+                    if (!waRes.ok) {
+                        console.error('❌ VPS Bot returned error:', await waRes.text());
+                    } else {
+                        console.log('✅ VPS Bot accepted notification');
+                    }
+                } catch (waError) {
+                    console.error('❌ Failed to contact VPS Bot:', waError.message);
+                }
+            }
+
+            return res.status(200).json({ success: true, message: 'Status updated & Notification processed' });
         }
 
         // Update Cache (Non-blocking usually, but here we await to ensure first load works)
