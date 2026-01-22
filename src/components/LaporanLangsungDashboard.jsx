@@ -314,7 +314,7 @@ Mohon segera dicek.${mentionText}`;
                   </td>
                   <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.keluhan}>{r.keluhan}</td>
                   <td>{r.layanan}</td>
-                  <td className="truncate-cell" style={{ maxWidth: '100px' }}>{r.snOnt}</td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.snOnt}</td>
                   <td>{r.pic}</td>
                   <td>
                     <span className={`status-badge status-${r.status.toLowerCase().replace(' ', '-')}`}>
