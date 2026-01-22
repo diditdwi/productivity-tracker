@@ -39,7 +39,8 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
       const matchesSearch = (
         (ticket.incident && ticket.incident.toLowerCase().includes(term)) ||
         (ticket.serviceId && ticket.serviceId.toString().toLowerCase().includes(term)) ||
-        (ticket.hdOfficer && ticket.hdOfficer.toLowerCase().includes(term))
+        (ticket.hdOfficer && ticket.hdOfficer.toLowerCase().includes(term)) ||
+        (ticket.technician && ticket.technician.toLowerCase().includes(term))
       )
 
       let matchesDate = true
@@ -203,7 +204,7 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search Incident, Service ID..."
+              placeholder="Search Incident, Service ID, Technician..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 h-9 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
