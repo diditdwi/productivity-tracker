@@ -299,9 +299,9 @@ Mohon segera dicek.${mentionText}`;
             ) : (
               paginatedReports.map(r => (
                 <tr key={r.id}>
-                  <td className="truncate-cell" style={{ maxWidth: '140px' }} title={r.timestamp}>{r.timestamp}</td>
-                  <td style={{ fontWeight: 'bold', maxWidth: '120px' }} className="truncate-cell">{r.nama}</td>
-                  <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.alamat}>{r.alamat}</td>
+                  <td style={{ maxWidth: '140px', whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '0.85rem' }}>{r.timestamp}</td>
+                  <td style={{ fontWeight: 'bold', maxWidth: '150px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.nama}</td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.alamat}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span className="truncate-cell">{r.noInternet}</span>
@@ -312,7 +312,7 @@ Mohon segera dicek.${mentionText}`;
                       )}
                     </div>
                   </td>
-                  <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.keluhan}>{r.keluhan}</td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.keluhan}</td>
                   <td>{r.layanan}</td>
                   <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.snOnt}</td>
                   <td>{r.pic}</td>
