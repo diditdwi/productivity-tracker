@@ -273,6 +273,7 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
             </div>
           </div>
 
+
           <div className="space-y-2">
             <Label>Workzone</Label>
             <Select name="workzone" value={formData.workzone} onChange={handleChange} options={['Select...', ...ALL_ZONES.sort()]} />

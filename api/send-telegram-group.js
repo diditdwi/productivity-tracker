@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     try {
         const bot = new TelegramBot(TOKEN, { polling: false }); // No polling for API
-        await bot.sendMessage(TARGET_GROUP_ID, message, { parse_mode: 'Markdown' });
+        await bot.sendMessage(TARGET_GROUP_ID, message, { parse_mode: 'HTML' });
         res.status(200).json({ success: true });
     } catch (error) {
         console.error('Telegram API Error:', error);

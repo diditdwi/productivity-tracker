@@ -9,7 +9,7 @@ import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;
 
 app.use(cors());
 app.use(express.json());
@@ -130,7 +130,7 @@ async function connectToWhatsApp() {
 
             try {
                 // 0. RESET/CANCEL COMMAND
-                if (text === 'BATAL' || text === 'RESET' || text === 'CANCEL') {
+                if (['BATAL', 'RESET', 'CANCEL', 'STOP', 'QUIT', 'EXIT'].includes(text)) {
                     if (userChats.has(chatId)) {
                         userChats.delete(chatId);
                         await sock.sendMessage(chatId, { text: '🚫 Laporan dibatalkan. Ketik *LAPOR* untuk mulai dari awal.' });
@@ -299,6 +299,70 @@ app.get('/api/laporan-langsung', async (req, res) => {
 
 app.get('/api/wa-status', (req, res) => {
     res.json({ ready: isWaReady });
+});
+
+// Send WhatsApp Message API (for frontend notifications)
+app.post('/api/send-whatsapp', async (req, res) => {
+    console.log('📨 NEW REQUEST /api/send-whatsapp');
+    console.log('📥 Headers:', JSON.stringify(req.headers));
+    console.log('📥 Body:', JSON.stringify(req.body));
+
+    console.log('Status: WA Ready =', isWaReady);
+
+    if (!isWaReady) {
+        console.log('❌ WhatsApp client not ready');
+        return res.status(503).json({ error: 'WhatsApp not ready yet' });
+    }
+
+    // Extract message and groupId safely
+    const message = req.body.message || req.body.text;
+    let groupId = req.body.groupId || req.body.to;
+
+    // FIX: Baileys uses @s.whatsapp.net for users, while whatsapp-web.js uses @c.us
+    if (groupId && groupId.endsWith('@c.us')) {
+        console.log('🔄 Converting @c.us to @s.whatsapp.net for Baileys compatibility');
+        groupId = groupId.replace('@c.us', '@s.whatsapp.net');
+    }
+
+    console.log('📱 Parsed Message:', message ? `"${message.substring(0, 20)}..."` : 'UNDEFINED/NULL');
+    console.log('📱 Final Target ID:', groupId);
+
+    if (!message || !groupId) {
+        console.error('❌ Error: Missing message or groupId in request body');
+        return res.status(400).json({
+            error: 'Missing message or groupId',
+            receivedBody: req.body
+        });
+    }
+
+    try {
+        // Ensure message is a string and trimmed
+        const textMessage = String(message).trim();
+
+        console.log(`📤 Sending WhatsApp message to ${groupId}...`);
+        console.log('MSG LENGTH:', textMessage.length);
+        console.log('MSG CONTENT:', JSON.stringify(textMessage));
+
+        // Send the actual message
+        await sock.sendMessage(groupId, { text: textMessage });
+
+        console.log('✅ WhatsApp message sent successfully!');
+        res.json({ success: true, message: 'Message sent successfully' });
+    } catch (e) {
+        console.error('❌ Send WA Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Health Check
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'WhatsApp Service (Baileys)',
+        whatsappReady: isWaReady,
+        features: ['send-notification', 'receive-lapor'],
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Start server

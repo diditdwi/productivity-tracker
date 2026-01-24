@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
-export default function Header({ user, theme, toggleTheme, onLogout }) {
+export default function Header({ user, theme, toggleTheme, onLogout, openCount }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -70,6 +70,11 @@ export default function Header({ user, theme, toggleTheme, onLogout }) {
                 <span className="relative z-10 flex items-center gap-2">
                   <Icon className={cn("h-4 w-4", isActive ? "text-white" : "text-slate-600 dark:text-slate-400")} />
                   {item.label}
+                  {item.id === 'laporan-langsung' && openCount > 0 && (
+                    <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white dark:ring-slate-900 animate-in zoom-in duration-300">
+                      {openCount > 99 ? '99+' : openCount}
+                    </span>
+                  )}
                 </span>
               </button>
             );

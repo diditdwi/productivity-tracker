@@ -8,7 +8,8 @@ import {
   TEKNISI_LIST,
   WORKZONES,
   HD_OFFICERS,
-  API_URL
+  API_URL,
+  WA_SERVICE_URL
 } from '../constants'
 
 export default function LaporanLangsungDashboard() {
@@ -16,7 +17,7 @@ export default function LaporanLangsungDashboard() {
   const [loading, setLoading] = useState(true)
   const [waGroups, setWaGroups] = useState([])
   const [sendModal, setSendModal] = useState({ isOpen: false, report: null, tech: '', group: TELEGRAM_GROUPS[0].id, platform: 'TELEGRAM' })
-  
+
   // Closing Modal State
   const [closingReport, setClosingReport] = useState(null)
   const [closeForm, setCloseForm] = useState({
@@ -25,6 +26,9 @@ export default function LaporanLangsungDashboard() {
     action: '',
     hdOfficer: ''
   })
+  const [showTechDropdown, setShowTechDropdown] = useState(false)
+  const [showWZDropdown, setShowWZDropdown] = useState(false)
+  const [showHDDropdown, setShowHDDropdown] = useState(false)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
@@ -86,21 +90,37 @@ export default function LaporanLangsungDashboard() {
       mentionText = `\n\nCC: @${tech.replace('@', '')}`;
     }
 
-    // Common Message Format
-    const message = `*ORDER TEKNISI*
+    // FFG Flag Info
+    let ffgInfo = "";
+    if (report.isFFG) {
+      ffgInfo = `\n⚠️ <b>FLAG: FFG</b> (Umur Garansi: ${report.umurGaransi || 'N/A'} hari)`;
+    }
+
+    // Common Message Format - Use HTML for Telegram, Markdown for WhatsApp
+    const message = platform === 'TELEGRAM'
+      ? `<b>ORDER TEKNISI</b>
 No Tiket: ${report.ticketId}
 Nama: ${report.nama}
 Alamat: ${report.alamat}
 No Layanan: ${report.noInternet}
 Kendala: ${report.keluhan}
 SN ONT: ${report.snOnt}
-CP: ${report.pic}
+CP: ${report.pic}${ffgInfo}
+Mohon segera dicek.${mentionText}`
+      : `*ORDER TEKNISI*
+No Tiket: ${report.ticketId}
+Nama: ${report.nama}
+Alamat: ${report.alamat}
+No Layanan: ${report.noInternet}
+Kendala: ${report.keluhan}
+SN ONT: ${report.snOnt}
+CP: ${report.pic}${ffgInfo}
 Mohon segera dicek.${mentionText}`;
 
     try {
       let res;
       if (platform === 'WHATSAPP') {
-        res = await fetch(API_URL_SEND_WA, {
+        res = await fetch(`${WA_SERVICE_URL}/send-whatsapp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message, groupId: group })
@@ -132,24 +152,24 @@ Mohon segera dicek.${mentionText}`;
     // Pre-fill Workzone using r.hsa if available, or try to guess, or default to first region
     let defaultWZ = '';
     if (r.hsa && r.hsa !== '-') {
-        // Map HSA name to Workzone code if possible?
-        // User's HSA logic returns "HSA RAJAWALI" etc.
-        // My WORKZONES const has "BANDUNG": ['BDK', 'RJW'...]
-        // So I should try to map "HSA RAJAWALI" -> "RJW" (Example)
-        // Or just let user select.
-        // For simplicity, I will set it if it matches exactly, otherwise empty.
-        // Actually, user provided "HSA RAJAWALI" -> "RJW" is likely.
-        // Let's implement a simple mapper if needed or just show the HSA hint.
-        // I will use `r.hsa` as a hint or pre-select if strict match.
-        // For now, let's just default to empty and let user pick, but show HSA as helper.
-        // Wait, user explicitly asked "kolom yang langsung terisi otomatis".
-        // I'll try to map common names.
-        if (r.hsa.includes('RAJAWALI')) defaultWZ = 'RJW';
-        else if (r.hsa.includes('MAJALAYA')) defaultWZ = 'MJY';
-        else if (r.hsa.includes('BANJARAN')) defaultWZ = 'BJA';
-        else if (r.hsa.includes('CIMAHI')) defaultWZ = 'CMI';
-        else if (r.hsa.includes('PADALARANG')) defaultWZ = 'PDL';
-        else if (r.hsa.includes('CIANJUR')) defaultWZ = 'CJR';
+      // Map HSA name to Workzone code if possible?
+      // User's HSA logic returns "HSA RAJAWALI" etc.
+      // My WORKZONES const has "BANDUNG": ['BDK', 'RJW'...]
+      // So I should try to map "HSA RAJAWALI" -> "RJW" (Example)
+      // Or just let user select.
+      // For simplicity, I will set it if it matches exactly, otherwise empty.
+      // Actually, user provided "HSA RAJAWALI" -> "RJW" is likely.
+      // Let's implement a simple mapper if needed or just show the HSA hint.
+      // I will use `r.hsa` as a hint or pre-select if strict match.
+      // For now, let's just default to empty and let user pick, but show HSA as helper.
+      // Wait, user explicitly asked "kolom yang langsung terisi otomatis".
+      // I'll try to map common names.
+      if (r.hsa.includes('RAJAWALI')) defaultWZ = 'RJW';
+      else if (r.hsa.includes('MAJALAYA')) defaultWZ = 'MJY';
+      else if (r.hsa.includes('BANJARAN')) defaultWZ = 'BJA';
+      else if (r.hsa.includes('CIMAHI')) defaultWZ = 'CMI';
+      else if (r.hsa.includes('PADALARANG')) defaultWZ = 'PDL';
+      else if (r.hsa.includes('CIANJUR')) defaultWZ = 'CJR';
     }
 
     setClosingReport(r);
@@ -171,7 +191,7 @@ Mohon segera dicek.${mentionText}`;
 
     setLoading(true);
     try {
-      // 1. Post to Main Dashboard (API_URL)
+      // 1. Post to Main Dashboard (Archive)
       const ticketPayload = {
         date: new Date().toISOString().split('T')[0],
         ticketType: 'LAPSUNG',
@@ -197,18 +217,40 @@ Mohon segera dicek.${mentionText}`;
         throw new Error("Gagal menyimpan ke Dashboard Utama.");
       }
 
-      // 2. Set Status Closed in Laporan Langsung
+      // 2. Prepare WhatsApp Notification Payload
+      let notificationPayload = null;
+      try {
+        let phoneNumber = closingReport.pic.replace(/\D/g, '');
+        if (phoneNumber.startsWith('0')) phoneNumber = '62' + phoneNumber.substring(1);
+        else if (!phoneNumber.startsWith('62')) phoneNumber = '62' + phoneNumber;
+
+        const waMessage = `*NOTIFIKASI TIKET SELESAI*\n\nHalo, ${closingReport.nama}\n\nTiket Anda telah selesai ditangani:\n📋 No. Tiket: ${closingReport.ticketId}\n📍 Alamat: ${closingReport.alamat}\n📞 No Layanan: ${closingReport.noInternet}\n✅ Status: CLOSED\n🔧 Teknisi: ${closeForm.technician}\n📝 Perbaikan: ${closeForm.action}\n\nTerima kasih telah melaporkan. Jika masih ada kendala, silakan hubungi kami kembali.`;
+
+        notificationPayload = {
+          message: waMessage,
+          groupId: phoneNumber + '@c.us'
+        };
+      } catch (err) {
+        console.error("Failed to prepare WA payload", err);
+      }
+
+      // 3. Update Status in Sheet & Send Notification (Backend Proxy)
       const resStatus = await fetch(API_URL_LAPORAN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticketId: closingReport.ticketId, status: 'Closed' })
+        body: JSON.stringify({
+          ticketId: closingReport.ticketId,
+          status: 'Closed',
+          notification: notificationPayload
+        })
       });
 
       if (!resStatus.ok) {
         throw new Error("Gagal update status di Laporan Langsung.");
       }
 
-      alert("✅ Sukses! Data masuk ke Dashboard & Tiket Closed.");
+      alert("✅ Sukses! Data masuk ke Dashboard & Tiket Closed.\n📱 Notifikasi akan dikirim oleh server.");
+
       setClosingReport(null);
       fetchLaporan();
 
@@ -257,9 +299,9 @@ Mohon segera dicek.${mentionText}`;
             ) : (
               paginatedReports.map(r => (
                 <tr key={r.id}>
-                  <td className="truncate-cell" style={{ maxWidth: '140px' }} title={r.timestamp}>{r.timestamp}</td>
-                  <td style={{ fontWeight: 'bold', maxWidth: '120px' }} className="truncate-cell">{r.nama}</td>
-                  <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.alamat}>{r.alamat}</td>
+                  <td style={{ maxWidth: '140px', whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '0.85rem' }}>{r.timestamp}</td>
+                  <td style={{ fontWeight: 'bold', maxWidth: '150px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.nama}</td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.alamat}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span className="truncate-cell">{r.noInternet}</span>
@@ -270,9 +312,9 @@ Mohon segera dicek.${mentionText}`;
                       )}
                     </div>
                   </td>
-                  <td className="truncate-cell" style={{ maxWidth: '150px' }} title={r.keluhan}>{r.keluhan}</td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.keluhan}</td>
                   <td>{r.layanan}</td>
-                  <td className="truncate-cell" style={{ maxWidth: '100px' }}>{r.snOnt}</td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.snOnt}</td>
                   <td>{r.pic}</td>
                   <td>
                     <span className={`status-badge status-${r.status.toLowerCase().replace(' ', '-')}`}>
@@ -292,10 +334,10 @@ Mohon segera dicek.${mentionText}`;
                         Kirim
                       </button>
                       {r.status !== 'Closed' && (
-                        <button 
-                          className="btn-success btn-small" 
-                          style={{ padding: '4px 8px', background: '#10B981' }} 
-                          onClick={() => initiateClose(r)} 
+                        <button
+                          className="btn-success btn-small"
+                          style={{ padding: '4px 8px', background: '#10B981' }}
+                          onClick={() => initiateClose(r)}
                           title="Closing & Transfer Dashboard"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -339,12 +381,12 @@ Mohon segera dicek.${mentionText}`;
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
           }}>
-             {/* ... (Keep Existing Send Modal Content) ... */}
+            {/* ... (Keep Existing Send Modal Content) ... */}
             <div className="glass-panel" style={{ width: '400px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
-               {/* Simplified for replace validity - assume existing content */}
-               <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order</h3>
-               {/* ... Keep the rest of Send Modal UI same as before ... */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              {/* Simplified for replace validity - assume existing content */}
+              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order</h3>
+              {/* ... Keep the rest of Send Modal UI same as before ... */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 <button
                   className={sendModal.platform === 'TELEGRAM' ? 'btn-telegram' : 'btn-secondary'}
                   onClick={() => setSendModal(prev => ({ ...prev, platform: 'TELEGRAM', group: TELEGRAM_GROUPS[0].id }))}
@@ -418,69 +460,223 @@ Mohon segera dicek.${mentionText}`;
         }}>
           <div className="glass-panel" style={{ width: '500px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
             <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>Closing & Transfer Ticket</h3>
-            
+
             <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'gray' }}>
-                <p>Tiket: <b>{closingReport.ticketId}</b></p>
-                <p>Layanan: <b>{closingReport.noInternet}</b></p>
-                {closingReport.hsa && <p>HSA (Auto): <b>{closingReport.hsa}</b></p>}
+              <p>Tiket: <b>{closingReport.ticketId}</b></p>
+              <p>Layanan: <b>{closingReport.noInternet}</b></p>
+              {closingReport.hsa && <p>HSA (Auto): <b>{closingReport.hsa}</b></p>}
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label>Teknisi</label>
-                <select 
-                    value={closeForm.technician} 
-                    onChange={e => setCloseForm({...closeForm, technician: e.target.value})}
-                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-                >
-                    <option value="">-- Pilih Teknisi --</option>
-                    {TEKNISI_LIST.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
+              <label>Teknisi</label>
+              <input
+                type="text"
+                placeholder="Ketik nama teknisi..."
+                value={closeForm.technician}
+                onChange={e => {
+                  setCloseForm({ ...closeForm, technician: e.target.value });
+                  setShowTechDropdown(true);
+                }}
+                onFocus={() => setShowTechDropdown(true)}
+                // Delay hiding to allow click event on dropdown items
+                onBlur={() => setTimeout(() => setShowTechDropdown(false), 200)}
+                style={{
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border)',
+                  width: '100%',
+                  padding: '0.5rem'
+                }}
+              />
+
+              {showTechDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {TEKNISI_LIST
+                    .filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase()))
+                    .map(t => (
+                      <div
+                        key={t}
+                        onClick={() => {
+                          setCloseForm({ ...closeForm, technician: t });
+                          setShowTechDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-light)',
+                          color: 'var(--text-main)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
+                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      >
+                        {t}
+                      </div>
+                    ))
+                  }
+                  {TEKNISI_LIST.filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase())).length === 0 && (
+                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada teknisi ditemukan</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label>Workzone (Auto-suggest based on HSA)</label>
-                <select 
-                    value={closeForm.workzone} 
-                    onChange={e => setCloseForm({...closeForm, workzone: e.target.value})}
-                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-                >
-                    <option value="">-- Pilih Workzone --</option>
-                    {allWorkzones.map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
+            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
+              <label>Workzone (Auto-suggest based on HSA)</label>
+              <input
+                type="text"
+                placeholder="Pilih Workzone..."
+                value={closeForm.workzone}
+                onChange={e => {
+                  setCloseForm({ ...closeForm, workzone: e.target.value });
+                  setShowWZDropdown(true);
+                }}
+                onFocus={() => setShowWZDropdown(true)}
+                onBlur={() => setTimeout(() => setShowWZDropdown(false), 200)}
+                style={{
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border)',
+                  width: '100%',
+                  padding: '0.5rem'
+                }}
+              />
+
+              {showWZDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {allWorkzones
+                    .filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase()))
+                    .map(w => (
+                      <div
+                        key={w}
+                        onClick={() => {
+                          setCloseForm({ ...closeForm, workzone: w });
+                          setShowWZDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-light)',
+                          color: 'var(--text-main)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
+                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      >
+                        {w}
+                      </div>
+                    ))
+                  }
+                  {allWorkzones.filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase())).length === 0 && (
+                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada workzone ditemukan</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label>HD Officer</label>
-                <select 
-                    value={closeForm.hdOfficer} 
-                    onChange={e => setCloseForm({...closeForm, hdOfficer: e.target.value})}
-                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-                >
-                    <option value="">-- Pilih HD --</option>
-                    {HD_OFFICERS.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
+            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
+              <label>HD Officer</label>
+              <input
+                type="text"
+                placeholder="Pilih HD Officer..."
+                value={closeForm.hdOfficer}
+                onChange={e => {
+                  setCloseForm({ ...closeForm, hdOfficer: e.target.value });
+                  setShowHDDropdown(true);
+                }}
+                onFocus={() => setShowHDDropdown(true)}
+                onBlur={() => setTimeout(() => setShowHDDropdown(false), 200)}
+                style={{
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border)',
+                  width: '100%',
+                  padding: '0.5rem'
+                }}
+              />
+
+              {showHDDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  zIndex: 10,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {HD_OFFICERS
+                    .filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase()))
+                    .map(h => (
+                      <div
+                        key={h}
+                        onClick={() => {
+                          setCloseForm({ ...closeForm, hdOfficer: h });
+                          setShowHDDropdown(false);
+                        }}
+                        style={{
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--border-light)',
+                          color: 'var(--text-main)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
+                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      >
+                        {h}
+                      </div>
+                    ))
+                  }
+                  {HD_OFFICERS.filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase())).length === 0 && (
+                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada HD ditemukan</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-                <label>Action / Perbaikan</label>
-                <textarea 
-                    value={closeForm.action}
-                    onChange={e => setCloseForm({...closeForm, action: e.target.value})}
-                    rows={3}
-                    style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-                />
+              <label>Action / Perbaikan</label>
+              <textarea
+                value={closeForm.action}
+                onChange={e => setCloseForm({ ...closeForm, action: e.target.value })}
+                rows={3}
+                style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
+              />
             </div>
 
-             <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
-                <button className="btn-secondary" onClick={() => setClosingReport(null)}>Batal</button>
-                <button 
-                  className="btn-success" 
-                  onClick={submitCloseTicket}
-                  style={{ background: '#10B981', color: 'white' }}
-                >
-                  Simpan ke Dashboard & Tutup
-                </button>
-              </div>
+            <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
+              <button className="btn-secondary" onClick={() => setClosingReport(null)}>Batal</button>
+              <button
+                className="btn-success"
+                onClick={submitCloseTicket}
+                style={{ background: '#10B981', color: 'white' }}
+              >
+                Simpan ke Dashboard & Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

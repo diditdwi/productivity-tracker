@@ -1,0 +1,32 @@
+{
+    "name": "whatsapp-service",
+    "version": "1.0.0",
+    "description": "Standalone WhatsApp Service for Productivity Tracker",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server-merged.js",
+        "dev": "nodemon server-merged.js",
+        "pm2:start": "pm2 start ecosystem.config.js",
+        "pm2:stop": "pm2 stop whatsapp-service",
+        "pm2:restart": "pm2 restart whatsapp-service",
+        "pm2:logs": "pm2 logs whatsapp-service",
+        "pm2:status": "pm2 status"
+    },
+    "keywords": [
+        "whatsapp",
+        "bot",
+        "service"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "googleapis": "^170.1.0",
+        "qrcode-terminal": "^0.12.0",
+        "whatsapp-web.js": "^1.23.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    }
+}

@@ -4,6 +4,11 @@ export const API_URL_WA_GROUPS = '/api/wa-groups'
 export const API_URL_SEND_WA = '/api/send-whatsapp'
 export const API_URL_SEND_TELEGRAM = '/api/send-telegram-group'
 
+// WhatsApp Service URL - VPS IP: 76.13.20.234
+// Development: 'http://localhost:3001'
+// Production: 'http://76.13.20.234:3001'
+export const WA_SERVICE_URL = import.meta.env.VITE_WA_SERVICE_URL || 'http://76.13.20.234:3001/api'
+
 export const TICKET_TYPES = ['SQM', 'REGULER', 'LAPSUNG', 'INFRACARE', 'CNQ', 'UNSPEC']
 
 export const SERVICE_TYPES = {
@@ -23,7 +28,10 @@ export const WORKZONES = {
 export const TELEGRAM_GROUPS = [
   { name: 'RJW', id: '-1001374270728' },
   { name: 'SOR', id: '-1001230361821' },
-  { name: 'CMI', id: '-1001328230875' }
+  { name: 'CMI', id: '-1001328230875' },
+  { name: 'LBG', id: '-1001118279472' },
+  { name: 'BDK', id: '-1001106767074' },
+  { name: 'SMD', id: '-1002725929409' }
 ]
 
 export const HD_OFFICERS = [
@@ -42,6 +50,7 @@ export const HD_OFFICERS = [
 export const TEKNISI_LIST = [
   '18890111 - ZAELANI MUHARAMSYAH',
   '18870033 - SURYANA',
+  '18870084 - NOVA MUCHLIS M',
   '18850025 - RUDI SABANA',
   '20961178 - NOVA HERDIANSYAH',
   '20870086 - RUSTANDI',
@@ -92,6 +101,7 @@ export const TEKNISI_LIST = [
   '20940923 - RAHMAN TRI SULISTIYO',
   '25850010 - R. ANDREAS EDWIN',
   '20950948 - BACHTIAR RISMAYA',
+  '20950940 - MOCHAMAD RIZKY GILANG PUTRA',
   '20950983 - DWI AGUS MULYANTO',
   '18930028 - MOHAMMAD ZULFIKAR',
   '20941036 - FAHMI HAMDANI PAMUNGKAS',
@@ -222,6 +232,9 @@ export const TEKNISI_LIST = [
   '20930811 - DIDAN SUWINDA',
   '18810030 - WENDA HERYANA',
   '18980067 - AHMAD RIZAL',
+  '18950101 - YUDI SOPANDI',
+  '20910526 - INDRA HIDAYAT',
   '81190002 - Fredy Rusdiana Nurdin',
   '19820015 - SUBHAKTI'
 ]
+

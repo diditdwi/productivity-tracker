@@ -12,7 +12,7 @@ import LaporanLangsungDashboard from './components/LaporanLangsungDashboard'
 import ChangePasswordForm from './components/ChangePasswordForm'
 import LoginForm from './components/LoginForm'
 
-import { API_URL, TEKNISI_LIST, HD_OFFICERS } from './constants'
+import { API_URL, TEKNISI_LIST, HD_OFFICERS, API_URL_LAPORAN } from './constants'
 
 const DEFAULT_USERS = [
   { username: 'dias', password: 'Xeon2108', role: 'admin' },
@@ -91,6 +91,9 @@ function App() {
   const [editingTicket, setEditingTicket] = useState(null)
   const [isNewTicketFromReport, setIsNewTicketFromReport] = useState(false)
 
+  // Laporan Langsung Count State
+  const [laporanCount, setLaporanCount] = useState(0)
+
   // --- FETCH TICKETS ---
   useEffect(() => {
     fetchTickets()
@@ -110,6 +113,31 @@ function App() {
       setLoading(false)
     }
   }
+
+  // --- FETCH LAPORAN COUNT ---
+  useEffect(() => {
+    const fetchLaporanCount = async () => {
+      try {
+        const res = await fetch(API_URL_LAPORAN)
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data)) {
+            const count = data.filter(item => {
+              const status = item.status || 'Open';
+              return status.toLowerCase() !== 'closed';
+            }).length
+            setLaporanCount(count)
+          }
+        }
+      } catch (e) {
+        // Silent error for background fetch
+      }
+    }
+
+    fetchLaporanCount()
+    const interval = setInterval(fetchLaporanCount, 30000) // Poll every 30s
+    return () => clearInterval(interval)
+  }, [])
 
   // --- HANDLERS ---
   const handleLogin = (username, password) => {
@@ -221,7 +249,13 @@ function App() {
 
   return (
     <div className="app-container" data-theme={theme}>
-      <Header user={user} theme={theme} toggleTheme={toggleTheme} onLogout={handleLogout} />
+      <Header
+        user={user}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onLogout={handleLogout}
+        openCount={laporanCount}
+      />
       <main>
         <Routes>
           <Route path="/" element={
