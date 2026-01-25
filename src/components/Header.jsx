@@ -27,7 +27,10 @@ export default function Header({ user, theme, toggleTheme, onLogout, openCount }
     : [
       { id: 'entry', label: 'Entry Data', icon: FilePlus, path: '/' },
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-      ...(user.role === 'admin' ? [{ id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' }] : []),
+      ...(user.role === 'admin' ? [
+        { id: 'productivity', label: 'Productivity', icon: BarChart3, path: '/productivity' },
+        { id: 'staff', label: 'Staff', icon: User, path: '/users' }
+      ] : []),
       { id: 'daily-report', label: 'Daily Report', icon: FileText, path: '/report' },
       { id: 'laporan-langsung', label: 'Laporan Langsung', icon: Zap, path: '/laporan-langsung' },
     ];

@@ -11,6 +11,7 @@ import DailyReportDashboard from './components/DailyReportDashboard'
 import LaporanLangsungDashboard from './components/LaporanLangsungDashboard'
 import ChangePasswordForm from './components/ChangePasswordForm'
 import LoginForm from './components/LoginForm'
+import UserManagement from './components/UserManagement'
 
 import { API_URL, TEKNISI_LIST, HD_OFFICERS, API_URL_LAPORAN } from './constants'
 
@@ -139,6 +140,27 @@ function App() {
     return () => clearInterval(interval)
   }, [])
 
+  // --- FETCH USERS (STAFF) ---
+  const [technicians, setTechnicians] = useState(TEKNISI_LIST)
+  const [hdOfficers, setHdOfficers] = useState(HD_OFFICERS)
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/users')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.technicians && data.technicians.length > 0) setTechnicians(data.technicians)
+        if (data.hdOfficers && data.hdOfficers.length > 0) setHdOfficers(data.hdOfficers)
+      }
+    } catch (e) {
+      console.error("Failed to fetch users:", e)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
   // --- HANDLERS ---
   const handleLogin = (username, password) => {
     const foundUser = usersDB.find(u => u.username === username && u.password === password)
@@ -265,8 +287,8 @@ function App() {
                 initialData={editingTicket}
                 isNewFromReport={isNewTicketFromReport}
                 user={user}
-                technicians={TEKNISI_LIST}
-                hdOfficers={HD_OFFICERS}
+                technicians={technicians}
+                hdOfficers={hdOfficers}
                 tickets={tickets}
               />
             )
@@ -281,6 +303,15 @@ function App() {
           <Route path="/productivity" element={<ProductivityDashboard tickets={tickets} />} />
           <Route path="/report" element={<DailyReportDashboard tickets={tickets} />} />
           <Route path="/laporan-langsung" element={<LaporanLangsungDashboard />} />
+          <Route path="/users" element={
+            user.role === 'admin' ? (
+              <UserManagement
+                technicians={technicians}
+                hdOfficers={hdOfficers}
+                onRefresh={fetchUsers}
+              />
+            ) : <Navigate to="/" />
+          } />
           <Route path="/change-password" element={
             <ChangePasswordForm
               user={user}

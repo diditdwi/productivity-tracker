@@ -584,6 +584,56 @@ app.get('/api/laporan-langsung', async (req, res) => {
     }
 });
 
+// --- USER MANAGEMENT API (Local) ---
+app.get('/api/users', async (req, res) => {
+    try {
+        const sheets = getSheetsClient();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SHEET_ID_LAPORAN,
+            range: "'Staff'!A:D",
+        });
+
+        const rows = response.data.values || [];
+        const technicians = [];
+        const hdOfficers = [];
+
+        rows.forEach(row => {
+            if (!row || row.length < 4) return;
+            const [type, id, name, fullString] = row;
+            if (type === 'TECHNICIAN') technicians.push(fullString);
+            else if (type === 'HD') hdOfficers.push(fullString);
+        });
+
+        res.json({ technicians, hdOfficers });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    try {
+        const { type, id, name } = req.body;
+        if (!type || !id || !name) return res.status(400).json({ error: 'Missing fields' });
+
+        const fullString = `${id} - ${name}`;
+        const row = [type, id, name, fullString];
+
+        const sheets = getSheetsClient();
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: SHEET_ID_LAPORAN,
+            range: "'Staff'!A:D",
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [row] }
+        });
+
+        res.json({ success: true, fullString });
+    } catch (error) {
+        console.error('Error adding user:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/api/laporan-langsung', async (req, res) => {
     try {
         const { ticketId, status } = req.body;
