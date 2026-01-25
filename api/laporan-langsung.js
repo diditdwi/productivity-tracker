@@ -111,8 +111,11 @@ export default async function handler(req, res) {
             // FORWARD NOTIFICATION TO VPS BOT (Server-to-Server to avoid Mixed Content)
             if (req.body.notification) {
                 try {
-                    console.log('🔄 Forwarding WA Notification to VPS...');
-                    const waRes = await fetch('http://76.13.20.234:3001/api/send-whatsapp', {
+                    // Use Environment Variable for VPS URL
+                    const waUrl = process.env.VITE_WA_SERVICE_URL || 'http://31.97.221.75:3001/api';
+                    console.log('🔄 Forwarding WA Notification to:', waUrl);
+
+                    const waRes = await fetch(`${waUrl}/send-whatsapp`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(req.body.notification)
