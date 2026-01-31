@@ -9,15 +9,17 @@ import {
   Zap,
   Sun,
   Moon,
+  Key,
   LogOut,
-  KeyRound,
-  User
+  User,
+  Menu
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export default function Header({ user, theme, toggleTheme, onLogout, openCount }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navItems = user.role === 'viewer'
     ? [
@@ -39,22 +41,22 @@ export default function Header({ user, theme, toggleTheme, onLogout, openCount }
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm"
+      className="sticky top-0 z-50 w-full border-b border-white/20 bg-white/70 backdrop-blur-xl dark:bg-slate-900/80 shadow-glass-sm transition-all duration-300"
     >
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4">
 
         {/* Logo Area */}
         <div className="flex items-center gap-2 mr-8">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-lg">
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/20">
             <LayoutDashboard className="h-5 w-5 text-white" />
           </div>
-          <span className="hidden font-extrabold sm:inline-block text-lg text-black dark:text-white tracking-tight">
+          <span className="hidden font-extrabold sm:inline-block text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent tracking-tight">
             TicketTracker
           </span>
         </div>
 
-        {/* Navigation Pills */}
-        <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar mask-gradient">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-1 p-1 bg-secondary/50 rounded-2xl border border-white/20 dark:border-white/5 backdrop-blur-sm">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
@@ -64,21 +66,19 @@ export default function Header({ user, theme, toggleTheme, onLogout, openCount }
                 key={item.id}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "relative flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all rounded-full whitespace-nowrap",
+                  "relative flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all rounded-xl",
                   isActive
-                    ? "bg-blue-600 text-white shadow-md outline outline-2 outline-blue-600 dark:outline-blue-500 dark:bg-blue-500"
-                    : "bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-black dark:hover:text-white"
+                    ? "bg-white text-primary shadow-sm dark:bg-slate-800 dark:text-primary-foreground"
+                    : "text-muted-foreground hover:bg-white/50 hover:text-foreground dark:hover:bg-slate-800/50"
                 )}
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  <Icon className={cn("h-4 w-4", isActive ? "text-white" : "text-slate-600 dark:text-slate-400")} />
-                  {item.label}
-                  {item.id === 'laporan-langsung' && openCount > 0 && (
-                    <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white dark:ring-slate-900 animate-in zoom-in duration-300">
-                      {openCount > 99 ? '99+' : openCount}
-                    </span>
-                  )}
-                </span>
+                <Icon className={cn("h-4 w-4", isActive ? "text-primary dark:text-primary-foreground" : "text-muted-foreground")} />
+                {item.label}
+                {item.id === 'laporan-langsung' && openCount > 0 && (
+                  <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white dark:ring-slate-900 animate-pulse">
+                    {openCount > 99 ? '99+' : openCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -88,43 +88,75 @@ export default function Header({ user, theme, toggleTheme, onLogout, openCount }
         <div className="flex items-center gap-2 ml-auto">
           <button
             onClick={toggleTheme}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background hover:bg-accent text-foreground transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-secondary/30 hover:bg-secondary/60 text-foreground transition-all"
           >
             <motion.div
               initial={false}
               animate={{ rotate: theme === 'dark' ? 180 : 0 }}
               transition={{ duration: 0.4 }}
             >
-              {theme === 'light' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === 'light' ? <Sun className="h-5 w-5 text-yellow-500" /> : <Moon className="h-5 w-5 text-blue-400" />}
             </motion.div>
           </button>
 
           <div className="hidden md:flex items-center gap-3 pl-4 border-l border-border/50 ml-2">
             <div className="flex flex-col items-end">
-              <span className="text-sm font-semibold">{user.username}</span>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/50 px-1.5 rounded-sm">
+              <span className="text-sm font-bold text-foreground">{user.username}</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-md font-semibold">
                 {user.role}
               </span>
             </div>
 
             <button
               onClick={() => navigate('/change-password')}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/80 hover:bg-secondary text-secondary-foreground transition-colors"
+              className="group flex h-10 w-10 items-center justify-center rounded-full bg-secondary/30 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all"
               title="Change Password"
             >
-              <KeyRound className="h-4 w-4" />
+              <Key className="h-5 w-5 transition-transform group-hover:rotate-12" />
             </button>
 
             <button
               onClick={onLogout}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 hover:bg-destructive text-destructive transition-colors"
+              className="group flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 hover:bg-destructive text-destructive hover:text-white transition-all shadow-sm"
               title="Logout"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden p-2 rounded-lg bg-secondary/50"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </div>
       </div>
+      
+      {/* Mobile Menu Dropdown (Simple implementation) */}
+      {isMobileMenuOpen && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl p-4 flex flex-col gap-2"
+        >
+           {navItems.map((item) => (
+             <button
+                key={item.id}
+                onClick={() => { navigate(item.path); setIsMobileMenuOpen(false); }}
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 font-medium"
+             >
+               <item.icon className="h-5 w-5 text-primary" />
+               {item.label}
+             </button>
+           ))}
+           <div className="h-px bg-border my-2" />
+           <button onClick={onLogout} className="flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 text-destructive font-bold">
+             <LogOut className="h-5 w-5" /> Logout
+           </button>
+        </motion.div>
+      )}
     </motion.header>
   );
 }

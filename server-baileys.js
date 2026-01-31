@@ -20,7 +20,9 @@ let isWaReady = false;
 const userChats = new Map();
 
 // --- GOOGLE SHEETS SETUP ---
-const KEY_FILE_PATH = path.join(process.cwd(), 'service-account.json');
+const KEY_FILE_LOCAL = path.join(__dirname, 'service-account.json');
+const KEY_FILE_PARENT = path.join(__dirname, '../service-account.json');
+const KEY_FILE_PATH = fs.existsSync(KEY_FILE_LOCAL) ? KEY_FILE_LOCAL : KEY_FILE_PARENT; // Robust Path Check
 const SHEET_ID_LAPORAN = '1PvOheQ9IO8Xs6aBGAn96AxItQYyLmmkEk0kKgdsUkfk';
 
 const getSheetsClient = () => {

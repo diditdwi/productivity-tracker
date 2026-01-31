@@ -169,10 +169,10 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
   }
 
   const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) return <ArrowUpDown className="h-3 w-3 text-slate-300 dark:text-slate-600 ml-1" />
+    if (sortConfig.key !== columnKey) return <ArrowUpDown className="h-3 w-3 text-muted-foreground ml-1" />
     return sortConfig.direction === 'ascending'
-      ? <ArrowUp className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" />
-      : <ArrowDown className="h-3 w-3 text-blue-600 dark:text-blue-400 ml-1" />
+      ? <ArrowUp className="h-3 w-3 text-primary ml-1" />
+      : <ArrowDown className="h-3 w-3 text-primary ml-1" />
   }
 
   // Helper to resolve NIK -> Name for display
@@ -191,66 +191,66 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header Controls */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+      {/* Header Controls (Using Glass Panel) */}
+      <div className="glass-panel p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Recent Tickets</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Syncing real-time from Google Sheets</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground bg-clip-text">Recent Tickets</h2>
+
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Search */}
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search Incident, Service ID, Technician..."
+              placeholder="Search Incident, Service ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-9 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="pl-9 h-10 w-full rounded-xl border border-white/20 bg-white/50 backdrop-blur-sm px-3 py-1 text-sm shadow-sm transition-all placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-white"
             />
           </div>
 
           {/* Filter Type */}
           <div className="relative">
-            <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Filter className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="pl-9 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 appearance-none pr-8 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="pl-9 h-10 rounded-xl border border-white/20 bg-white/50 backdrop-blur-sm px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary appearance-none pr-8 cursor-pointer hover:bg-white/80 transition-all dark:bg-slate-800/50"
             >
               <option value="ALL">All Types</option>
               {TICKET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
-            <ChevronDownIcon className="absolute right-3 top-3 h-3 w-3 text-slate-400 pointer-events-none" />
+            <ChevronDownIcon className="absolute right-3 top-3.5 h-3 w-3 text-muted-foreground pointer-events-none" />
           </div>
 
           {/* Filter Date Range */}
           <div className="flex items-center gap-2">
             <div className="relative">
-              <span className="absolute left-2 top-2 text-[10px] uppercase font-bold text-slate-400 pointer-events-none">From</span>
+              <span className="absolute left-2 top-2 text-[10px] uppercase font-bold text-muted-foreground pointer-events-none">From</span>
               <input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                className="pl-10 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pr-2 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="pl-10 h-10 rounded-xl border border-white/20 bg-white/50 backdrop-blur-sm pr-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:bg-white/80 transition-all dark:bg-slate-800/50"
               />
             </div>
-            <span className="text-slate-400 text-xs">to</span>
+            <span className="text-muted-foreground text-xs">to</span>
             <div className="relative">
-              <span className="absolute left-2 top-2 text-[10px] uppercase font-bold text-slate-400 pointer-events-none">To</span>
+              <span className="absolute left-2 top-2 text-[10px] uppercase font-bold text-muted-foreground pointer-events-none">To</span>
               <input
                 type="date"
                 value={dateRange.end}
                 onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                className="pl-7 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pr-2 py-1 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="pl-7 h-10 rounded-xl border border-white/20 bg-white/50 backdrop-blur-sm pr-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:bg-white/80 transition-all dark:bg-slate-800/50"
               />
             </div>
           </div>
 
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 h-9 px-3 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600"
+            className="flex items-center gap-2 h-10 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-sm font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             title="Export CSV"
           >
             <Download className="h-4 w-4" />
@@ -259,28 +259,27 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
         </div>
       </div>
 
-      {/* Table Container */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden transition-colors">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase text-xs font-bold border-b border-slate-200 dark:border-slate-700">
+      <div className="table-container bg-white/60 dark:bg-slate-900/60 backdrop-blur-md w-full">
+        <div className="w-full">
+          <table className="data-table w-full table-fixed text-xs">
+            <thead>
               <tr>
                 {[
-                  { key: 'date', label: 'Date', width: 'w-24' },
-                  { key: 'incident', label: 'Incident', width: 'w-32' },
-                  { key: 'customerName', label: 'Customer', width: 'w-48' },
-                  { key: 'serviceId', label: 'Service', width: 'w-36' },
-                  { key: 'ticketType', label: 'Type', width: 'w-24' },
-                  { key: 'technician', label: 'Technician', width: 'w-40' },
-                  { key: 'workzone', label: 'Workzone', width: 'w-24' },
-                  { key: 'status', label: 'Status', width: 'w-28' },
-                  { key: 'hdOfficer', label: 'HD Officer', width: 'w-32' },
+                  { key: 'date', label: 'Date', width: 'w-[90px]' },
+                  { key: 'incident', label: 'Incident', width: 'w-[120px]' },
+                  { key: 'customerName', label: 'Customer', width: 'w-[18%]' },
+                  { key: 'serviceId', label: 'Service', width: 'w-[110px]' },
+                  { key: 'ticketType', label: 'Type', width: 'w-[80px]' },
+                  { key: 'technician', label: 'Technician', width: 'w-[14%]' },
+                  { key: 'workzone', label: 'Workzone', width: 'w-[80px]' },
+                  { key: 'status', label: 'Status', width: 'w-[100px]' },
+                  { key: 'hdOfficer', label: 'HD Officer', width: 'w-[12%]' },
                 ].map((col) => (
                   <th
                     key={col.key}
                     onClick={() => requestSort(col.key)}
                     className={cn(
-                      "px-4 py-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors select-none whitespace-nowrap",
+                      "cursor-pointer hover:text-primary transition-colors select-none whitespace-nowrap px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider",
                       col.width
                     )}
                   >
@@ -292,24 +291,27 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-white/20 dark:divide-slate-700/50">
               {loading ? (
                 <tr>
-                  <td colSpan="9" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan="9" className="px-2 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent"></div>
-                      Loading data...
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                      <span className="text-sm font-medium animate-pulse">Syncing tickets...</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-800">
-                        <Search className="h-6 w-6 opacity-30" />
+                  <td colSpan="9" className="px-2 py-16 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
+                        <Search className="h-8 w-8 opacity-40" />
                       </div>
-                      <p>No tickets found matching your search.</p>
+                      <p className="font-medium">No tickets found matching your search.</p>
+                      <button onClick={() => {setSearchTerm(''); setFilterType('ALL')}} className="text-sm text-primary hover:underline">
+                        Clear all filters
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -322,55 +324,60 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"
+                      className="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors group bg-white/40 dark:bg-slate-900/40"
                     >
-                      <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{ticket.date}</td>
-                      <td className="px-4 py-3">
+                      <td className="font-medium text-foreground whitespace-nowrap px-2 py-2 truncate">{ticket.date}</td>
+                      <td className="px-2 py-2 truncate">
                         <button
                           onClick={() => onEditTicket(ticket)}
-                          className="flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-all"
+                          className="flex items-center gap-1.5 font-bold text-primary hover:text-primary-dark hover:underline transition-all truncate w-full"
+                          title={ticket.incident}
                         >
-                          {ticket.incident || "NO INC"}
-                          <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="truncate">{ticket.incident || "NO INC"}</span>
+                          <Edit className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         </button>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="line-clamp-1 max-w-[200px] text-slate-800 dark:text-slate-200 font-medium" title={ticket.customerName}>
+                      <td className="px-2 py-2">
+                        <div className="font-medium text-foreground text-wrap line-clamp-2" title={ticket.customerName}>
                           {ticket.customerName}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{ticket.serviceId}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500">{ticket.serviceType}</span>
+                      <td className="px-2 py-2 truncate">
+                        <div className="flex flex-col truncate">
+                          <span className="font-mono text-xs text-muted-foreground truncate" title={ticket.serviceId}>{ticket.serviceId}</span>
+                          <span className="text-[10px] text-muted-foreground opacity-70 truncate" title={ticket.serviceType}>{ticket.serviceType}</span>
                           {isGaul && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400 animate-pulse mt-0.5">
-                              <AlertCircle className="h-3 w-3" /> GAUL CHECK
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400 animate-pulse mt-0.5 truncate">
+                              <AlertCircle className="h-3 w-3 shrink-0" /> GAUL
                             </span>
                           )}
                           {ticket.isFFG && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 px-1 rounded">
-                              FFG {ticket.umurGaransi ? `(${ticket.umurGaransi}h)` : ''}
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 bg-amber-100/50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md truncate">
+                              FFG
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                      <td className="px-2 py-2 truncate">
+                        <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold bg-white/50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 shadow-sm truncate">
                           {ticket.ticketType}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">
-                        {resolveDisplay(ticket.technician, TEKNISI_LIST)}
+                      <td className="text-slate-600 dark:text-slate-400 px-2 py-2">
+                        <div className="text-wrap line-clamp-2" title={ticket.technician}>
+                          {resolveDisplay(ticket.technician, TEKNISI_LIST)}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs font-medium">
+                      <td className="text-slate-600 dark:text-slate-400 font-medium px-2 py-2 truncate">
                         {ticket.workzone}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2 truncate">
                         <StatusBadge status={ticket.status} />
                       </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-500 text-xs text-right">
-                        {resolveDisplay(ticket.hdOfficer, HD_OFFICERS)}
+                      <td className="text-muted-foreground text-right px-2 py-2">
+                        <div className="text-wrap line-clamp-2 inline-block text-right" title={ticket.hdOfficer}>
+                          {resolveDisplay(ticket.hdOfficer, HD_OFFICERS)}
+                        </div>
                       </td>
                     </motion.tr>
                   )
@@ -382,13 +389,13 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
 
         {/* Pagination Footer */}
         {!loading && filteredTickets.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 border-b-2 rounded-b-xl">
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-white/20 dark:border-slate-700/50 bg-white/30 dark:bg-slate-900/30">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTickets.length)} of {filteredTickets.length}</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                className="h-7 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 text-xs focus-visible:outline-none cursor-pointer"
+                className="h-7 rounded-lg border border-white/30 bg-white/50 dark:bg-slate-800 px-2 text-xs focus-visible:outline-none cursor-pointer"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -402,17 +409,17 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-white/30 bg-white/50 hover:bg-white dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-sm font-medium min-w-[3rem] text-center text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-bold min-w-[3rem] text-center">
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-white/30 bg-white/50 hover:bg-white dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -426,18 +433,18 @@ export default function TicketTable({ tickets, loading, onEditTicket }) {
 
 function StatusBadge({ status }) {
   const styles = {
-    'Open': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800', // Green for Open (Positive action needed)
-    'In Progress': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-    'Pending': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-    'Resolved': 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-400 border-slate-200 dark:border-slate-600',
-    'Closed': 'bg-slate-800 text-white dark:bg-slate-900 dark:text-slate-500 border-slate-700 dark:border-slate-800',
+    'Open': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800', 
+    'In Progress': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    'Pending': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border-orange-200 dark:border-orange-800',
+    'Resolved': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800', // Green for Resolved
+    'Closed': 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700',
   }
 
   const defaultStyle = 'bg-gray-100 text-gray-700 border-gray-200'
   const activeStyle = styles[status] || defaultStyle
 
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold transition-colors shadow-sm", activeStyle)}>
+    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold transition-all shadow-sm", activeStyle)}>
       {status}
     </span>
   )

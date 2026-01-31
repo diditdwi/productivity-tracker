@@ -1,68 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%; /* Ultra light cool white/blue tint */
     --foreground: 222.2 84% 4.9%;
- 
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
- 
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
- 
+
+    /* Primary: Royal Blue/Indigo */
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
- 
+
+    /* Secondary: Cool Gray */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
- 
+
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
- 
+
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
- 
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
- 
-    --radius: 0.5rem;
+
+    --radius: 0.75rem;
   }
- 
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
- 
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
- 
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
- 
+
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
- 
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
- 
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
- 
+
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
- 
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 217.2 91.2% 59.8%;
   }
 }
  
@@ -71,6 +75,83 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Panel */
+  .glass-panel {
+    @apply bg-white/60 dark:bg-stone-900/60 backdrop-blur-xl rounded-2xl border border-white/40 dark:border-white/5 shadow-xl transition-all duration-300;
+  }
+  
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-primary/40 active:translate-y-0 active:shadow-md disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/80 hover:-translate-y-0.5 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50;
+  }
+  
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-red-500/25 transition-all hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-red-500/40 active:translate-y-0 active:shadow-md disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-telegram {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-[#229ED9] px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-sky-500/20 transition-all hover:bg-[#1f8ubd] hover:-translate-y-0.5 hover:shadow-sky-500/30 active:translate-y-0;
+  }
+
+  /* Form Elements */
+  .input-group {
+    @apply mb-4 flex flex-col gap-1.5;
+  }
+  
+  .input-label {
+    @apply text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1;
+  }
+
+  .form-input {
+    @apply flex h-10 w-full rounded-xl border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all;
+  }
+
+  /* Table Styles */
+  .table-container {
+    @apply w-full overflow-hidden rounded-xl border border-white/20 bg-white/10;
+  }
+  
+  .data-table {
+    @apply w-full caption-bottom text-sm;
+  }
+  
+  .data-table thead tr {
+    @apply border-b border-white/20 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
+  }
+
+  .data-table th {
+    @apply h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0;
+  }
+  
+  .data-table td {
+    @apply p-4 align-middle [&:has([role=checkbox])]:pr-0;
+  }
+  
+  .data-table tr {
+    @apply border-b border-white/10 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-stone-200 dark:bg-stone-700 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-stone-300 dark:bg-stone-600;
   }
 }

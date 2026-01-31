@@ -13,6 +13,7 @@ import {
    Medal
 } from 'lucide-react'
 import { cn } from '../lib/utils'
+import MotivationalWidget from './MotivationalWidget'
 
 import { TEKNISI_LIST, WORKZONES, TICKET_TYPES } from '../constants'
 
@@ -111,7 +112,7 @@ export default function ProductivityDashboard({ tickets }) {
       try {
          const canvas = await html2canvas(reportRef.current, {
             scale: 2,
-            backgroundColor: '#1e293b', // Force dark background for pro look
+            backgroundColor: '#0f172a', // Force dark background for pro look
             useCORS: true
          })
          const link = document.createElement('a')
@@ -129,21 +130,21 @@ export default function ProductivityDashboard({ tickets }) {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
          {/* 1. Header & Controls */}
-         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+         <div className="glass-panel p-5 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-center gap-3">
-               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl text-blue-600 dark:text-blue-400">
+               <div className="p-3 bg-primary/10 rounded-xl text-primary">
                   <BarChart3 className="w-6 h-6" />
                </div>
                <div>
-                  <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">Productivity Dashboard</h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Daily performance metrics & ranking</p>
+                  <h2 className="text-xl font-extrabold text-foreground">Productivity Dashboard</h2>
+                  <p className="text-sm text-muted-foreground font-medium">Daily performance metrics & ranking</p>
                </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-               <div className="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
+               <div className="flex bg-white/20 dark:bg-slate-900/40 rounded-xl p-1 border border-white/10 backdrop-blur-sm">
                   <select
-                     className="bg-transparent text-sm font-bold text-slate-700 dark:text-slate-300 py-1.5 px-3 focus:outline-none cursor-pointer"
+                     className="bg-transparent text-sm font-bold text-foreground py-1.5 px-3 focus:outline-none cursor-pointer [&>option]:text-black [&>option]:dark:text-white"
                      value={selectedRegion}
                      onChange={e => setSelectedRegion(e.target.value)}
                   >
@@ -158,13 +159,13 @@ export default function ProductivityDashboard({ tickets }) {
                      type="date"
                      value={selectedDate}
                      onChange={e => setSelectedDate(e.target.value)}
-                     className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-bold py-2 px-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+                     className="bg-white/20 dark:bg-slate-900/40 border border-white/10 text-foreground text-sm font-bold py-2 px-3 rounded-xl focus:ring-2 focus:ring-primary outline-none shadow-sm backdrop-blur-sm"
                   />
                </div>
 
                <button
                   onClick={handleCapture}
-                  className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-lg"
+                  className="btn-primary flex items-center gap-2 px-4 py-2"
                >
                   <Download className="w-4 h-4" /> Export
                </button>
@@ -188,37 +189,37 @@ export default function ProductivityDashboard({ tickets }) {
             </div>
 
             {/* Card 2: Top Performer */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+            <div className="glass-panel p-6 relative overflow-hidden">
                <div className="flex items-start justify-between">
                   <div>
-                     <p className="text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider mb-1">Top Performer</p>
+                     <p className="text-muted-foreground text-sm font-bold uppercase tracking-wider mb-1">Top Performer</p>
                      {topPerformer ? (
                         <>
-                           <h3 className="text-lg font-extrabold text-slate-800 dark:text-white truncate max-w-[200px]" title={topPerformer.name}>
+                           <h3 className="text-lg font-extrabold text-foreground truncate max-w-[200px]" title={topPerformer.name}>
                               {topPerformer.name}
                            </h3>
-                           <p className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">
-                              {topPerformer.count} <span className="text-sm text-slate-400 font-normal">tickets</span>
+                           <p className="text-3xl font-extrabold text-primary mt-1">
+                              {topPerformer.count} <span className="text-sm text-muted-foreground font-normal">tickets</span>
                            </p>
                         </>
                      ) : (
-                        <p className="text-slate-400 italic">No data yet</p>
+                        <p className="text-muted-foreground italic">No data yet</p>
                      )}
                   </div>
-                  <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-full text-yellow-600 dark:text-yellow-400">
+                  <div className="bg-yellow-500/10 p-3 rounded-full text-yellow-500">
                      <Trophy className="w-6 h-6" />
                   </div>
                </div>
             </div>
 
             {/* Card 3: Active Techs */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="glass-panel p-6">
                <div className="flex items-start justify-between">
                   <div>
-                     <p className="text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider mb-1">Active Technicians</p>
-                     <h3 className="text-4xl font-extrabold text-slate-800 dark:text-white">{sortedTechs.length}</h3>
+                     <p className="text-muted-foreground text-sm font-bold uppercase tracking-wider mb-1">Active Technicians</p>
+                     <h3 className="text-4xl font-extrabold text-foreground">{sortedTechs.length}</h3>
                   </div>
-                  <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full text-purple-600 dark:text-purple-400">
+                  <div className="bg-purple-500/10 p-3 rounded-full text-purple-500">
                      <Users className="w-6 h-6" />
                   </div>
                </div>
@@ -226,33 +227,33 @@ export default function ProductivityDashboard({ tickets }) {
          </div>
 
          {/* 3. Leaderboard Table */}
-         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden" ref={reportRef}>
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+         <div className="glass-panel overflow-hidden" ref={reportRef}>
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 dark:bg-slate-900/50">
+               <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <Award className="w-5 h-5 text-orange-500" /> Leaderboard
                </h3>
-               <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">
+               <div className="text-xs font-bold text-muted-foreground uppercase bg-white/10 px-2 py-1 rounded">
                   {selectedRegion}
                </div>
             </div>
 
             <div className="overflow-x-auto">
                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                  <thead className="text-xs text-muted-foreground uppercase bg-white/10 dark:bg-slate-900/30 border-b border-white/10">
                      <tr>
-                        <th className="px-6 py-4 w-16 text-center">Rank</th>
-                        <th className="px-6 py-4 min-w-[200px]">Technician</th>
+                        <th className="px-2 py-4 w-12 text-center">Rank</th>
+                        <th className="px-2 py-4 min-w-[150px]">Technician</th>
                         {TICKET_TYPES.map(type => (
-                           <th key={type} className="px-4 py-4 text-center hidden md:table-cell">{type}</th>
+                           <th key={type} className="px-1 py-4 text-center hidden md:table-cell text-[10px] sm:text-xs">{type}</th>
                         ))}
-                        <th className="px-6 py-4 text-center font-bold w-32 bg-slate-50 dark:bg-slate-800/50">Total</th>
-                        <th className="px-6 py-4 w-48 hidden lg:table-cell">Performance</th>
+                        <th className="px-2 py-4 text-center font-bold w-20 bg-white/5 dark:bg-slate-800/50">Total</th>
+                        <th className="px-2 py-4 w-40 hidden lg:table-cell">Performance</th>
                      </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody className="divide-y divide-white/5 dark:divide-slate-700/30">
                      {paginatedTechs.length === 0 ? (
                         <tr>
-                           <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                           <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground">
                               No performance data found for this date/region.
                            </td>
                         </tr>
@@ -269,35 +270,35 @@ export default function ProductivityDashboard({ tickets }) {
                                  initial={{ opacity: 0, y: 5 }}
                                  animate={{ opacity: 1, y: 0 }}
                                  transition={{ delay: idx * 0.05 }}
-                                 className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                 className="hover:bg-primary/5 transition-colors"
                               >
-                                 <td className="px-6 py-4 text-center">
-                                    {rank === 1 && <div className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold mx-auto">1</div>}
-                                    {rank === 2 && <div className="w-8 h-8 rounded-full bg-gray-200 text-slate-600 flex items-center justify-center font-bold mx-auto">2</div>}
-                                    {rank === 3 && <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold mx-auto">3</div>}
-                                    {rank > 3 && <span className="font-mono text-slate-400 font-bold">#{rank}</span>}
+                                 <td className="px-2 py-2 text-center">
+                                    {rank === 1 && <div className="w-6 h-6 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold text-xs mx-auto">1</div>}
+                                    {rank === 2 && <div className="w-6 h-6 rounded-full bg-gray-200 text-slate-600 flex items-center justify-center font-bold text-xs mx-auto">2</div>}
+                                    {rank === 3 && <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs mx-auto">3</div>}
+                                    {rank > 3 && <span className="font-mono text-muted-foreground font-bold text-xs">#{rank}</span>}
                                  </td>
-                                 <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200">
-                                    {tech}
+                                 <td className="px-2 py-2 font-bold text-foreground text-xs sm:text-sm">
+                                    <div className="line-clamp-1" title={tech}>{tech}</div>
                                  </td>
                                  {TICKET_TYPES.map(type => (
-                                    <td key={type} className="px-4 py-4 text-center text-slate-500 dark:text-slate-400 hidden md:table-cell">
+                                    <td key={type} className="px-1 py-2 text-center text-muted-foreground hidden md:table-cell text-xs">
                                        {reportData[tech][type] || '-'}
                                     </td>
                                  ))}
-                                 <td className="px-6 py-4 text-center">
-                                    <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-bold rounded-full">
+                                 <td className="px-2 py-2 text-center">
+                                    <span className="inline-block px-2 py-0.5 bg-blue-500/10 text-blue-500 font-bold rounded-full text-xs">
                                        {total}
                                     </span>
                                  </td>
-                                 <td className="px-6 py-4 hidden lg:table-cell align-middle">
-                                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                                 <td className="px-2 py-2 hidden lg:table-cell align-middle">
+                                    <div className="w-full bg-white/10 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                                        <div
-                                          className="bg-blue-600 h-2.5 rounded-full"
+                                          className="bg-primary h-1.5 rounded-full"
                                           style={{ width: `${percentage}%` }}
                                        ></div>
                                     </div>
-                                    <div className="text-[10px] text-right text-slate-400 mt-1">{percentage}% of top</div>
+                                    <div className="text-[10px] text-right text-muted-foreground mt-1">{percentage}%</div>
                                  </td>
                               </motion.tr>
                            )
@@ -309,22 +310,22 @@ export default function ProductivityDashboard({ tickets }) {
 
             {/* Pagination Footer */}
             {sortedTechs.length > itemsPerPage && itemsPerPage < 10000 && (
-               <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-                  <div className="text-xs text-slate-500">
+               <div className="px-6 py-4 border-t border-white/10 bg-white/5 flex justify-between items-center">
+                  <div className="text-xs text-muted-foreground">
                      Page {currentPage} of {totalPages}
                   </div>
                   <div className="flex gap-2">
                      <button
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm disabled:opacity-50"
+                        className="px-3 py-1 rounded-lg border border-white/10 bg-white/10 text-sm disabled:opacity-50 text-foreground hover:bg-white/20 transition-colors"
                      >
                         Prev
                      </button>
                      <button
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm disabled:opacity-50"
+                        className="px-3 py-1 rounded-lg border border-white/10 bg-white/10 text-sm disabled:opacity-50 text-foreground hover:bg-white/20 transition-colors"
                      >
                         Next
                      </button>
@@ -334,29 +335,29 @@ export default function ProductivityDashboard({ tickets }) {
          </div>
 
          {/* 4. HD Officer Leaderboard */}
-         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+         <div className="glass-panel overflow-hidden">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 dark:bg-slate-900/50">
+               <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <Users className="w-5 h-5 text-purple-500" /> HD Officer Performance
                </h3>
             </div>
 
             <div className="overflow-x-auto">
                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                  <thead className="text-xs text-muted-foreground uppercase bg-white/10 dark:bg-slate-900/30 border-b border-white/10">
                      <tr>
                         <th className="px-6 py-4 w-16 text-center">Rank</th>
                         <th className="px-6 py-4 min-w-[200px]">HD Officer</th>
                         {TICKET_TYPES.map(type => (
                            <th key={type} className="px-4 py-4 text-center hidden md:table-cell">{type}</th>
                         ))}
-                        <th className="px-6 py-4 text-center font-bold w-32 bg-slate-50 dark:bg-slate-800/50">Total</th>
+                        <th className="px-6 py-4 text-center font-bold w-32 bg-white/5 dark:bg-slate-800/50">Total</th>
                      </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tbody className="divide-y divide-white/5 dark:divide-slate-700/30">
                      {sortedHDs.length === 0 ? (
                         <tr>
-                           <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                           <td colSpan={10} className="px-6 py-12 text-center text-muted-foreground">
                               No HD performance data.
                            </td>
                         </tr>
@@ -367,24 +368,24 @@ export default function ProductivityDashboard({ tickets }) {
                            return (
                               <tr
                                  key={hd}
-                                 className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                 className="hover:bg-primary/5 transition-colors"
                               >
                                  <td className="px-6 py-4 text-center">
                                     {rank === 1 && <div className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold mx-auto">1</div>}
                                     {rank === 2 && <div className="w-8 h-8 rounded-full bg-gray-200 text-slate-600 flex items-center justify-center font-bold mx-auto">2</div>}
                                     {rank === 3 && <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold mx-auto">3</div>}
-                                    {rank > 3 && <span className="font-mono text-slate-400 font-bold">#{rank}</span>}
+                                    {rank > 3 && <span className="font-mono text-muted-foreground font-bold">#{rank}</span>}
                                  </td>
-                                 <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200">
+                                 <td className="px-6 py-4 font-bold text-foreground">
                                     {hd}
                                  </td>
                                  {TICKET_TYPES.map(type => (
-                                    <td key={type} className="px-4 py-4 text-center text-slate-500 dark:text-slate-400 hidden md:table-cell">
+                                    <td key={type} className="px-4 py-4 text-center text-muted-foreground hidden md:table-cell">
                                        {hdData[hd][type] || '-'}
                                     </td>
                                  ))}
                                  <td className="px-6 py-4 text-center">
-                                    <span className="inline-block px-3 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold rounded-full">
+                                    <span className="inline-block px-3 py-1 bg-purple-500/10 text-purple-500 font-bold rounded-full">
                                        {total}
                                     </span>
                                  </td>

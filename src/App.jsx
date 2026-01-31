@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-
 import toast from 'react-hot-toast'
 import './App.css'
 
-import Header from './components/Header'
+import Layout from './components/Layout'
 import TicketTable from './components/TicketTable'
 import TicketForm from './components/TicketForm'
 import ProductivityDashboard from './components/ProductivityDashboard'
@@ -271,57 +271,55 @@ function App() {
 
   return (
     <div className="app-container" data-theme={theme}>
-      <Header
-        user={user}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onLogout={handleLogout}
-        openCount={laporanCount}
-      />
-      <main>
-        <Routes>
-          <Route path="/" element={
-            user.role === 'viewer' ? <Navigate to="/dashboard" replace /> : (
-              <TicketForm
-                onSubmit={handleTicketSubmit}
-                initialData={editingTicket}
-                isNewFromReport={isNewTicketFromReport}
-                user={user}
-                technicians={technicians}
-                hdOfficers={hdOfficers}
+      {/* Auth Wrapper handled by Routes if needed, but here we Wrap Main */}
+      <Routes>
+        <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
+        
+        {/* Protected Routes Wrapped in Layout */}
+        <Route element={<Layout user={user} onLogout={handleLogout} openCount={laporanCount} />}>
+            <Route path="/" element={
+              user.role === 'viewer' ? <Navigate to="/dashboard" replace /> : (
+                <TicketForm
+                  onSubmit={handleTicketSubmit}
+                  initialData={editingTicket}
+                  isNewFromReport={isNewTicketFromReport}
+                  user={user}
+                  technicians={technicians}
+                  hdOfficers={hdOfficers}
+                  tickets={tickets}
+                />
+              )
+            } />
+            <Route path="/dashboard" element={
+              <TicketTable
                 tickets={tickets}
+                loading={loading}
+                onEditTicket={handleEditTicket}
               />
-            )
-          } />
-          <Route path="/dashboard" element={
-            <TicketTable
-              tickets={tickets}
-              loading={loading}
-              onEditTicket={handleEditTicket}
-            />
-          } />
-          <Route path="/productivity" element={<ProductivityDashboard tickets={tickets} />} />
-          <Route path="/report" element={<DailyReportDashboard tickets={tickets} />} />
-          <Route path="/laporan-langsung" element={<LaporanLangsungDashboard />} />
-          <Route path="/users" element={
-            user.role === 'admin' ? (
-              <UserManagement
-                technicians={technicians}
-                hdOfficers={hdOfficers}
-                onRefresh={fetchUsers}
+            } />
+            <Route path="/productivity" element={<ProductivityDashboard tickets={tickets} />} />
+            <Route path="/report" element={<DailyReportDashboard tickets={tickets} />} />
+            <Route path="/laporan-langsung" element={<LaporanLangsungDashboard />} />
+            <Route path="/users" element={
+              user.role === 'admin' ? (
+                <UserManagement
+                  technicians={technicians}
+                  hdOfficers={hdOfficers}
+                  onRefresh={fetchUsers}
+                />
+              ) : <Navigate to="/" />
+            } />
+            <Route path="/change-password" element={
+              <ChangePasswordForm
+                user={user}
+                onChangePassword={changePassword}
+                onCancel={() => navigate('/')}
               />
-            ) : <Navigate to="/" />
-          } />
-          <Route path="/change-password" element={
-            <ChangePasswordForm
-              user={user}
-              onChangePassword={changePassword}
-              onCancel={() => navigate('/')}
-            />
-          } />
-          <Route path="/login" element={<Navigate to="/" />} />
-        </Routes>
-      </main>
+            } />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </div>
   )
 }

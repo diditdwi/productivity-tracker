@@ -37,29 +37,29 @@ export default function TicketForm({ onSubmit, tickets, initialData, isNewFromRe
   const [mode, setMode] = useState('SINGLE') // SINGLE | BULK | NOTEPAD
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* Mode Switcher */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors sticky top-4 z-40">
-        <h2 className="text-xl font-extrabold px-4 flex items-center gap-2 text-slate-800 dark:text-white">
-          {mode === 'SINGLE' && <EditIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
-          {mode === 'BULK' && <FileSpreadsheet className="w-6 h-6 text-green-600 dark:text-green-400" />}
-          {mode === 'NOTEPAD' && <ClipboardList className="w-6 h-6 text-orange-600 dark:text-orange-400" />}
-          <span>
+      <div className="glass-panel p-2 flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-0 z-40 transition-all shadow-md">
+        <h2 className="text-lg font-bold px-4 flex items-center gap-2 text-foreground">
+          {mode === 'SINGLE' && <EditIcon className="w-5 h-5 text-primary" />}
+          {mode === 'BULK' && <FileSpreadsheet className="w-5 h-5 text-emerald-500" />}
+          {mode === 'NOTEPAD' && <ClipboardList className="w-5 h-5 text-amber-500" />}
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground">
             {mode === 'SINGLE' ? (initialData && !isNewFromReport ? 'Edit Ticket' : 'New Entry') : mode} Mode
           </span>
         </h2>
 
-        <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="flex bg-white/20 dark:bg-slate-900/40 p-1 rounded-xl backdrop-blur-sm">
           {['SINGLE', 'BULK', 'NOTEPAD'].map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
               className={cn(
-                "px-5 py-2 text-sm font-bold rounded-md transition-all",
+                "px-5 py-2 text-sm font-bold rounded-lg transition-all",
                 mode === m
-                  ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-md transform scale-105"
-                  : "text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white hover:bg-white dark:hover:bg-slate-800"
+                  ? "bg-white dark:bg-slate-800 text-primary shadow-sm transform scale-105"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/30 dark:hover:bg-slate-800/30"
               )}
             >
               {m.charAt(0) + m.slice(1).toLowerCase()}
@@ -201,11 +201,11 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 shadow-xl rounded-xl overflow-hidden transition-colors duration-200">
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="ticket-form bg-white border border-[#e2e8f0] rounded-xl p-6 shadow-sm">
+      <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
         {/* Date & Type */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Date</Label>
               <Input type="date" name="date" value={formData.date} onChange={handleChange} required />
@@ -229,17 +229,17 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
                 onBlur={handleBlur}
                 placeholder="INC... or LAPSUNG_..."
                 className={cn(
-                  "font-mono font-bold tracking-wide",
+                  "font-mono font-bold tracking-wide pl-10",
                   errors.incident ? "border-red-500 focus-visible:ring-red-500" : ""
                 )}
                 required
               />
-              <div className="absolute right-3 top-2.5">
-                <Search className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <div className="absolute left-3 top-2.5">
+                <Search className="w-5 h-5 text-muted-foreground" />
               </div>
             </div>
             {errors.incident && (
-              <p className="text-xs text-red-500 font-bold animate-pulse">
+              <p className="text-xs text-red-500 font-bold animate-pulse mt-1 ml-1">
                 {errors.incident}
               </p>
             )}
@@ -252,8 +252,8 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
         </div>
 
         {/* Techno & Service */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Service ID</Label>
               <Input name="serviceId" value={formData.serviceId} onChange={handleChange} className="font-mono py-2" />
@@ -286,16 +286,16 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
         </div>
 
         {/* Full Width Bottom */}
-        <div className="md:col-span-2 space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="md:col-span-2 space-y-6 pt-6 border-t border-white/20 dark:border-slate-700/50">
           <div className="space-y-2">
             <Label>Perbaikan (Action)</Label>
-            <textarea
-              name="repair"
-              value={formData.repair}
-              onChange={handleChange}
-              className="w-full min-h-[80px] rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 font-medium transition-colors"
-              placeholder="Describe the fix..."
-            />
+              <textarea
+                name="repair"
+                value={formData.repair}
+                onChange={handleChange}
+                className="w-full min-h-[120px] rounded-lg border border-[#e2e8f0] p-3 text-sm text-[#2d3748] focus:outline-none focus:border-[#4a5568] focus:ring-1 focus:ring-[#4a5568] transition-colors resize-none placeholder:text-gray-400"
+                placeholder="Describe the fix..."
+              />
           </div>
 
           <div className="grid grid-cols-2 gap-6">
@@ -311,10 +311,14 @@ function SingleForm({ onSubmit, initialData, isNewFromReport, tickets = [] }) {
         </div>
       </div>
 
-      <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
-        <button type="submit" className="btn-primary flex items-center gap-2">
-          <Save className="w-5 h-5" />
-          {isUpdateMode ? 'Update Ticket' : 'Save Ticket'}
+      <div className="bg-white/30 dark:bg-slate-900/40 p-6 border-t border-white/20 dark:border-slate-700/50 flex justify-end gap-3 backdrop-blur-md">
+        <button 
+          type="submit" 
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#4a5568] hover:bg-[#2d3748] text-white rounded-lg font-medium transition-colors shadow-sm"
+        >
+          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+          <Save className="w-5 h-5 relative z-10" />
+          <span className="relative z-10">{isUpdateMode ? 'Update Ticket' : 'Save Ticket'}</span>
         </button>
       </div>
     </form>
@@ -402,7 +406,7 @@ function BulkForm({ onSubmit }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Global Settings */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row gap-6 items-end">
+      <div className="glass-panel p-6 flex flex-col md:flex-row gap-6 items-end">
         <div className="space-y-2 w-full md:w-48">
           <Label>Global Date</Label>
           <Input type="date" value={globalDate} onChange={e => setGlobalDate(e.target.value)} />
@@ -411,48 +415,48 @@ function BulkForm({ onSubmit }) {
           <Label>Global HD Officer</Label>
           <Input value={globalHd} onChange={e => setGlobalHd(e.target.value)} list="hd-list" placeholder="Select Officer..." />
         </div>
-        <div className="pb-2 text-sm text-slate-500 dark:text-slate-400 italic">
+        <div className="pb-2 text-sm text-muted-foreground italic">
           * Applied to all submitted tickets
         </div>
       </div>
 
       {/* Grid Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+      <div className="glass-panel w-full">
+        <div className="w-full">
+          <table className="w-full text-xs text-left table-fixed">
+            <thead className="text-xs text-muted-foreground uppercase bg-white/30 dark:bg-slate-900/30 border-b border-white/20 dark:border-slate-700/50">
               <tr>
-                <th className="px-4 py-3 w-10">#</th>
-                <th className="px-4 py-3 w-32">Type</th>
-                <th className="px-4 py-3 w-40">Incident</th>
-                <th className="px-4 py-3 min-w-[150px]">Customer</th>
-                <th className="px-4 py-3 w-32">SVC Type</th>
-                <th className="px-4 py-3 w-40 group cursor-pointer" title="Click icon to copy down" onClick={() => copyDown('technician')}>
-                  <div className="flex items-center gap-1 hover:text-blue-500">Tech <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100" /></div>
+                <th className="px-1 py-3 w-[30px] text-center">#</th>
+                <th className="px-1 py-3 w-[85px]">Type</th>
+                <th className="px-1 py-3 w-[100px]">Incident</th>
+                <th className="px-1 py-3 w-[18%]">Customer</th>
+                <th className="px-1 py-3 w-[80px]">SVC</th>
+                <th className="px-1 py-3 w-[12%] group cursor-pointer" title="Click icon to copy down" onClick={() => copyDown('technician')}>
+                  <div className="flex items-center gap-1 hover:text-primary">Tech <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100" /></div>
                 </th>
-                <th className="px-4 py-3 w-32 group cursor-pointer" title="Click icon to copy down" onClick={() => copyDown('workzone')}>
-                  <div className="flex items-center gap-1 hover:text-blue-500">Zone <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100" /></div>
+                <th className="px-1 py-3 w-[80px] group cursor-pointer" title="Click icon to copy down" onClick={() => copyDown('workzone')}>
+                  <div className="flex items-center gap-1 hover:text-primary">Zone <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100" /></div>
                 </th>
-                <th className="px-4 py-3 min-w-[200px]">Action (Fix)</th>
-                <th className="px-4 py-3 w-12"></th>
+                <th className="px-1 py-3 w-[25%]">Action (Fix)</th>
+                <th className="px-1 py-3 w-[40px]"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-white/10 dark:divide-slate-700/30">
               {rows.map((row, idx) => (
-                <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <td className="px-4 py-2 font-mono text-slate-400">{idx + 1}</td>
-                  <td className="px-2 py-2">
-                    <Select className="h-9 min-w-[100px]" value={row.ticketType} onChange={e => updateRow(idx, 'ticketType', e.target.value)} options={TICKET_TYPES} />
+                <tr key={row.id} className="hover:bg-primary/5 transition-colors">
+                  <td className="px-1 py-2 font-mono text-muted-foreground text-center">{idx + 1}</td>
+                  <td className="px-1 py-2">
+                    <Select className="h-8 text-[11px] min-w-[70px] px-1" value={row.ticketType} onChange={e => updateRow(idx, 'ticketType', e.target.value)} options={TICKET_TYPES} />
                   </td>
-                  <td className="px-2 py-2">
-                    <Input className={cn("h-9 font-mono", !row.incident && "border-red-200 dark:border-red-900/30")} placeholder="INC..." value={row.incident} onChange={e => updateRow(idx, 'incident', e.target.value)} />
+                  <td className="px-1 py-2">
+                    <Input className={cn("h-8 text-[11px] font-mono px-2", !row.incident && "border-red-200 dark:border-red-900/30")} placeholder="INC..." value={row.incident} onChange={e => updateRow(idx, 'incident', e.target.value)} />
                   </td>
-                  <td className="px-2 py-2">
-                    <Input className="h-9" placeholder="Name/ID..." value={row.customerName} onChange={e => updateRow(idx, 'customerName', e.target.value)} />
+                  <td className="px-1 py-2">
+                    <Input className="h-8 text-[11px] bg-white/50 px-2" placeholder="Name..." value={row.customerName} onChange={e => updateRow(idx, 'customerName', e.target.value)} />
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="px-1 py-2">
                     <Select
-                      className="h-9"
+                      className="h-8 text-[11px] px-1"
                       value={row.serviceType}
                       onChange={e => updateRow(idx, 'serviceType', e.target.value)}
                       options={
@@ -462,18 +466,18 @@ function BulkForm({ onSubmit }) {
                       }
                     />
                   </td>
-                  <td className="px-2 py-2">
-                    <Input className="h-9" list="techs-list" placeholder="Tech..." value={row.technician} onChange={e => updateRow(idx, 'technician', e.target.value)} />
+                  <td className="px-1 py-2">
+                    <Input className="h-8 text-[11px] px-2" list="techs-list" placeholder="Tech..." value={row.technician} onChange={e => updateRow(idx, 'technician', e.target.value)} />
                   </td>
-                  <td className="px-2 py-2">
-                    <Select className="h-9" value={row.workzone} onChange={e => updateRow(idx, 'workzone', e.target.value)} options={{ 'Select...': ['Select...'], 'BANDUNG': WORKZONES.BANDUNG, 'BANDUNG BARAT': WORKZONES['BANDUNG BARAT'], 'CIANJUR': WORKZONES.CIANJUR }} />
+                  <td className="px-1 py-2">
+                    <Select className="h-8 text-[11px] px-1" value={row.workzone} onChange={e => updateRow(idx, 'workzone', e.target.value)} options={{ 'Select...': ['Select...'], 'BANDUNG': WORKZONES.BANDUNG, 'BANDUNG BARAT': WORKZONES['BANDUNG BARAT'], 'CIANJUR': WORKZONES.CIANJUR }} />
                   </td>
-                  <td className="px-2 py-2">
-                    <Input className="h-9" placeholder="Fix..." value={row.repair} onChange={e => updateRow(idx, 'repair', e.target.value)} />
+                  <td className="px-1 py-2">
+                    <Input className="h-8 text-[11px] px-2" placeholder="Fix..." value={row.repair} onChange={e => updateRow(idx, 'repair', e.target.value)} />
                   </td>
-                  <td className="px-2 py-2 text-center">
-                    <button type="button" onClick={() => removeRow(idx)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
-                      <Trash2 className="w-4 h-4" />
+                  <td className="px-1 py-2 text-center">
+                    <button type="button" onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-red-500 transition-colors p-1">
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
@@ -482,8 +486,8 @@ function BulkForm({ onSubmit }) {
           </table>
         </div>
 
-        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <button type="button" onClick={addRow} className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20">
+        <div className="p-4 bg-white/30 dark:bg-slate-900/30 border-t border-white/20 dark:border-slate-700/50 flex justify-between items-center backdrop-blur-sm">
+          <button type="button" onClick={addRow} className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark transition-colors px-4 py-2 rounded-lg hover:bg-primary/10">
             <Plus className="w-4 h-4" /> Add Row
           </button>
           <button type="submit" className="btn-primary flex items-center gap-2">
@@ -579,21 +583,21 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)] min-h-[500px]">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-220px)] min-h-[500px]">
       {/* Input Side */}
       <div className="flex flex-col gap-4">
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
+        <div className="glass-panel p-4 flex items-center gap-4">
           <div className="flex-1">
             <Label>Set Ticket Date</Label>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded">
+          <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg border border-white/10">
             Format: HD | Type | Zone | Tech | Status | Inc | Name | ID | Svc | Fix
           </div>
         </div>
 
         <textarea
-          className="flex-1 w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-blue-500 outline-none shadow-inner"
+          className="flex-1 w-full p-4 rounded-xl border border-white/20 bg-white/50 backdrop-blur-sm dark:bg-slate-800/50 text-foreground font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-primary outline-none shadow-inner"
           placeholder={`Paste here...\n\nExample:\nSHOLIHIN | REGULER | BDK | SURYANA | Open | INC123456 | Ahmad | 1223344 | INTERNET | Restart ONT`}
           value={content}
           onChange={e => setContent(e.target.value)}
@@ -601,10 +605,10 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
       </div>
 
       {/* Preview Side */}
-      <div className="flex flex-col gap-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 overflow-hidden">
-        <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-500" />
+      <div className="flex flex-col gap-4 glass-panel p-4">
+        <div className="flex justify-between items-center pb-2 border-b border-white/20 dark:border-slate-700/50">
+          <h3 className="font-bold text-foreground flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
             Live Preview ({validCount})
           </h3>
           {validCount > 0 && (
@@ -616,7 +620,7 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
 
         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
           {parsedPreview.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
               <ArrowRight className="w-8 h-8 mb-2 opacity-50" />
               <p>Paste data to preview tickets</p>
             </div>
@@ -626,8 +630,8 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
             <div key={item.id} className={cn(
               "p-4 rounded-xl border text-sm transition-all group",
               item.isValid
-                ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md"
-                : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                ? "bg-white/50 dark:bg-slate-800/50 border-white/20 dark:border-slate-700/50 shadow-sm hover:shadow-md backdrop-blur-sm"
+                : "bg-red-50/50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
             )}>
               {!item.isValid ? (
                 <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold">
@@ -637,19 +641,19 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
               ) : (
                 <div className="space-y-3">
                   {/* Header: Inc, Type, Status */}
-                  <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-2">
+                  <div className="flex justify-between items-start border-b border-white/10 dark:border-slate-700/30 pb-2">
                     <div>
-                      <div className="font-mono font-bold text-blue-600 dark:text-blue-400 text-base">
+                      <div className="font-mono font-bold text-primary text-base">
                         {item.data.inc}
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                        {item.data.type} • <span className="text-slate-700 dark:text-slate-300">{item.data.stype}</span>
+                      <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                        {item.data.type} • <span className="text-foreground">{item.data.stype}</span>
                       </div>
                     </div>
                     <div className={cn(
                       "px-2 py-1 rounded text-xs font-bold uppercase tracking-wider",
-                      item.data.status.toLowerCase() === 'open' ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                        item.data.status.toLowerCase().includes('progress') ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                      item.data.status.toLowerCase() === 'open' ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
+                        item.data.status.toLowerCase().includes('progress') ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
                           "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                     )}>
                       {item.data.status}
@@ -661,26 +665,26 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
 
                     {/* Left Col: Customer */}
                     <div className="space-y-1">
-                      <div className="text-slate-400 font-semibold uppercase text-[10px]">Customer Data</div>
-                      <div className="font-medium text-slate-700 dark:text-slate-200 truncate">{item.data.cust}</div>
+                      <div className="text-muted-foreground font-semibold uppercase text-[10px]">Customer Data</div>
+                      <div className="font-medium text-foreground truncate">{item.data.cust}</div>
                       <div className="font-mono text-slate-500">{item.data.sid}</div>
                     </div>
 
                     {/* Right Col: Tech & Zone */}
                     <div className="space-y-1">
-                      <div className="text-slate-400 font-semibold uppercase text-[10px]">Technician</div>
-                      <div className="font-medium text-slate-700 dark:text-slate-200 truncate">{item.data.tech}</div>
+                      <div className="text-muted-foreground font-semibold uppercase text-[10px]">Technician</div>
+                      <div className="font-medium text-foreground truncate">{item.data.tech}</div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500">Zone: {item.data.wz}</span>
-                        <span className="text-slate-400 text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">HD: {item.data.hd}</span>
+                        <span className="text-muted-foreground text-[10px] bg-secondary/50 px-1.5 py-0.5 rounded">HD: {item.data.hd}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Footer: Fix */}
-                  <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg mt-2">
-                    <div className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Note / Action</div>
-                    <div className="text-sm text-slate-700 dark:text-slate-300 italic line-clamp-2">
+                  <div className="bg-white/30 dark:bg-slate-900/30 p-2 rounded-lg mt-2">
+                    <div className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Note / Action</div>
+                    <div className="text-sm text-foreground italic line-clamp-2">
                       "{item.data.repair}"
                     </div>
                   </div>
@@ -695,21 +699,25 @@ function NotepadForm({ onSubmit, technicians = [], hdOfficers = [] }) {
 }
 
 
-// --- SHARED UI COMPONENTS ---
+// --- SHARED UI COMPONENTS (BIZLINK STYLE) ---
 const Label = ({ children }) => (
-  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400 ml-1 mb-1 block">
+  <label className="block text-sm font-medium text-[#718096] mb-2 ml-0.5">
     {children}
   </label>
 )
+
 const Input = ({ className, ...props }) => (
   <input
     className={cn(
-      "flex h-11 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 hover:border-slate-400 dark:hover:border-slate-500",
+      "flex h-10 w-full rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#2d3748] transition-all placeholder:text-gray-400",
+      "focus:outline-none focus:border-[#4a5568] focus:ring-1 focus:ring-[#4a5568]",
+      "disabled:opacity-50 disabled:cursor-not-allowed",
       className
     )}
     {...props}
   />
 )
+
 const Select = ({ options, className, ...props }) => {
   const isGrouped = !Array.isArray(options) && typeof options === 'object'
 
@@ -717,26 +725,27 @@ const Select = ({ options, className, ...props }) => {
     <div className="relative">
       <select
         className={cn(
-          "flex h-11 w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:border-slate-400 dark:hover:border-slate-500 cursor-pointer",
+          "flex h-10 w-full appearance-none rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#2d3748] transition-all cursor-pointer",
+          "focus:outline-none focus:border-[#4a5568] focus:ring-1 focus:ring-[#4a5568]",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
           className
         )}
         {...props}
       >
         {isGrouped ? (
           Object.entries(options).map(([group, items]) => (
-            <optgroup key={group} label={group} className="font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800">
+            <optgroup key={group} label={group} className="font-bold">
               {items.map(opt => (
-                <option key={opt} value={opt} className="font-normal bg-white dark:bg-slate-900">{opt}</option>
+                <option key={opt} value={opt} className="font-normal">{opt}</option>
               ))}
             </optgroup>
           ))
         ) : (
           options.map(opt => (
-            <option key={opt} value={opt} className="text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800">{opt}</option>
+            <option key={opt} value={opt}>{opt}</option>
           ))
         )}
       </select>
     </div>
   )
 }
-

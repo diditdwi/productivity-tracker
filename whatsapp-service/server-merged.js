@@ -42,7 +42,12 @@ const waClient = new Client({
 });
 
 // ==================== GOOGLE SHEETS SETUP ====================
-const KEY_FILE_PATH = path.join(process.cwd(), '../service-account.json');
+// Check both locations (VPS uses current dir, Local uses parent dir)
+const fs = require('fs');
+const KEY_FILE_LOCAL = path.join(__dirname, 'service-account.json');
+const KEY_FILE_PARENT = path.join(__dirname, '../service-account.json');
+const KEY_FILE_PATH = fs.existsSync(KEY_FILE_LOCAL) ? KEY_FILE_LOCAL : KEY_FILE_PARENT;
+
 const SHEET_ID_LAPORAN = '1PvOheQ9IO8Xs6aBGAn96AxItQYyLmmkEk0kKgdsUkfk';
 
 const getSheetsClient = () => {

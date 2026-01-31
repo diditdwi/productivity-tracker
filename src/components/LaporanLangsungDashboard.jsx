@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import {
+  Send,
+  MessageSquare,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
+  Search,
+  X,
+  ChevronDown,
+  ArrowRight
+} from 'lucide-react'
+import {
   TELEGRAM_GROUPS,
   API_URL_LAPORAN,
   API_URL_WA_GROUPS,
@@ -11,6 +22,7 @@ import {
   API_URL,
   WA_SERVICE_URL
 } from '../constants'
+import { cn } from '../lib/utils'
 
 export default function LaporanLangsungDashboard() {
   const [reports, setReports] = useState([])
@@ -79,7 +91,6 @@ export default function LaporanLangsungDashboard() {
   }
 
   const confirmSend = async () => {
-    // ... (Existing confirmSend logic kept primarily, but need to be careful with replacement)
     const { report, tech, group, platform } = sendModal;
     if (!report) return;
 
@@ -149,21 +160,8 @@ Mohon segera dicek.${mentionText}`;
   }
 
   const initiateClose = (r) => {
-    // Pre-fill Workzone using r.hsa if available, or try to guess, or default to first region
     let defaultWZ = '';
     if (r.hsa && r.hsa !== '-') {
-      // Map HSA name to Workzone code if possible?
-      // User's HSA logic returns "HSA RAJAWALI" etc.
-      // My WORKZONES const has "BANDUNG": ['BDK', 'RJW'...]
-      // So I should try to map "HSA RAJAWALI" -> "RJW" (Example)
-      // Or just let user select.
-      // For simplicity, I will set it if it matches exactly, otherwise empty.
-      // Actually, user provided "HSA RAJAWALI" -> "RJW" is likely.
-      // Let's implement a simple mapper if needed or just show the HSA hint.
-      // I will use `r.hsa` as a hint or pre-select if strict match.
-      // For now, let's just default to empty and let user pick, but show HSA as helper.
-      // Wait, user explicitly asked "kolom yang langsung terisi otomatis".
-      // I'll try to map common names.
       if (r.hsa.includes('RAJAWALI')) defaultWZ = 'RJW';
       else if (r.hsa.includes('MAJALAYA')) defaultWZ = 'MJY';
       else if (r.hsa.includes('BANJARAN')) defaultWZ = 'BJA';
@@ -266,417 +264,394 @@ Mohon segera dicek.${mentionText}`;
   const allWorkzones = Object.values(WORKZONES).flat().sort();
 
   return (
-    <div className="glass-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>LAPORAN LANGSUNG</h2>
-        <button className="btn-refresh" onClick={fetchLaporan}>
-          Refresh Data
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header */}
+      <div className="glass-panel p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 rounded-xl text-primary">
+            <MessageSquare className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-foreground tracking-tight">Laporan Langsung</h2>
+            <p className="text-sm text-muted-foreground font-medium">Real-time reports from external sources</p>
+          </div>
+        </div>
+        <button
+          onClick={fetchLaporan}
+          className="btn-primary flex items-center gap-2 group"
+          disabled={loading}
+        >
+          <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+          <span className="hidden sm:inline">Refresh Data</span>
         </button>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Nama</th>
-              <th>Alamat</th>
-              <th>No Internet</th>
-              <th>Keluhan</th>
-              <th>Layanan</th>
-              <th>SN ONT</th>
-              <th>PIC</th>
-              <th>Status</th>
-              <th>No Tiket</th>
-              <th style={{ minWidth: '150px' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="11" style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td></tr>
-            ) : reports.length === 0 ? (
-              <tr><td colSpan="11" style={{ textAlign: 'center', padding: '2rem' }}>Belum ada laporan masuk.</td></tr>
-            ) : (
-              paginatedReports.map(r => (
-                <tr key={r.id}>
-                  <td style={{ maxWidth: '140px', whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '0.85rem' }}>{r.timestamp}</td>
-                  <td style={{ fontWeight: 'bold', maxWidth: '150px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.nama}</td>
-                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.alamat}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span className="truncate-cell">{r.noInternet}</span>
-                      {r.isFFG && (
-                        <span className="status-badge" style={{ backgroundColor: '#D97706', color: 'white', fontSize: '0.7em', padding: '2px 6px' }}>
-                          FFG {r.umurGaransi ? `(${r.umurGaransi}h)` : ''}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.keluhan}</td>
-                  <td>{r.layanan}</td>
-                  <td style={{ maxWidth: '200px', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.snOnt}</td>
-                  <td>{r.pic}</td>
-                  <td>
-                    <span className={`status-badge status-${r.status.toLowerCase().replace(' ', '-')}`}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>
-                    {r.ticketId}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button className="btn-telegram btn-small" onClick={() => handleProcessAndSend(r)} title="Kirim ke Grup & Mention">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="22" y1="2" x2="11" y2="13"></line>
-                          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                        Kirim
-                      </button>
-                      {r.status !== 'Closed' && (
+      {/* Table - Fixed Layout to prevent scrolling */}
+      <div className="glass-panel w-full">
+        <div className="w-full">
+          <table className="w-full text-xs text-left table-fixed">
+            <thead className="text-xs text-muted-foreground uppercase bg-white/10 dark:bg-slate-900/30 border-b border-white/10">
+              <tr>
+                <th className="px-2 py-3 w-[80px]">Time</th>
+                <th className="px-2 py-3 w-[12%]">Nama</th>
+                <th className="px-2 py-3 w-[15%]">Alamat</th>
+                <th className="px-2 py-3 w-[12%]">No Internet</th>
+                <th className="px-2 py-3 w-[15%]">Keluhan</th>
+                <th className="px-2 py-3 w-[60px]">Svc</th>
+                <th className="px-2 py-3 w-[80px]">SN ONT</th>
+                <th className="px-2 py-3 w-[80px]">PIC</th>
+                <th className="px-2 py-3 w-[80px]">Status</th>
+                <th className="px-2 py-3 w-[90px]">Tiket</th>
+                <th className="px-2 py-3 w-[70px] text-center">Act</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 dark:divide-slate-700/30 text-xs">
+              {loading ? (
+                <tr><td colSpan="11" className="px-2 py-12 text-center text-muted-foreground animate-pulse">Loading reports...</td></tr>
+              ) : reports.length === 0 ? (
+                <tr><td colSpan="11" className="px-2 py-12 text-center text-muted-foreground">Belum ada laporan masuk.</td></tr>
+              ) : (
+                paginatedReports.map(r => (
+                  <tr key={r.id} className="hover:bg-primary/5 transition-colors group">
+                    <td className="px-2 py-2 text-muted-foreground truncate">{r.timestamp.split(',')[1] || r.timestamp}</td>
+                    <td className="px-2 py-2 font-bold text-foreground truncate" title={r.nama}>{r.nama}</td>
+                    <td className="px-2 py-2 text-muted-foreground truncate" title={r.alamat}>{r.alamat}</td>
+                    <td className="px-2 py-2 truncate">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-mono text-primary truncate">{r.noInternet}</span>
+                        {r.isFFG && (
+                          <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 w-fit">
+                            FFG
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 text-muted-foreground truncate" title={r.keluhan}>{r.keluhan}</td>
+                    <td className="px-2 py-2 text-foreground truncate text-[10px]">{r.layanan}</td>
+                    <td className="px-2 py-2 font-mono text-[10px] text-muted-foreground truncate" title={r.snOnt}>{r.snOnt}</td>
+                    <td className="px-2 py-2 text-muted-foreground truncate">{r.pic}</td>
+                    <td className="px-2 py-2 truncate">
+                      <span className={cn(
+                        "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 ring-inset truncate max-w-full",
+                        r.status.toLowerCase().includes('open') ? "bg-red-500/10 text-red-500 ring-red-500/20" :
+                          r.status.toLowerCase().includes('closed') ? "bg-emerald-500/10 text-emerald-500 ring-emerald-500/20" :
+                            "bg-slate-500/10 text-slate-500 ring-slate-500/20"
+                      )}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 font-mono font-bold text-primary truncate text-[10px]" title={r.ticketId}>{r.ticketId}</td>
+                    <td className="px-2 py-2">
+                      <div className="flex justify-center gap-1">
                         <button
-                          className="btn-success btn-small"
-                          style={{ padding: '4px 8px', background: '#10B981' }}
-                          onClick={() => initiateClose(r)}
-                          title="Closing & Transfer Dashboard"
+                          className="p-1.5 rounded-lg bg-sky-500/10 text-sky-500 hover:bg-sky-500/20 transition-colors"
+                          onClick={() => handleProcessAndSend(r)}
+                          title="Kirim ke Grup & Mention"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
+                          <Send className="w-3.5 h-3.5" />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                        {r.status !== 'Closed' && (
+                          <button
+                            className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+                            onClick={() => initiateClose(r)}
+                            title="Closing & Transfer Dashboard"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        {!loading && reports.length > 0 && (
+          <div className="px-6 py-4 border-t border-white/10 bg-white/5 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground uppercase">Rows</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="bg-white/10 border border-white/10 rounded-lg text-xs font-bold text-foreground px-2 py-1 focus:outline-none cursor-pointer"
+              >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={10000}>All</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-lg border border-white/10 bg-white/10 text-xs font-bold disabled:opacity-50 text-foreground hover:bg-white/20 transition-colors"
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded-lg border border-white/10 bg-white/10 text-xs font-bold disabled:opacity-50 text-foreground hover:bg-white/20 transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Pagination Controls */}
-      {!loading && reports.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.9rem' }}>Rows:</label>
-            <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} style={{ padding: '0.3rem', borderRadius: '4px' }}>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={10000}>All</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="btn-secondary btn-small">Previous</button>
-            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Page {currentPage} of {totalPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="btn-secondary btn-small">Next</button>
+      {/* SEND MODAL */}
+      {sendModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="glass-panel w-full max-w-md p-6 space-y-6 relative">
+            <button
+              onClick={() => setSendModal({ ...sendModal, isOpen: false })}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                <Send className="w-5 h-5 text-primary" /> Kirim Order
+              </h3>
+              <p className="text-sm text-muted-foreground">Distribute ticket to tech teams</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                className={cn(
+                  "flex items-center justify-center gap-2 py-3 rounded-xl border transition-all font-bold text-sm",
+                  sendModal.platform === 'TELEGRAM'
+                    ? "bg-sky-500/10 border-sky-500/20 text-sky-500 shadow-sm"
+                    : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10"
+                )}
+                onClick={() => setSendModal(prev => ({ ...prev, platform: 'TELEGRAM', group: TELEGRAM_GROUPS[0].id }))}
+              >
+                <Send className="w-4 h-4" /> Telegram
+              </button>
+              <button
+                className={cn(
+                  "flex items-center justify-center gap-2 py-3 rounded-xl border transition-all font-bold text-sm",
+                  sendModal.platform === 'WHATSAPP'
+                    ? "bg-green-500/10 border-green-500/20 text-green-500 shadow-sm"
+                    : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10"
+                )}
+                onClick={() => setSendModal(prev => ({ ...prev, platform: 'WHATSAPP', group: waGroups[0]?.id || '' }))}
+              >
+                <MessageSquare className="w-4 h-4" /> WhatsApp
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Target Group</label>
+                <div className="relative">
+                  <select
+                    value={sendModal.group}
+                    onChange={e => setSendModal({ ...sendModal, group: e.target.value })}
+                    className="w-full h-10 pl-3 pr-8 rounded-lg bg-white/5 border border-white/10 text-sm font-medium focus:ring-2 focus:ring-primary outline-none appearance-none cursor-pointer"
+                  >
+                    {sendModal.platform === 'TELEGRAM' ? (
+                      TELEGRAM_GROUPS.map(g => <option key={g.id} value={g.id} className="text-black dark:text-white bg-white dark:bg-slate-900">{g.name}</option>)
+                    ) : (
+                      waGroups.length > 0 ? (
+                        waGroups.map(g => <option key={g.id} value={g.id} className="text-black dark:text-white bg-white dark:bg-slate-900">{g.name}</option>)
+                      ) : (
+                        <option value="" className="text-black dark:text-white bg-white dark:bg-slate-900">Loading Groups...</option>
+                      )
+                    )}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tech Suggestion (Mention)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="e.g. ahmad"
+                    value={sendModal.tech}
+                    onChange={e => setSendModal({ ...sendModal, tech: e.target.value })}
+                    className="w-full h-10 pl-9 rounded-lg bg-white/5 border border-white/10 text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
+                  />
+                  <span className="absolute left-3 top-3 text-muted-foreground font-mono text-xs">@</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              className={cn(
+                "w-full py-3 rounded-xl font-bold text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2",
+                sendModal.platform === 'WHATSAPP' ? "bg-green-600 hover:bg-green-700" : "bg-sky-600 hover:bg-sky-700"
+              )}
+              onClick={confirmSend}
+            >
+              Send to {sendModal.platform === 'WHATSAPP' ? 'WhatsApp' : 'Telegram'} <ArrowRight className="w-4 h-4 ml-1" />
+            </button>
           </div>
         </div>
       )}
 
-      {/* SEND MODAL */}
-      {
-        sendModal.isOpen && (
-          <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-          }}>
-            {/* ... (Keep Existing Send Modal Content) ... */}
-            <div className="glass-panel" style={{ width: '400px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
-              {/* Simplified for replace validity - assume existing content */}
-              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Kirim Order</h3>
-              {/* ... Keep the rest of Send Modal UI same as before ... */}
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                <button
-                  className={sendModal.platform === 'TELEGRAM' ? 'btn-telegram' : 'btn-secondary'}
-                  onClick={() => setSendModal(prev => ({ ...prev, platform: 'TELEGRAM', group: TELEGRAM_GROUPS[0].id }))}
-                  style={{ flex: 1 }}
-                >
-                  <span style={{ marginRight: '0.5rem' }}>✈️</span> Telegram
-                </button>
-                <button
-                  className={sendModal.platform === 'WHATSAPP' ? 'btn-success' : 'btn-secondary'}
-                  onClick={() => setSendModal(prev => ({ ...prev, platform: 'WHATSAPP', group: waGroups[0]?.id || '' }))}
-                  style={{ flex: 1, background: sendModal.platform === 'WHATSAPP' ? '#25D366' : '' }}
-                >
-                  <span style={{ marginRight: '0.5rem' }}>💬</span> WhatsApp
-                </button>
-              </div>
-
-              <div className="input-group" style={{ marginBottom: '1rem' }}>
-                <label>Pilih Grup Tujuan ({sendModal.platform})</label>
-                <select
-                  value={sendModal.group}
-                  onChange={e => setSendModal({ ...sendModal, group: e.target.value })}
-                  style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
-                >
-                  {sendModal.platform === 'TELEGRAM' ? (
-                    TELEGRAM_GROUPS.map(g => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))
-                  ) : (
-                    waGroups.length > 0 ? (
-                      waGroups.map(g => (
-                        <option key={g.id} value={g.id}>{g.name}</option>
-                      ))
-                    ) : (
-                      <option value="">{waGroups.length === 0 ? 'Loading / No Groups...' : 'Select...'}</option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-                <label>Username Teknisi (Untuk Mention)</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: ahmad (tanpa @)"
-                  value={sendModal.tech}
-                  onChange={e => setSendModal({ ...sendModal, tech: e.target.value })}
-                  style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
-                />
-              </div>
-
-              <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
-                <button className="btn-secondary" onClick={() => setSendModal({ ...sendModal, isOpen: false })}>Batal</button>
-                <button
-                  className={sendModal.platform === 'WHATSAPP' ? 'btn-success' : 'btn-telegram'}
-                  onClick={confirmSend}
-                  style={{ background: sendModal.platform === 'WHATSAPP' ? '#25D366' : '' }}
-                >
-                  Kirim ke {sendModal.platform === 'WHATSAPP' ? 'WhatsApp' : 'Telegram'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
       {/* CLOSING MODAL */}
       {closingReport && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
-        }}>
-          <div className="glass-panel" style={{ width: '500px', padding: '2rem', animation: 'fadeIn 0.2s', background: 'var(--surface)' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>Closing & Transfer Ticket</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="glass-panel w-full max-w-lg p-6 space-y-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button
+              onClick={() => setClosingReport(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-            <div style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'gray' }}>
-              <p>Tiket: <b>{closingReport.ticketId}</b></p>
-              <p>Layanan: <b>{closingReport.noInternet}</b></p>
-              {closingReport.hsa && <p>HSA (Auto): <b>{closingReport.hsa}</b></p>}
+            <div className="space-y-1">
+              <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Close Ticket
+              </h3>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground bg-white/5 p-2 rounded-lg border border-white/10">
+                <span className="font-mono text-primary font-bold">{closingReport.ticketId}</span>
+                <span>•</span>
+                <span>{closingReport.noInternet}</span>
+                {closingReport.hsa && (
+                  <>
+                    <span>•</span>
+                    <span className="text-orange-400">HSA: {closingReport.hsa}</span>
+                  </>
+                )}
+              </div>
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
-              <label>Teknisi</label>
-              <input
-                type="text"
-                placeholder="Ketik nama teknisi..."
-                value={closeForm.technician}
-                onChange={e => {
-                  setCloseForm({ ...closeForm, technician: e.target.value });
-                  setShowTechDropdown(true);
-                }}
-                onFocus={() => setShowTechDropdown(true)}
-                // Delay hiding to allow click event on dropdown items
-                onBlur={() => setTimeout(() => setShowTechDropdown(false), 200)}
-                style={{
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--border)',
-                  width: '100%',
-                  padding: '0.5rem'
-                }}
-              />
-
-              {showTechDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  zIndex: 10,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}>
-                  {TEKNISI_LIST
-                    .filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase()))
-                    .map(t => (
-                      <div
-                        key={t}
-                        onClick={() => {
-                          setCloseForm({ ...closeForm, technician: t });
-                          setShowTechDropdown(false);
-                        }}
-                        style={{
-                          padding: '0.5rem',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid var(--border-light)',
-                          color: 'var(--text-main)'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
-                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                      >
-                        {t}
-                      </div>
-                    ))
-                  }
-                  {TEKNISI_LIST.filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase())).length === 0 && (
-                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada teknisi ditemukan</div>
-                  )}
+            <div className="space-y-4">
+              <div className="space-y-2 relative">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Technician</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search technician..."
+                    value={closeForm.technician}
+                    onChange={e => {
+                      setCloseForm({ ...closeForm, technician: e.target.value });
+                      setShowTechDropdown(true);
+                    }}
+                    onFocus={() => setShowTechDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowTechDropdown(false), 200)}
+                    className="w-full h-10 pl-3 pr-10 rounded-lg bg-white/5 border border-white/10 text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
+                  />
+                  <Search className="absolute right-3 top-3 w-4 h-4 text-muted-foreground" />
                 </div>
-              )}
+                {showTechDropdown && (
+                  <div className="absolute z-50 w-full mt-1 max-h-40 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-xl cursor-custom">
+                    {TEKNISI_LIST
+                      .filter(t => t.toLowerCase().includes(closeForm.technician.toLowerCase()))
+                      .map(t => (
+                        <div
+                          key={t}
+                          onClick={() => {
+                            setCloseForm({ ...closeForm, technician: t });
+                            setShowTechDropdown(false);
+                          }}
+                          className="px-3 py-2 text-sm text-slate-200 hover:bg-primary/20 hover:text-white cursor-pointer transition-colors"
+                        >
+                          {t}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 relative">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workzone</label>
+                <input
+                  type="text"
+                  placeholder="Select Workzone..."
+                  value={closeForm.workzone}
+                  onChange={e => {
+                    setCloseForm({ ...closeForm, workzone: e.target.value });
+                    setShowWZDropdown(true);
+                  }}
+                  onFocus={() => setShowWZDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowWZDropdown(false), 200)}
+                  className="w-full h-10 pl-3 rounded-lg bg-white/5 border border-white/10 text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
+                />
+                {showWZDropdown && (
+                  <div className="absolute z-50 w-full mt-1 max-h-40 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-xl">
+                    {allWorkzones
+                      .filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase()))
+                      .map(w => (
+                        <div
+                          key={w}
+                          onClick={() => {
+                            setCloseForm({ ...closeForm, workzone: w });
+                            setShowWZDropdown(false);
+                          }}
+                          className="px-3 py-2 text-sm text-slate-200 hover:bg-primary/20 hover:text-white cursor-pointer transition-colors"
+                        >
+                          {w}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 relative">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">HD Officer</label>
+                <input
+                  type="text"
+                  placeholder="Select HD..."
+                  value={closeForm.hdOfficer}
+                  onChange={e => {
+                    setCloseForm({ ...closeForm, hdOfficer: e.target.value });
+                    setShowHDDropdown(true);
+                  }}
+                  onFocus={() => setShowHDDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowHDDropdown(false), 200)}
+                  className="w-full h-10 pl-3 rounded-lg bg-white/5 border border-white/10 text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
+                />
+                {showHDDropdown && (
+                  <div className="absolute z-50 w-full mt-1 max-h-40 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-xl">
+                    {HD_OFFICERS
+                      .filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase()))
+                      .map(h => (
+                        <div
+                          key={h}
+                          onClick={() => {
+                            setCloseForm({ ...closeForm, hdOfficer: h });
+                            setShowHDDropdown(false);
+                          }}
+                          className="px-3 py-2 text-sm text-slate-200 hover:bg-primary/20 hover:text-white cursor-pointer transition-colors"
+                        >
+                          {h}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Action Taken</label>
+                <textarea
+                  value={closeForm.action}
+                  onChange={e => setCloseForm({ ...closeForm, action: e.target.value })}
+                  rows={3}
+                  className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-sm font-medium focus:ring-2 focus:ring-primary outline-none resize-none"
+                />
+              </div>
             </div>
 
-            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
-              <label>Workzone (Auto-suggest based on HSA)</label>
-              <input
-                type="text"
-                placeholder="Pilih Workzone..."
-                value={closeForm.workzone}
-                onChange={e => {
-                  setCloseForm({ ...closeForm, workzone: e.target.value });
-                  setShowWZDropdown(true);
-                }}
-                onFocus={() => setShowWZDropdown(true)}
-                onBlur={() => setTimeout(() => setShowWZDropdown(false), 200)}
-                style={{
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--border)',
-                  width: '100%',
-                  padding: '0.5rem'
-                }}
-              />
-
-              {showWZDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  zIndex: 10,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}>
-                  {allWorkzones
-                    .filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase()))
-                    .map(w => (
-                      <div
-                        key={w}
-                        onClick={() => {
-                          setCloseForm({ ...closeForm, workzone: w });
-                          setShowWZDropdown(false);
-                        }}
-                        style={{
-                          padding: '0.5rem',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid var(--border-light)',
-                          color: 'var(--text-main)'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
-                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                      >
-                        {w}
-                      </div>
-                    ))
-                  }
-                  {allWorkzones.filter(w => w.toLowerCase().includes(closeForm.workzone.toLowerCase())).length === 0 && (
-                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada workzone ditemukan</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="input-group" style={{ marginBottom: '1rem', position: 'relative' }}>
-              <label>HD Officer</label>
-              <input
-                type="text"
-                placeholder="Pilih HD Officer..."
-                value={closeForm.hdOfficer}
-                onChange={e => {
-                  setCloseForm({ ...closeForm, hdOfficer: e.target.value });
-                  setShowHDDropdown(true);
-                }}
-                onFocus={() => setShowHDDropdown(true)}
-                onBlur={() => setTimeout(() => setShowHDDropdown(false), 200)}
-                style={{
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--border)',
-                  width: '100%',
-                  padding: '0.5rem'
-                }}
-              />
-
-              {showHDDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  zIndex: 10,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}>
-                  {HD_OFFICERS
-                    .filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase()))
-                    .map(h => (
-                      <div
-                        key={h}
-                        onClick={() => {
-                          setCloseForm({ ...closeForm, hdOfficer: h });
-                          setShowHDDropdown(false);
-                        }}
-                        style={{
-                          padding: '0.5rem',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid var(--border-light)',
-                          color: 'var(--text-main)'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = 'var(--primary-light)'}
-                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                      >
-                        {h}
-                      </div>
-                    ))
-                  }
-                  {HD_OFFICERS.filter(h => h.toLowerCase().includes(closeForm.hdOfficer.toLowerCase())).length === 0 && (
-                    <div style={{ padding: '0.5rem', color: 'gray', fontStyle: 'italic' }}>Tidak ada HD ditemukan</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-              <label>Action / Perbaikan</label>
-              <textarea
-                value={closeForm.action}
-                onChange={e => setCloseForm({ ...closeForm, action: e.target.value })}
-                rows={3}
-                style={{ background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', width: '100%', padding: '0.5rem' }}
-              />
-            </div>
-
-            <div className="form-actions" style={{ gap: '1rem', marginTop: '0' }}>
-              <button className="btn-secondary" onClick={() => setClosingReport(null)}>Batal</button>
-              <button
-                className="btn-success"
-                onClick={submitCloseTicket}
-                style={{ background: '#10B981', color: 'white' }}
-              >
-                Simpan ke Dashboard & Tutup
-              </button>
-            </div>
+            <button
+              onClick={submitCloseTicket}
+              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+            >
+              <CheckCircle2 className="w-5 h-5" /> Confirm & Close
+            </button>
           </div>
         </div>
       )}
